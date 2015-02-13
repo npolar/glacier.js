@@ -1,0 +1,32 @@
+{
+	"name": "@npolar/glacier",
+	"version": "0.0.1",
+	"description": "JavaScript WebGL Framework",
+	"keywords": [
+		"WebGL",
+		"npolar"
+	],
+	"license": "MIT",
+	"author": {
+		"name": "Remi A. Solås",
+		"email": "remi@npolar.no"
+	},
+	"files": [
+		"src/",
+		"gulpfile.js",
+		"LICENCE",
+		"README.md"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/npolar/glacier.js"
+	},
+	"devDependencies": {
+		"gulp": "",
+		"gulp-concat": "",
+		"gulp-uglify": "",
+		"gulp-jshint": ""
+	},
+	"main": "gulpfile.js",
+	"private": true
+}
