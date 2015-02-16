@@ -1,14 +1,5 @@
 var glacier = {
-	VERSION: "0.0.1",
-	EPSILON: 10e-5
-};
-
-glacier.compare = function(number1, number2) {
-	if(typeof number1 == 'number' && typeof number2 == 'number') {
-		return (Math.abs(number1 - number2) < glacier.EPSILON);
-	}
-	
-	return false;
+	VERSION: "0.0.1"
 };
 
 if(typeof module == 'object') {
@@ -32,6 +23,16 @@ glacier.colors = {
 	NAVY:		0x000080,
 	FUSCIA:		0xFF00FF,
 	PURPLE:		0x800080
+};
+
+glacier.EPSILON = 10e-5;
+
+glacier.compare = function(number1, number2) {
+	if(typeof number1 == 'number' && typeof number2 == 'number') {
+		return (Math.abs(number1 - number2) < glacier.EPSILON);
+	}
+	
+	return false;
 };
 
 glacier.Matrix33 = function(value) {
