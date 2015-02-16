@@ -3,8 +3,10 @@
 	"version": "0.0.1",
 	"description": "JavaScript WebGL Framework",
 	"keywords": [
-		"WebGL",
-		"npolar"
+		"gl",
+		"webgl",
+		"npolar",
+		"glacier"
 	],
 	"license": "MIT",
 	"author": {
@@ -13,20 +15,23 @@
 	},
 	"files": [
 		"src/",
-		"gulpfile.js",
+		"test/",
+		"dist/",
 		"LICENCE",
-		"README.md"
+		"README.md",
+		"gulpfile.js"
 	],
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/npolar/glacier.js"
 	},
 	"devDependencies": {
-		"gulp": "",
-		"gulp-concat": "",
-		"gulp-uglify": "",
-		"gulp-jshint": ""
+		"gulp": "^3.8.11",
+		"gulp-concat": "^2.5.0",
+		"gulp-jshint": "^1.9.2",
+		"gulp-mocha": "^2.0.0",
+		"gulp-uglify": "^1.1.0"
 	},
-	"main": "gulpfile.js",
+	"main": "dist/glacier.js",
 	"private": true
 }
