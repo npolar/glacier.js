@@ -133,7 +133,7 @@ glacier.Matrix44.prototype = {
 		
 		var det = (a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0); 
 		
-		if(Math.abs(det) < Number.EPSILON)
+		if(Math.abs(det) < glacier.EPSILON)
 			return false;
 		
 		this.array = new Float32Array([

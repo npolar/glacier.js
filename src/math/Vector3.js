@@ -19,6 +19,8 @@ glacier.Vector3.prototype = {
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector3.add: ' + typeof(value) + ' (expected number or Vector3)');
 		}
+		
+		return this;
 	},
 	
 	angle: function(vec3) {
@@ -34,6 +36,8 @@ glacier.Vector3.prototype = {
 		} else {
 			console.warn('Invalid parameter types for glacier.Vector.assign: ' + typeof(x) + ', ' + typeof(y) + ', ' + typeof(z) + ' (expected three numbers)');
 		}
+		
+		return this;
 	},
 	
 	crossProduct: function(vec3) {
@@ -45,10 +49,11 @@ glacier.Vector3.prototype = {
 	},
 	
 	distance: function(vec3) {
-		return glacier.Vector3(this.array[0] - vec3.array[0], this.array[1] - vec3.array[1], this.array[2] - vec3.array[2]).length();
+		var dx = this.array[0] - vec3.array[0], dy = this.array[1] - vec3.array[1], dz = this.array[2] - vec3.array[2];
+		return Math.sqrt(dx * dx + dy * dy + dz * dz);
 	},
 	
-	divide: function(vec3) {
+	divide: function(value) {
 		if(value instanceof glacier.Vector3) {
 			this.array[0] /= value.array[0];
 			this.array[1] /= value.array[1];
@@ -68,6 +73,8 @@ glacier.Vector3.prototype = {
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector3.divide: ' + typeof(value) + ' (expected number, Vector3, Matrix33 or Matrix44)');
 		}
+		
+		return this;
 	},
 	
 	dotProduct: function(vec3) {
@@ -98,6 +105,8 @@ glacier.Vector3.prototype = {
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector3.multiply: ' + typeof(value) + ' (expected number, Vector3, Matrix33 or Matrix44)');
 		}
+		
+		return this;
 	},
 	
 	normalize: function() {
@@ -106,30 +115,47 @@ glacier.Vector3.prototype = {
 		this.array[0] *= inverted;
 		this.array[1] *= inverted;
 		this.array[2] *= inverted;
+		
+		return this;
 	},
 	
 	rotateX: function(radians) {
 		var cosRad = Math.cos(radians);
 		var sinRad = Math.sin(radians);
 		
-		this.array[1] = ((this.array[1] * cosRad) - (this.array[2] * sinRad));
-		this.array[2] = ((this.array[1] * sinRad) + (this.array[2] * cosRad));
+		var rotY = ((this.array[1] * cosRad) - (this.array[2] * sinRad));
+		var rotZ = ((this.array[1] * sinRad) + (this.array[2] * cosRad));
+		
+		this.array[1] = rotY;
+		this.array[2] = rotZ;
+		
+		return this;
 	},
 	
 	rotateY: function(radians) {
 		var cosRad = Math.cos(radians);
 		var sinRad = Math.sin(radians);
 		
-		this.array[0] = ((this.array[0] * cosRad) - (this.array[2] * sinRad));
-		this.array[2] = ((this.array[0] * sinRad) - (this.array[2] * cosRad));
+		var rotX = ((this.array[0] * cosRad) - (this.array[2] * sinRad));
+		var rotZ = ((this.array[0] * sinRad) + (this.array[2] * cosRad));
+		
+		this.array[0] = rotX;
+		this.array[2] = rotZ;
+		
+		return this;
 	},
 	
 	rotateZ: function(radians) {
 		var cosRad = Math.cos(radians);
 		var sinRad = Math.sin(radians);
 		
-		this.array[0] = ((this.array[0] * cosRad) - (this.array[1] * sinRad));
-		this.array[1] = ((this.array[0] * sinRad) + (this.array[1] * cosRad));
+		var rotX = ((this.array[0] * cosRad) - (this.array[1] * sinRad));
+		var rotY = ((this.array[0] * sinRad) + (this.array[1] * cosRad));
+		
+		this.array[0] = rotX;
+		this.array[1] = rotY;
+		
+		return this;
 	},
 	
 	subtract: function(value) {
@@ -144,6 +170,8 @@ glacier.Vector3.prototype = {
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector3.subtract: ' + typeof(value) + ' (expected number or Vector3)');
 		}
+		
+		return this;
 	},
 	
 	toString: function() {

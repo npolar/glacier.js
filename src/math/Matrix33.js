@@ -103,7 +103,7 @@ glacier.Matrix33.prototype = {
 		
 		var det = (this.array[0] * temp[0] - this.array[1] * temp[3] + this.array[2] * temp[6]);
 		
-		if(Math.abs(det) < Number.EPSILON)
+		if(Math.abs(det) < glacier.EPSILON)
 			return false;
 		
 		det = 1.0 / det;
