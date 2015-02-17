@@ -14,7 +14,7 @@ describe('Vector3', function() {
 			assert.equal(true, glacier.compare(0.0, vec3.z));
 		});
 		
-		it('number, number, number', function() {
+		it('number (x), number (y), number (z)', function() {
 			var x = 1.5, y = 2.2, z = 3.9;
 			var vec3 = new glacier.Vector3(x, y, z);
 			
@@ -36,7 +36,7 @@ describe('Vector3', function() {
 			assert.equal(true, glacier.compare(z1 + z2, vec3.z));
 		});
 		
-		it('number', function() {
+		it('number (scalar)', function() {
 			var x = 1.2, y = 2.5, z = 3.2, n = 4.9;
 			var vec3 = new glacier.Vector3(x, y, z);
 			
@@ -49,7 +49,7 @@ describe('Vector3', function() {
 	});
 	
 	describe('assign', function() {
-		it('number, number, number', function() {
+		it('number (x), number (y), number (z)', function() {
 			var x1 = 1.5, y1 = 2.1, z1 = 3.7, x2 = 4.4, y2 = 5.2, z2 = 6.9;
 			var vec3 = new glacier.Vector3(x1, y1, z1);
 			
@@ -83,7 +83,7 @@ describe('Vector3', function() {
 			assert.equal(true, glacier.compare(z1 / z2, vec3.z));
 		});
 		
-		it('number', function() {
+		it('number (scalar)', function() {
 			var x = -6.2, y = 3.7, z = -8.4, n = 2.1;
 			var vec3 = new glacier.Vector3(x, y, z);
 			
@@ -126,7 +126,7 @@ describe('Vector3', function() {
 			assert.equal(true, glacier.compare(z1 * z2, vec3.z));
 		});
 		
-		it('number', function() {
+		it('number (scalar)', function() {
 			var x = 4.6, y = -3.1, z = 6.8, n = 5.2;
 			var vec3 = new glacier.Vector3(x, y, z);
 			
@@ -149,7 +149,7 @@ describe('Vector3', function() {
 	});
 	
 	describe('rotateX', function() {
-		it('number', function() {
+		it('number (radians)', function() {
 			var x = -4.0, y = 2.0, z = 6.0, n = 0.7;
 			var vec3 = new glacier.Vector3(x, y, z);
 			
@@ -161,7 +161,7 @@ describe('Vector3', function() {
 	});
 	
 	describe('rotateY', function() {
-		it('number', function() {
+		it('number (radians)', function() {
 			var x = -4.0, y = 2.0, z = 6.0, n = 0.7;
 			var vec3 = new glacier.Vector3(x, y, z);
 			
@@ -173,7 +173,7 @@ describe('Vector3', function() {
 	});
 	
 	describe('rotateZ', function() {
-		it('number', function() {
+		it('number (radians)', function() {
 			var x = -4.0, y = 2.0, z = 6.0, n = 0.7;
 			var vec3 = new glacier.Vector3(x, y, z);
 			
@@ -196,7 +196,7 @@ describe('Vector3', function() {
 			assert.equal(true, glacier.compare(z1 - z2, vec3.z));
 		});
 		
-		it('number', function() {
+		it('number (scalar)', function() {
 			var x = -4.0, y = 3.0, z = 2.1, n = -1.8;
 			var vec3 = new glacier.Vector3(x, y, z);
 			

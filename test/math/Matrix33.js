@@ -90,10 +90,17 @@ describe('Matrix33', function() {
 	});
 	
 	describe('element', function() {
-		it('number, number', function() {
+		it('number (column), number (row)', function() {
 			var mat33 = new glacier.Matrix33([ 0.0, 0.1, 0.2, 1.0, 1.1, 1.2, 2.0, 2.1, 2.2 ]);
 			
 			assert.equal(true, glacier.compare(mat33.element(2, 1), 2.1));
+			
+		});
+		
+		it('number (index)', function() {
+			var mat33 = new glacier.Matrix33([ 0.0, 0.1, 0.2, 1.0, 1.1, 1.2, 2.0, 2.1, 2.2 ]);
+			
+			assert.equal(true, glacier.compare(mat33.element(8), 2.2));
 		});
 	});
 });

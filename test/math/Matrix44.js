@@ -94,10 +94,16 @@ describe('Matrix44', function() {
 	});
 	
 	describe('element', function() {
-		it('number, number', function() {
+		it('number (column), number (row)', function() {
 			var mat44 = new glacier.Matrix44([ 0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 1.3, 2.0, 2.1, 2.2, 2.3, 3.0, 3.1, 3.2, 3.3 ]);
 			
 			assert.equal(true, glacier.compare(mat44.element(3, 2), 3.2));
+		});
+		
+		it('number (index)', function() {
+			var mat44 = new glacier.Matrix44([ 0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 1.3, 2.0, 2.1, 2.2, 2.3, 3.0, 3.1, 3.2, 3.3 ]);
+			
+			assert.equal(true, glacier.compare(mat44.element(15), 3.3));
 		});
 	});
 });

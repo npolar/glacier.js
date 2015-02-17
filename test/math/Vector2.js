@@ -13,7 +13,7 @@ describe('Vector2', function() {
 			assert.equal(true, glacier.compare(0.0, vec2.y));
 		});
 		
-		it('number, number', function() {
+		it('number (x), number (y)', function() {
 			var x = 1.6, y = 2.2;
 			var vec2 = new glacier.Vector2(x, y);
 			
@@ -33,7 +33,7 @@ describe('Vector2', function() {
 			assert.equal(true, glacier.compare(y1 + y2, vec2.y));
 		});
 		
-		it('number', function() {
+		it('number (scalar)', function() {
 			var x = 1.2, y = 2.6, n = 3.5;
 			var vec2 = new glacier.Vector2(x, y);
 			
@@ -45,7 +45,7 @@ describe('Vector2', function() {
 	});
 	
 	describe('assign', function() {
-		it('number, number', function() {
+		it('number (x), number (y)', function() {
 			var x1 = 1.5, y1 = 2.4, x2 = 3.7, y2 = 4.4;
 			var vec2 = new glacier.Vector2(x1, x2);
 			
@@ -77,7 +77,7 @@ describe('Vector2', function() {
 			assert.equal(true, glacier.compare(y1 / y2, vec2.y));
 		});
 		
-		it('number', function() {
+		it('number (scalar)', function() {
 			var x = -6.7, y = 3.2, n = 4.5;
 			var vec2 = new glacier.Vector2(x, y);
 			
@@ -118,7 +118,7 @@ describe('Vector2', function() {
 			assert.equal(true, glacier.compare(y1 * y2, vec2.y));
 		});
 		
-		it('number', function() {
+		it('number (scalar)', function() {
 			var x = 4.9, y = -3.7, n = 5.1;
 			var vec2 = new glacier.Vector2(x, y);
 			
@@ -140,7 +140,7 @@ describe('Vector2', function() {
 	});
 	
 	describe('rotate', function() {
-		it('number', function() {
+		it('number (radians)', function() {
 			var x = -4.7, y = 2.3, n = 0.4;
 			var vec2 = new glacier.Vector2(x, y);
 			
@@ -162,7 +162,7 @@ describe('Vector2', function() {
 			assert.equal(true, glacier.compare(y1 - y2, vec2.y));
 		});
 		
-		it('number', function() {
+		it('number (scalar)', function() {
 			var x = -4.4, y = 3.6, n = -1.3;
 			var vec2 = new glacier.Vector2(x, y);
 			
