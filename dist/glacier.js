@@ -6,6 +6,10 @@ if(typeof module == 'object') {
 	module.exports = glacier;
 }
 
+glacier.isArray = function(value) {
+	return (value instanceof Array || value instanceof Float32Array);
+};
+
 glacier.colors = {
 	WHITE:		0xFFFFFF,
 	SILVER:		0xC0C0C0,
@@ -27,9 +31,41 @@ glacier.colors = {
 
 glacier.EPSILON = 10e-5;
 
-glacier.compare = function(number1, number2) {
-	if(typeof number1 == 'number' && typeof number2 == 'number') {
-		return (Math.abs(number1 - number2) < glacier.EPSILON);
+glacier.compare = function(value1, value2) {
+	var e, val1Arr = glacier.isArray(value1), val2Arr = glacier.isArray(value2);
+	
+	if(val1Arr && val2Arr) {
+		if(value1.length == value2.length) {
+			for(e = 0; e < value1.length; ++e) {
+				if(typeof value1[e] == 'number' && typeof value2[e] == 'number') {
+					if(Math.abs(value1[e] - value2[e]) >= glacier.EPSILON) {
+						return false;
+					}
+				} else if(value1 !== value2) {
+					return false;
+				}
+			}
+			
+			return true;
+		}
+	} else if(val1Arr || val2Arr) {
+		var arr = (val1Arr ? value1 : value2), val = (val1Arr ? value2 : value1);
+		
+		for(e = 0; e < value1.length; ++e) {
+			if(typeof arr[e] == 'number' && typeof val == 'number') {
+				if(Math.abs(arr[e] - val) >= glacier.EPSILON) {
+					return false;
+				}
+			} else if(arr[e] !== val) {
+				return false;
+			}
+		}
+		
+		return true;
+	} else if(typeof value1 == 'number' && typeof value2 == 'number') {
+		return (Math.abs(value1 - value2) < glacier.EPSILON);
+	} else {
+		return (value1 === value2);
 	}
 	
 	return false;
@@ -61,8 +97,8 @@ glacier.Matrix33.prototype = {
 					this.array[(col * 3) + row] = value.array[(col * 4) + row];
 				}
 			}
-		} else if(value instanceof Array || value instanceof Float32Array) {
-			for(e in value) {
+		} else if(glacier.isArray(value)) {
+			for(e = 0; e < value.length; ++e) {
 				this.array[e] = value[e];
 			}
 		} else if(typeof value == 'number') {
@@ -152,10 +188,14 @@ glacier.Matrix33.prototype = {
 		return true;
 	},
 	
+	toArray: function() {
+		return new Float32Array(this.array);
+	},
+	
 	toString: function() {
-		return ('[[' + this.array[0] + ', ' + this.array[1] + ', ' + this.array[2] + '], ' +
-				 '[' + this.array[3] + ', ' + this.array[4] + ', ' + this.array[5] + '], ' +
-				 '[' + this.array[6] + ', ' + this.array[7] + ', ' + this.array[8] + ']]');
+		return ('[[' + this.array[0].toPrecision(5) + ', ' + this.array[1].toPrecision(5) + ', ' + this.array[2].toPrecision(5) + '], ' +
+				 '[' + this.array[3].toPrecision(5) + ', ' + this.array[4].toPrecision(5) + ', ' + this.array[5].toPrecision(5) + '], ' +
+				 '[' + this.array[6].toPrecision(5) + ', ' + this.array[7].toPrecision(5) + ', ' + this.array[8].toPrecision(5) + ']]');
 	}
 };
 
@@ -190,8 +230,9 @@ glacier.Matrix44.prototype = {
 			for(e in value.array) {
 				this.array[e] = value.array[e];
 			}
-		} else if(value instanceof Array || value instanceof Float32Array) {
-			for(e in value) {
+			
+		} else if(glacier.isArray(value)) {
+			for(e = 0; e < value.length; ++e) {
 				this.array[e] = value[e];
 			}
 		} else if(typeof value == 'number') {
@@ -319,29 +360,31 @@ glacier.Matrix44.prototype = {
 		return true;
 	},
 	
+	toArray: function() {
+		return new Float32Array(this.array);
+	},
+	
 	toString: function() {
-		return ('[[' + this.array[ 0] + ', ' + this.array[ 1] + ', ' + this.array[ 2] + ', ' + this.array[ 3] + '], ' +
-				 '[' + this.array[ 4] + ', ' + this.array[ 5] + ', ' + this.array[ 6] + ', ' + this.array[ 7] + '], ' +
-				 '[' + this.array[ 8] + ', ' + this.array[ 9] + ', ' + this.array[10] + ', ' + this.array[11] + '], ' +
-				 '[' + this.array[12] + ', ' + this.array[13] + ', ' + this.array[14] + ', ' + this.array[15] + ']]');
+		return ('[[' + this.array[ 0].toPrecision(5) + ', ' + this.array[ 1].toPrecision(5) + ', ' + this.array[ 2].toPrecision(5) + ', ' + this.array[ 3].toPrecision(5) + '], ' +
+				 '[' + this.array[ 4].toPrecision(5) + ', ' + this.array[ 5].toPrecision(5) + ', ' + this.array[ 6].toPrecision(5) + ', ' + this.array[ 7].toPrecision(5) + '], ' +
+				 '[' + this.array[ 8].toPrecision(5) + ', ' + this.array[ 9].toPrecision(5) + ', ' + this.array[10].toPrecision(5) + ', ' + this.array[11].toPrecision(5) + '], ' +
+				 '[' + this.array[12].toPrecision(5) + ', ' + this.array[13].toPrecision(5) + ', ' + this.array[14].toPrecision(5) + ', ' + this.array[15].toPrecision(5) + ']]');
 	}
 };
 
 glacier.Vector2 = function(x, y) {
-	this.array = new Float32Array([
-		(typeof x == 'number' ? x : 0.0),
-		(typeof y == 'number' ? y : 0.0)
-	]);
+	this.x = (typeof x == 'number' ? x : 0.0);
+	this.y = (typeof y == 'number' ? y : 0.0);
 };
 
 glacier.Vector2.prototype = {
 	add: function(value) {
 		if(value instanceof glacier.Vector2) {
-			this.array[0] += value.array[0];
-			this.array[1] += value.array[1];
+			this.x += value.x;
+			this.y += value.y;
 		} else if(typeof value == 'number') {
-			this.array[0] += value;
-			this.array[1] += value;
+			this.x += value;
+			this.y += value;
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector2.add: ' + typeof(value) + ' (expected number or Vector2)');
 		}
@@ -351,8 +394,8 @@ glacier.Vector2.prototype = {
 	
 	assign: function(x, y) {
 		if(typeof x == 'number' && typeof y == 'number') {
-			this.array[0] = x;
-			this.array[1] = y;
+			this.x = x;
+			this.y = y;
 		} else {
 			console.warn('Invalid parameter types for glacier.Vector2.assign: ' + typeof(x) + ', ' + typeof(y) + ' (expected two numbers)');
 		}
@@ -361,17 +404,17 @@ glacier.Vector2.prototype = {
 	},
 
 	distance: function(vec2) {
-		var dx = this.array[0] - vec2.array[0], dy = this.array[1] - vec2.array[1];
+		var dx = this.x - vec2.x, dy = this.y - vec2.y;
 		return Math.sqrt(dx * dx + dy * dy);
 	},
 	
 	divide: function(value) {
 		if(value instanceof glacier.Vector2) {
-			this.array[0] /= value.array[0];
-			this.array[1] /= value.array[1];
+			this.x /= value.x;
+			this.y /= value.y;
 		} else if(typeof value == 'number') {
-			this.array[0] /= value;
-			this.array[1] /= value;
+			this.x /= value;
+			this.y /= value;
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector2.divide: ' + typeof(value) + ' (expected number or Vector2)');
 		}
@@ -380,20 +423,20 @@ glacier.Vector2.prototype = {
 	},
 	
 	dotProduct: function(vec2) {
-		return ((this.array[0] * vec2.array[0]) + (this.array[1] * vec2.array[1]));
+		return ((this.x * vec2.x) + (this.y * vec2.y));
 	},
 	
 	length: function() {
-		return Math.sqrt((this.array[0] * this.array[0]) + (this.array[1] * this.array[1]));
+		return Math.sqrt((this.x * this.x) + (this.y * this.y));
 	},
 	
 	multiply: function(value) {
 		if(value instanceof glacier.Vector2) {
-			this.array[0] *= value.array[0];
-			this.array[1] *= value.array[1];
+			this.x *= value.x;
+			this.y *= value.y;
 		} else if(typeof value == 'number') {
-			this.array[0] *= value;
-			this.array[1] *= value;
+			this.x *= value;
+			this.y *= value;
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector2.multiply: ' + typeof(value) + ' (expected number or Vector2)');
 		}
@@ -404,8 +447,8 @@ glacier.Vector2.prototype = {
 	normalize: function() {
 		var inverted = 1.0 / this.length();
 		
-		this.array[0] *= inverted;
-		this.array[1] *= inverted;
+		this.x *= inverted;
+		this.y *= inverted;
 		
 		return this;
 	},
@@ -414,22 +457,22 @@ glacier.Vector2.prototype = {
 		var cosRad = Math.cos(radians);
 		var sinRad = Math.sin(radians);
 		
-		var rotX = ((this.array[0] * cosRad) - (this.array[1] * sinRad));
-		var rotY = ((this.array[0] * sinRad) + (this.array[1] * cosRad));
+		var rotX = ((this.x * cosRad) - (this.y * sinRad));
+		var rotY = ((this.x * sinRad) + (this.y * cosRad));
 		
-		this.array[0] = rotX;
-		this.array[1] = rotY;
+		this.x = rotX;
+		this.y = rotY;
 		
 		return this;
 	},
 	
 	subtract: function(value) {
 		if(value instanceof glacier.Vector2) {
-			this.array[0] -= value.array[0];
-			this.array[1] -= value.array[1];
+			this.x -= value.x;
+			this.y -= value.y;
 		} else if(typeof value == 'number') {
-			this.array[0] -= value;
-			this.array[1] -= value;
+			this.x -= value;
+			this.y -= value;
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector2.subtract: ' + typeof(value) + ' (expected number or Vector2)');
 		}
@@ -437,34 +480,37 @@ glacier.Vector2.prototype = {
 		return this;
 	},
 	
-	toString: function() {
-		return ('(' + this.array[0] + ', ' + this.array[1] + ')');
+	toArray: function() {
+		return new Float32Array([
+			this.x,
+			this.y
+		]);
 	},
 	
-	x: function() { return this.array[0]; },
-	y: function() { return this.array[1]; },
-	u: function() { return this.array[0]; },
-	v: function() { return this.array[1]; }
+	toString: function() {
+		return ('(' + this.x + ', ' + this.y + ')');
+	},
+	
+	u: function() { return this.x; },
+	v: function() { return this.y; }
 };
 
 glacier.Vector3 = function(x, y, z) {
-	this.array = new Float32Array([
-		(typeof x == 'number' ? x : 0.0),
-		(typeof y == 'number' ? y : 0.0),
-		(typeof z == 'number' ? z : 0.0)
-	]);
+	this.x = (typeof x == 'number' ? x : 0.0);
+	this.y = (typeof y == 'number' ? y : 0.0);
+	this.z = (typeof z == 'number' ? z : 0.0);
 };
 
 glacier.Vector3.prototype = {
 	add: function(value) {
 		if(value instanceof glacier.Vector3) {
-			this.array[0] += value.array[0];
-			this.array[1] += value.array[1];
-			this.array[2] += value.array[2];
+			this.x += value.x;
+			this.y += value.y;
+			this.z += value.z;
 		} else if(typeof value == 'number') {
-			this.array[0] += value;
-			this.array[1] += value;
-			this.array[2] += value;
+			this.x += value;
+			this.y += value;
+			this.z += value;
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector3.add: ' + typeof(value) + ' (expected number or Vector3)');
 		}
@@ -479,9 +525,9 @@ glacier.Vector3.prototype = {
 	
 	assign: function(x, y, z) {
 		if(typeof x == 'number' && typeof y == 'number' && typeof z == 'number') {
-			this.array[0] = x;
-			this.array[1] = y;
-			this.array[2] = z;
+			this.x = x;
+			this.y = y;
+			this.z = z;
 		} else {
 			console.warn('Invalid parameter types for glacier.Vector.assign: ' + typeof(x) + ', ' + typeof(y) + ', ' + typeof(z) + ' (expected three numbers)');
 		}
@@ -491,34 +537,34 @@ glacier.Vector3.prototype = {
 	
 	crossProduct: function(vec3) {
 		return new glacier.Vector3(
-			(this.array[1] * vec3.array[2]) - (this.array[2] * vec3.array[1]),
-			(this.array[2] * vec3.array[0]) - (this.array[0] * vec3.array[2]),
-			(this.array[0] * vec3.array[1]) - (this.array[1] * vec3.array[0])
+			(this.y * vec3.z) - (this.z * vec3.y),
+			(this.z * vec3.x) - (this.x * vec3.z),
+			(this.x * vec3.y) - (this.y * vec3.x)
 		);
 	},
 	
 	distance: function(vec3) {
-		var dx = this.array[0] - vec3.array[0], dy = this.array[1] - vec3.array[1], dz = this.array[2] - vec3.array[2];
+		var dx = this.x - vec3.x, dy = this.y - vec3.y, dz = this.z - vec3.z;
 		return Math.sqrt(dx * dx + dy * dy + dz * dz);
 	},
 	
 	divide: function(value) {
 		if(value instanceof glacier.Vector3) {
-			this.array[0] /= value.array[0];
-			this.array[1] /= value.array[1];
-			this.array[2] /= value.array[2];
+			this.x /= value.x;
+			this.y /= value.y;
+			this.z /= value.z;
 		} else if(typeof value == 'number') {
-			this.array[0] /= value;
-			this.array[1] /= value;
-			this.array[2] /= value;
+			this.x /= value;
+			this.y /= value;
+			this.z /= value;
 		} else if(value instanceof glacier.Matrix33) {
-			this.array[0] = (this.array[0] / value.element(0, 0)) + (this.array[1] / value.element(0, 1)) + (this.array[2] / value.element(0, 2));
-			this.array[1] = (this.array[0] / value.element(1, 0)) + (this.array[1] / value.element(1, 1)) + (this.array[2] / value.element(1, 2));
-			this.array[2] = (this.array[0] / value.element(2, 0)) + (this.array[1] / value.element(2, 1)) + (this.array[2] / value.element(2, 2));
+			this.x = (this.x / value.element(0, 0)) + (this.y / value.element(0, 1)) + (this.z / value.element(0, 2));
+			this.y = (this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2));
+			this.z = (this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2));
 		} else if(value instanceof glacier.Matrix44) {
-			this.array[0] = (this.array[0] / value.element(0, 0)) + (this.array[1] / value.element(0, 1)) + (this.array[2] / value.element(0, 2)) + value.element(0, 3);
-			this.array[1] = (this.array[0] / value.element(1, 0)) + (this.array[1] / value.element(1, 1)) + (this.array[2] / value.element(1, 2)) + value.element(1, 3);
-			this.array[2] = (this.array[0] / value.element(2, 0)) + (this.array[1] / value.element(2, 1)) + (this.array[2] / value.element(2, 2)) + value.element(2, 3);
+			this.x = (this.x / value.element(0, 0)) + (this.y / value.element(0, 1)) + (this.z / value.element(0, 2)) + value.element(0, 3);
+			this.y = (this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2)) + value.element(1, 3);
+			this.z = (this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2)) + value.element(2, 3);
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector3.divide: ' + typeof(value) + ' (expected number, Vector3, Matrix33 or Matrix44)');
 		}
@@ -527,30 +573,30 @@ glacier.Vector3.prototype = {
 	},
 	
 	dotProduct: function(vec3) {
-		return ((this.array[0] * vec3.array[0]) + (this.array[1] * vec3.array[1]) + (this.array[2] * vec3.array[2]));
+		return ((this.x * vec3.x) + (this.y * vec3.y) + (this.z * vec3.z));
 	},
 	
 	length: function() {
-		return Math.sqrt((this.array[0] * this.array[0]) + (this.array[1] * this.array[1]) + (this.array[2] * this.array[2]));
+		return Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z));
 	},
 	
 	multiply: function(value) {
 		if(value instanceof glacier.Vector3) {
-			this.array[0] *= value.array[0];
-			this.array[1] *= value.array[1];
-			this.array[2] *= value.array[2];
+			this.x *= value.x;
+			this.y *= value.y;
+			this.z *= value.z;
 		} else if(typeof value == 'number') {
-			this.array[0] *= value;
-			this.array[1] *= value;
-			this.array[2] *= value;
+			this.x *= value;
+			this.y *= value;
+			this.z *= value;
 		} else if(value instanceof glacier.Matrix33) {
-			this.array[0] = (this.array[0] * value.element(0, 0)) + (this.array[1] * value.element(0, 1)) + (this.array[2] * value.element(0, 2));
-			this.array[1] = (this.array[0] * value.element(1, 0)) + (this.array[1] * value.element(1, 1)) + (this.array[2] * value.element(1, 2));
-			this.array[2] = (this.array[0] * value.element(2, 0)) + (this.array[1] * value.element(2, 1)) + (this.array[2] * value.element(2, 2));
+			this.x = (this.x * value.element(0, 0)) + (this.y * value.element(0, 1)) + (this.z * value.element(0, 2));
+			this.y = (this.x * value.element(1, 0)) + (this.y * value.element(1, 1)) + (this.z * value.element(1, 2));
+			this.z = (this.x * value.element(2, 0)) + (this.y * value.element(2, 1)) + (this.z * value.element(2, 2));
 		} else if(value instanceof glacier.Matrix44) {
-			this.array[0] = (this.array[0] * value.element(0, 0)) + (this.array[1] * value.element(0, 1)) + (this.array[2] * value.element(0, 2)) + value.element(0, 3);
-			this.array[1] = (this.array[0] * value.element(1, 0)) + (this.array[1] * value.element(1, 1)) + (this.array[2] * value.element(1, 2)) + value.element(1, 3);
-			this.array[2] = (this.array[0] * value.element(2, 0)) + (this.array[1] * value.element(2, 1)) + (this.array[2] * value.element(2, 2)) + value.element(2, 3);
+			this.x = (this.x * value.element(0, 0)) + (this.y * value.element(0, 1)) + (this.z * value.element(0, 2)) + value.element(0, 3);
+			this.y = (this.x * value.element(1, 0)) + (this.y * value.element(1, 1)) + (this.z * value.element(1, 2)) + value.element(1, 3);
+			this.z = (this.x * value.element(2, 0)) + (this.y * value.element(2, 1)) + (this.z * value.element(2, 2)) + value.element(2, 3);
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector3.multiply: ' + typeof(value) + ' (expected number, Vector3, Matrix33 or Matrix44)');
 		}
@@ -561,9 +607,9 @@ glacier.Vector3.prototype = {
 	normalize: function() {
 		var inverted = 1.0 / this.length();
 		
-		this.array[0] *= inverted;
-		this.array[1] *= inverted;
-		this.array[2] *= inverted;
+		this.x *= inverted;
+		this.y *= inverted;
+		this.z *= inverted;
 		
 		return this;
 	},
@@ -572,11 +618,11 @@ glacier.Vector3.prototype = {
 		var cosRad = Math.cos(radians);
 		var sinRad = Math.sin(radians);
 		
-		var rotY = ((this.array[1] * cosRad) - (this.array[2] * sinRad));
-		var rotZ = ((this.array[1] * sinRad) + (this.array[2] * cosRad));
+		var rotY = ((this.y * cosRad) - (this.z * sinRad));
+		var rotZ = ((this.y * sinRad) + (this.z * cosRad));
 		
-		this.array[1] = rotY;
-		this.array[2] = rotZ;
+		this.y = rotY;
+		this.z = rotZ;
 		
 		return this;
 	},
@@ -585,11 +631,11 @@ glacier.Vector3.prototype = {
 		var cosRad = Math.cos(radians);
 		var sinRad = Math.sin(radians);
 		
-		var rotX = ((this.array[0] * cosRad) - (this.array[2] * sinRad));
-		var rotZ = ((this.array[0] * sinRad) + (this.array[2] * cosRad));
+		var rotX = ((this.x * cosRad) - (this.z * sinRad));
+		var rotZ = ((this.x * sinRad) + (this.z * cosRad));
 		
-		this.array[0] = rotX;
-		this.array[2] = rotZ;
+		this.x = rotX;
+		this.z = rotZ;
 		
 		return this;
 	},
@@ -598,24 +644,24 @@ glacier.Vector3.prototype = {
 		var cosRad = Math.cos(radians);
 		var sinRad = Math.sin(radians);
 		
-		var rotX = ((this.array[0] * cosRad) - (this.array[1] * sinRad));
-		var rotY = ((this.array[0] * sinRad) + (this.array[1] * cosRad));
+		var rotX = ((this.x * cosRad) - (this.y * sinRad));
+		var rotY = ((this.x * sinRad) + (this.y * cosRad));
 		
-		this.array[0] = rotX;
-		this.array[1] = rotY;
+		this.x = rotX;
+		this.y = rotY;
 		
 		return this;
 	},
 	
 	subtract: function(value) {
 		if(value instanceof glacier.Vector3) {
-			this.array[0] -= value.array[0];
-			this.array[1] -= value.array[1];
-			this.array[2] -= value.array[2];
+			this.x -= value.x;
+			this.y -= value.y;
+			this.z -= value.z;
 		} else if(typeof value == 'number') {
-			this.array[0] -= value;
-			this.array[1] -= value;
-			this.array[2] -= value;
+			this.x -= value;
+			this.y -= value;
+			this.z -= value;
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector3.subtract: ' + typeof(value) + ' (expected number or Vector3)');
 		}
@@ -623,14 +669,19 @@ glacier.Vector3.prototype = {
 		return this;
 	},
 	
-	toString: function() {
-		return ('(' + this.array[0] + ', ' + this.array[1] + ', ' + this.array[2] + ')');
+	toArray: function() {
+		return new Float32Array([
+			this.x,
+			this.y,
+			this.z
+		]);
 	},
 	
-	x: function() { return this.array[0]; },
-	y: function() { return this.array[1]; },
-	z: function() { return this.array[2]; },
-	u: function() { return this.array[0]; },
-	v: function() { return this.array[1]; },
-	w: function() { return this.array[2]; }
+	toString: function() {
+		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
+	},
+	
+	u: function() { return this.x; },
+	v: function() { return this.y; },
+	w: function() { return this.z; }
 };
