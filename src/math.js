@@ -1,9 +1,5 @@
 glacier.EPSILON = 10e-5;
 
-glacier.isArray = function(value) {
-	return (value instanceof Array || value instanceof Float32Array);
-};
-
 glacier.compare = function(value1, value2) {
 	var e, val1Arr = glacier.isArray(value1), val2Arr = glacier.isArray(value2);
 	
