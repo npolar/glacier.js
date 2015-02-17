@@ -1,13 +1,134 @@
 var assert = require('assert');
 var glacier = require('../dist/glacier.min.js');
 
-describe('glacier', function() {
-	it('compare', function() {
-		var n1 = 123.45678, n2 = 123.45678, n3 = 123.456, n4 = 123;
+describe('math', function() {
+	describe('compare', function() {
+		it('number, number', function() {
+			var n1 = 123.45678, n2 = 123.45678, n3 = 123.456, n4 = 123;
+			
+			assert.equal(true, glacier.compare(n1, n2));
+			assert.equal(false, glacier.compare(n2, n3));
+			assert.equal(false, glacier.compare(n3, n4));
+		});
 		
-		assert.equal(true, glacier.compare(n1, n2));
-		assert.equal(false, glacier.compare(n2, n3));
-		assert.equal(false, glacier.compare(n3, n4));
+		it('array, array', function() {
+			var a1 = [ 1.1, 2.2, 3.3 ], a2 = new Float32Array([ 1.1, 2.2, 3.3 ]), a3 = [ 1, 2, 3 ], a4 = new Float32Array([ 1, 2, 3 ]);
+			
+			assert.equal(true, glacier.compare(a1, a2));
+			assert.equal(true, glacier.compare(a3, a4));
+			assert.equal(false, glacier.compare(a1, a3));
+			assert.equal(false, glacier.compare(a2, a4));
+		});
+		
+		it('array, number', function() {
+			var a1 = [ 1.1, 1.1, 1.1 ], a2 = new Float32Array([ 2.2, 2.2, 2.2 ]), n1 = 1.1, n2 = 2.2, n3 = 1, n4 = 2;
+			
+			assert.equal(true, glacier.compare(a1, n1));
+			assert.equal(true, glacier.compare(a2, n2));
+			assert.equal(false, glacier.compare(a1, n3));
+			assert.equal(false, glacier.compare(a2, n4));
+		});
+		
+		it('array, boolean', function() {
+			var a = [ true, true, true ], t = true, f = false, o = 1, z = 0;
+			
+			assert.equal(true, glacier.compare(a, t));
+			assert.equal(false, glacier.compare(a, f));
+			assert.equal(false, glacier.compare(a, o));
+			assert.equal(false, glacier.compare(a, z));
+		});
+	});
+});
+
+describe('Matrix33', function() {
+	it('class in glacier', function() {
+		assert.equal('object', typeof glacier);
+		assert.equal('function', typeof glacier.Matrix33);
+		assert.equal(true, new glacier.Matrix33 instanceof glacier.Matrix33);
+	});
+	
+	describe('constructor', function() {
+		it('default', function() {
+			var arr = [ 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 ];
+			var mat33 = new glacier.Matrix33();
+			
+			assert.equal(true, glacier.compare(arr, mat33.toArray()));
+		});
+		
+		it('array', function() {
+			var arr = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
+			var mat33 = new glacier.Matrix33(arr);
+			
+			assert.equal(true, glacier.compare(arr, mat33.toArray()));
+		});
+		
+		it('number', function() {
+			var num = 1.1, mat33 = new glacier.Matrix33(num);
+			
+			assert.equal(true, glacier.compare(num, mat33.toArray()));
+		});
+		
+		it('Matrix33', function() {
+			var arr = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
+			var mat33 = new glacier.Matrix33(new glacier.Matrix33(arr));
+			
+			assert.equal(true, glacier.compare(arr, mat33.toArray()));
+		});
+		
+		it('Matrix44', function() {
+			var arr44 = [ 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4 ];
+			var arr33 = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
+			var mat44 = new glacier.Matrix44(arr44);
+			var mat33 = new glacier.Matrix33(mat44);
+			
+			assert.equal(true, glacier.compare(arr33, mat33.toArray()));
+		});
+	});
+});
+
+describe('Matrix44', function() {
+	it('class in glacier', function() {
+		assert.equal('object', typeof glacier);
+		assert.equal('function', typeof glacier.Matrix44);
+		assert.equal(true, new glacier.Matrix44 instanceof glacier.Matrix44);
+	});
+	
+	describe('constructor', function() {
+		it('default', function() {
+			var arr = [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ];
+			var mat44 = new glacier.Matrix44();
+			
+			assert.equal(true, glacier.compare(arr, mat44.toArray()));
+		});
+		
+		it('array', function() {
+			var arr = [ 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4 ];
+			var mat44 = new glacier.Matrix44(arr);
+			
+			assert.equal(true, glacier.compare(arr, mat44.toArray()));
+		});
+		
+		it('number', function() {
+			var num = 1.1, mat44 = new glacier.Matrix44(num);
+			
+			assert.equal(true, glacier.compare(num, mat44.toArray()));
+		});
+		
+		it('Matrix33', function() {
+			var arr33 = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
+			var arr44 = [ 1.1, 1.2, 1.3, 0.0, 2.1, 2.2, 2.3, 0.0, 3.1, 3.2, 3.3, 0.0, 0.0, 0.0, 0.0, 1.0 ];
+			var mat33 = new glacier.Matrix33(arr33);
+			var mat44 = new glacier.Matrix44(mat33);
+			
+			assert.equal(true, glacier.compare(arr44, mat44.toArray()));
+		});
+		
+		it('Matrix44', function() {
+			var arr = [ 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4 ];
+			var mat44 = new glacier.Matrix44(new glacier.Matrix44(arr));
+			
+			assert.equal(true, glacier.compare(arr, mat44.toArray()));
+		});
 	});
 });
 
@@ -22,16 +143,16 @@ describe('Vector2', function() {
 		it('default', function() {
 			var vec2 = new glacier.Vector2();
 			
-			assert.equal(true, glacier.compare(0.0, vec2.array[0]));
-			assert.equal(true, glacier.compare(0.0, vec2.array[1]));
+			assert.equal(true, glacier.compare(0.0, vec2.x));
+			assert.equal(true, glacier.compare(0.0, vec2.y));
 		});
 		
 		it('number, number', function() {
 			var x = 1.6, y = 2.2;
 			var vec2 = new glacier.Vector2(x, y);
 			
-			assert.equal(true, glacier.compare(x, vec2.array[0]));
-			assert.equal(true, glacier.compare(y, vec2.array[1]));
+			assert.equal(true, glacier.compare(x, vec2.x));
+			assert.equal(true, glacier.compare(y, vec2.y));
 		});
 	});
 	
@@ -42,8 +163,8 @@ describe('Vector2', function() {
 			
 			vec2.add(new glacier.Vector2(x2, y2));
 			
-			assert.equal(true, glacier.compare(x1 + x2, vec2.array[0]));
-			assert.equal(true, glacier.compare(y1 + y2, vec2.array[1]));
+			assert.equal(true, glacier.compare(x1 + x2, vec2.x));
+			assert.equal(true, glacier.compare(y1 + y2, vec2.y));
 		});
 		
 		it('number', function() {
@@ -52,8 +173,8 @@ describe('Vector2', function() {
 			
 			vec2.add(n);
 			
-			assert.equal(true, glacier.compare(x + n, vec2.array[0]));
-			assert.equal(true, glacier.compare(y + n, vec2.array[1]));
+			assert.equal(true, glacier.compare(x + n, vec2.x));
+			assert.equal(true, glacier.compare(y + n, vec2.y));
 		});
 	});
 	
@@ -64,8 +185,8 @@ describe('Vector2', function() {
 			
 			vec2.assign(x2, y2);
 			
-			assert.equal(true, glacier.compare(x2, vec2.array[0]));
-			assert.equal(true, glacier.compare(y2, vec2.array[1]));
+			assert.equal(true, glacier.compare(x2, vec2.x));
+			assert.equal(true, glacier.compare(y2, vec2.y));
 		});
 	});
 	
@@ -86,8 +207,8 @@ describe('Vector2', function() {
 			
 			vec2.divide(new glacier.Vector2(x2, y2));
 			
-			assert.equal(true, glacier.compare(x1 / x2, vec2.array[0]));
-			assert.equal(true, glacier.compare(y1 / y2, vec2.array[1]));
+			assert.equal(true, glacier.compare(x1 / x2, vec2.x));
+			assert.equal(true, glacier.compare(y1 / y2, vec2.y));
 		});
 		
 		it('number', function() {
@@ -96,8 +217,8 @@ describe('Vector2', function() {
 			
 			vec2.divide(n);
 			
-			assert.equal(true, glacier.compare(x / n, vec2.array[0]));
-			assert.equal(true, glacier.compare(y / n, vec2.array[1]));
+			assert.equal(true, glacier.compare(x / n, vec2.x));
+			assert.equal(true, glacier.compare(y / n, vec2.y));
 		});
 	});
 	
@@ -127,8 +248,8 @@ describe('Vector2', function() {
 			
 			vec2.multiply(new glacier.Vector2(x2, y2));
 			
-			assert.equal(true, glacier.compare(x1 * x2, vec2.array[0]));
-			assert.equal(true, glacier.compare(y1 * y2, vec2.array[1]));
+			assert.equal(true, glacier.compare(x1 * x2, vec2.x));
+			assert.equal(true, glacier.compare(y1 * y2, vec2.y));
 		});
 		
 		it('number', function() {
@@ -137,8 +258,8 @@ describe('Vector2', function() {
 			
 			vec2.multiply(n);
 			
-			assert.equal(true, glacier.compare(x * n, vec2.array[0]));
-			assert.equal(true, glacier.compare(y * n, vec2.array[1]));
+			assert.equal(true, glacier.compare(x * n, vec2.x));
+			assert.equal(true, glacier.compare(y * n, vec2.y));
 		});
 	});
 	
@@ -159,8 +280,8 @@ describe('Vector2', function() {
 			
 			vec2.rotate(n);
 			
-			assert.equal(true, glacier.compare(vec2.array[0], (x * Math.cos(n)) - (y * Math.sin(n))));
-			assert.equal(true, glacier.compare(vec2.array[1], (x * Math.sin(n)) + (y * Math.cos(n))));
+			assert.equal(true, glacier.compare(vec2.x, (x * Math.cos(n)) - (y * Math.sin(n))));
+			assert.equal(true, glacier.compare(vec2.y, (x * Math.sin(n)) + (y * Math.cos(n))));
 		});
 	});
 	
@@ -171,8 +292,8 @@ describe('Vector2', function() {
 			
 			vec2.subtract(new glacier.Vector2(x2, y2));
 			
-			assert.equal(true, glacier.compare(x1 - x2, vec2.array[0]));
-			assert.equal(true, glacier.compare(y1 - y2, vec2.array[1]));
+			assert.equal(true, glacier.compare(x1 - x2, vec2.x));
+			assert.equal(true, glacier.compare(y1 - y2, vec2.y));
 		});
 		
 		it('number', function() {
@@ -181,18 +302,15 @@ describe('Vector2', function() {
 			
 			vec2.subtract(n);
 			
-			assert.equal(true, glacier.compare(x - n, vec2.array[0]));
-			assert.equal(true, glacier.compare(y - n, vec2.array[1]));
+			assert.equal(true, glacier.compare(x - n, vec2.x));
+			assert.equal(true, glacier.compare(y - n, vec2.y));
 		});
 	});
 	
-	describe('xy/uv', function() {
+	describe('uv', function() {
 		it('', function() {
 			var x = 8.4, y = -3.5;
 			var vec2 = new glacier.Vector2(x, y);
-			
-			assert.equal(true, glacier.compare(x, vec2.x()));
-			assert.equal(true, glacier.compare(y, vec2.y()));
 			
 			assert.equal(true, glacier.compare(x, vec2.u()));
 			assert.equal(true, glacier.compare(y, vec2.v()));
@@ -211,18 +329,18 @@ describe('Vector3', function() {
 		it('default', function() {
 			var vec3 = new glacier.Vector3();
 			
-			assert.equal(true, glacier.compare(0.0, vec3.array[0]));
-			assert.equal(true, glacier.compare(0.0, vec3.array[1]));
-			assert.equal(true, glacier.compare(0.0, vec3.array[2]));
+			assert.equal(true, glacier.compare(0.0, vec3.x));
+			assert.equal(true, glacier.compare(0.0, vec3.y));
+			assert.equal(true, glacier.compare(0.0, vec3.z));
 		});
 		
 		it('number, number, number', function() {
 			var x = 1.5, y = 2.2, z = 3.9;
 			var vec3 = new glacier.Vector3(x, y, z);
 			
-			assert.equal(true, glacier.compare(x, vec3.array[0]));
-			assert.equal(true, glacier.compare(y, vec3.array[1]));
-			assert.equal(true, glacier.compare(z, vec3.array[2]));
+			assert.equal(true, glacier.compare(x, vec3.x));
+			assert.equal(true, glacier.compare(y, vec3.y));
+			assert.equal(true, glacier.compare(z, vec3.z));
 		});
 	});
 	
@@ -233,9 +351,9 @@ describe('Vector3', function() {
 			
 			vec3.add(new glacier.Vector3(x2, y2, z2));
 			
-			assert.equal(true, glacier.compare(x1 + x2, vec3.array[0]));
-			assert.equal(true, glacier.compare(y1 + y2, vec3.array[1]));
-			assert.equal(true, glacier.compare(z1 + z2, vec3.array[2]));
+			assert.equal(true, glacier.compare(x1 + x2, vec3.x));
+			assert.equal(true, glacier.compare(y1 + y2, vec3.y));
+			assert.equal(true, glacier.compare(z1 + z2, vec3.z));
 		});
 		
 		it('number', function() {
@@ -244,9 +362,9 @@ describe('Vector3', function() {
 			
 			vec3.add(n);
 			
-			assert.equal(true, glacier.compare(x + n, vec3.array[0]));
-			assert.equal(true, glacier.compare(y + n, vec3.array[1]));
-			assert.equal(true, glacier.compare(z + n, vec3.array[2]));
+			assert.equal(true, glacier.compare(x + n, vec3.x));
+			assert.equal(true, glacier.compare(y + n, vec3.y));
+			assert.equal(true, glacier.compare(z + n, vec3.z));
 		});
 	});
 	
@@ -257,9 +375,9 @@ describe('Vector3', function() {
 			
 			vec3.assign(x2, y2, z2);
 			
-			assert.equal(true, glacier.compare(x2, vec3.array[0]));
-			assert.equal(true, glacier.compare(y2, vec3.array[1]));
-			assert.equal(true, glacier.compare(z2, vec3.array[2]));
+			assert.equal(true, glacier.compare(x2, vec3.x));
+			assert.equal(true, glacier.compare(y2, vec3.y));
+			assert.equal(true, glacier.compare(z2, vec3.z));
 		});
 	});
 	
@@ -280,9 +398,9 @@ describe('Vector3', function() {
 			
 			vec3.divide(new glacier.Vector3(x2, y2, z2));
 			
-			assert.equal(true, glacier.compare(x1 / x2, vec3.array[0]));
-			assert.equal(true, glacier.compare(y1 / y2, vec3.array[1]));
-			assert.equal(true, glacier.compare(z1 / z2, vec3.array[2]));
+			assert.equal(true, glacier.compare(x1 / x2, vec3.x));
+			assert.equal(true, glacier.compare(y1 / y2, vec3.y));
+			assert.equal(true, glacier.compare(z1 / z2, vec3.z));
 		});
 		
 		it('number', function() {
@@ -291,9 +409,9 @@ describe('Vector3', function() {
 			
 			vec3.divide(n);
 			
-			assert.equal(true, glacier.compare(x / n, vec3.array[0]));
-			assert.equal(true, glacier.compare(y / n, vec3.array[1]));
-			assert.equal(true, glacier.compare(z / n, vec3.array[2]));
+			assert.equal(true, glacier.compare(x / n, vec3.x));
+			assert.equal(true, glacier.compare(y / n, vec3.y));
+			assert.equal(true, glacier.compare(z / n, vec3.z));
 		});
 	});
 	
@@ -323,9 +441,9 @@ describe('Vector3', function() {
 			
 			vec3.multiply(new glacier.Vector3(x2, y2, z2));
 			
-			assert.equal(true, glacier.compare(x1 * x2, vec3.array[0]));
-			assert.equal(true, glacier.compare(y1 * y2, vec3.array[1]));
-			assert.equal(true, glacier.compare(z1 * z2, vec3.array[2]));
+			assert.equal(true, glacier.compare(x1 * x2, vec3.x));
+			assert.equal(true, glacier.compare(y1 * y2, vec3.y));
+			assert.equal(true, glacier.compare(z1 * z2, vec3.z));
 		});
 		
 		it('number', function() {
@@ -334,9 +452,9 @@ describe('Vector3', function() {
 			
 			vec3.multiply(n);
 			
-			assert.equal(true, glacier.compare(x * n, vec3.array[0]));
-			assert.equal(true, glacier.compare(y * n, vec3.array[1]));
-			assert.equal(true, glacier.compare(z * n, vec3.array[2]));
+			assert.equal(true, glacier.compare(x * n, vec3.x));
+			assert.equal(true, glacier.compare(y * n, vec3.y));
+			assert.equal(true, glacier.compare(z * n, vec3.z));
 		});
 	});
 	
@@ -357,8 +475,8 @@ describe('Vector3', function() {
 			
 			vec3.rotateX(n);
 			
-			assert.equal(true, glacier.compare(vec3.array[1], (y * Math.cos(n)) - (z * Math.sin(n))));
-			assert.equal(true, glacier.compare(vec3.array[2], (y * Math.sin(n)) + (z * Math.cos(n))));
+			assert.equal(true, glacier.compare(vec3.y, (y * Math.cos(n)) - (z * Math.sin(n))));
+			assert.equal(true, glacier.compare(vec3.z, (y * Math.sin(n)) + (z * Math.cos(n))));
 		});
 	});
 	
@@ -369,8 +487,8 @@ describe('Vector3', function() {
 			
 			vec3.rotateY(n);
 			
-			assert.equal(true, glacier.compare(vec3.array[0], (x * Math.cos(n)) - (z * Math.sin(n))));
-			assert.equal(true, glacier.compare(vec3.array[2], (x * Math.sin(n)) + (z * Math.cos(n))));
+			assert.equal(true, glacier.compare(vec3.x, (x * Math.cos(n)) - (z * Math.sin(n))));
+			assert.equal(true, glacier.compare(vec3.z, (x * Math.sin(n)) + (z * Math.cos(n))));
 		});
 	});
 	
@@ -381,8 +499,8 @@ describe('Vector3', function() {
 			
 			vec3.rotateZ(n);
 			
-			assert.equal(true, glacier.compare(vec3.array[0], (x * Math.cos(n)) - (y * Math.sin(n))));
-			assert.equal(true, glacier.compare(vec3.array[1], (x * Math.sin(n)) + (y * Math.cos(n))));
+			assert.equal(true, glacier.compare(vec3.x, (x * Math.cos(n)) - (y * Math.sin(n))));
+			assert.equal(true, glacier.compare(vec3.y, (x * Math.sin(n)) + (y * Math.cos(n))));
 		});
 	});
 	
@@ -393,9 +511,9 @@ describe('Vector3', function() {
 			
 			vec3.subtract(new glacier.Vector3(x2, y2, z2));
 			
-			assert.equal(true, glacier.compare(x1 - x2, vec3.array[0]));
-			assert.equal(true, glacier.compare(y1 - y2, vec3.array[1]));
-			assert.equal(true, glacier.compare(z1 - z2, vec3.array[2]));
+			assert.equal(true, glacier.compare(x1 - x2, vec3.x));
+			assert.equal(true, glacier.compare(y1 - y2, vec3.y));
+			assert.equal(true, glacier.compare(z1 - z2, vec3.z));
 		});
 		
 		it('number', function() {
@@ -404,20 +522,16 @@ describe('Vector3', function() {
 			
 			vec3.subtract(n);
 			
-			assert.equal(true, glacier.compare(x - n, vec3.array[0]));
-			assert.equal(true, glacier.compare(y - n, vec3.array[1]));
-			assert.equal(true, glacier.compare(z - n, vec3.array[2]));
+			assert.equal(true, glacier.compare(x - n, vec3.x));
+			assert.equal(true, glacier.compare(y - n, vec3.y));
+			assert.equal(true, glacier.compare(z - n, vec3.z));
 		});
 	});
 	
-	describe('xyz/uvw', function() {
+	describe('uvw', function() {
 		it('', function() {
 			var x = 8.4, y = -3.5, z = 5.2;
 			var vec3 = new glacier.Vector3(x, y, z);
-			
-			assert.equal(true, glacier.compare(x, vec3.x()));
-			assert.equal(true, glacier.compare(y, vec3.y()));
-			assert.equal(true, glacier.compare(z, vec3.z()));
 			
 			assert.equal(true, glacier.compare(x, vec3.u()));
 			assert.equal(true, glacier.compare(y, vec3.v()));
