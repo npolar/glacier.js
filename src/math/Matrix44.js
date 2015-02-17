@@ -30,7 +30,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] = value.array[e];
 			}
 			
-		} else if(glacier.isArray(value)) {
+		} else if(glacier.isArray(value) && value.length == 16) {
 			for(e = 0; e < value.length; ++e) {
 				this.array[e] = value[e];
 			}
@@ -39,7 +39,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			console.warn('Invalid parameter type for glacier.Matrix44.assign: ' + typeof(value) + ' (expected Matrix33, Matrix44, array or number)');
+			console.warn('Invalid parameter type for glacier.Matrix44.assign: ' + typeof(value) + ' (expected Matrix33, Matrix44, array[16] or number)');
 		}
 		
 		return this;
