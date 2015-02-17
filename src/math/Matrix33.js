@@ -24,8 +24,8 @@ glacier.Matrix33.prototype = {
 					this.array[(col * 3) + row] = value.array[(col * 4) + row];
 				}
 			}
-		} else if(value instanceof Array || value instanceof Float32Array) {
-			for(e in value) {
+		} else if(glacier.isArray(value)) {
+			for(e = 0; e < value.length; ++e) {
 				this.array[e] = value[e];
 			}
 		} else if(typeof value == 'number') {
