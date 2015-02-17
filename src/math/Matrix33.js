@@ -35,6 +35,8 @@ glacier.Matrix33.prototype = {
 		} else {
 			console.warn('Invalid parameter type for glacier.Matrix33.assign: ' + typeof(value) + ' (expected Matrix33, Matrix44, array or number)');
 		}
+		
+		return this;
 	},
 	
 	determinant: function() {
@@ -70,6 +72,8 @@ glacier.Matrix33.prototype = {
 		} else {
 			console.warn('Invalid parameter type for glacier.Matrix33.multiply: ' + typeof(value) + ' (expected Matrix33, Matrix44 or number)');
 		}
+		
+		return this;
 	},
 	
 	transpose: function() {
@@ -86,6 +90,8 @@ glacier.Matrix33.prototype = {
 		temp = this.array[5];
 		this.array[5] = this.array[7];
 		this.array[7] = temp;
+		
+		return this;
 	},
 	
 	invert: function() {

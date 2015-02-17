@@ -41,6 +41,8 @@ glacier.Matrix44.prototype = {
 		} else {
 			console.warn('Invalid parameter type for glacier.Matrix44.assign: ' + typeof(value) + ' (expected Matrix33, Matrix44, array or number)');
 		}
+		
+		return this;
 	},
 	
 	determinant: function() {
@@ -53,11 +55,11 @@ glacier.Matrix44.prototype = {
 		var b0 = this.array[ 8] * this.array[13] - this.array[ 9] * this.array[12];
 		var b1 = this.array[ 8] * this.array[14] - this.array[10] * this.array[12];
 		var b2 = this.array[ 8] * this.array[15] - this.array[11] * this.array[12];
-		var b3 = this.array[ 9] * this.array[14] - this.array[11] * this.array[13];
-		var b4 = this.array[ 9] * this.array[15] - this.array[10] * this.array[13];
+		var b3 = this.array[ 9] * this.array[14] - this.array[10] * this.array[13];
+		var b4 = this.array[ 9] * this.array[15] - this.array[11] * this.array[13];
 		var b5 = this.array[10] * this.array[15] - this.array[11] * this.array[14];
 		
-		return (a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0); 
+		return (a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0);
 	},
 
 	element: function(col, row) {
@@ -88,6 +90,8 @@ glacier.Matrix44.prototype = {
 		} else {
 			console.warn('Invalid parameter type for glacier.Matrix4.multiply: ' + typeof(value) + ' (expected Matrix44, Matrix33 or number)');
 		}
+		
+		return this;
 	},
 	
 	transpose: function() {
@@ -116,6 +120,8 @@ glacier.Matrix44.prototype = {
 		temp = this.array[11];
 		this.array[11] = this.array[14];
 		this.array[14] = temp;
+		
+		return this;
 	},
 	
 	invert: function() {
@@ -128,11 +134,11 @@ glacier.Matrix44.prototype = {
 		var b0 = this.array[ 8] * this.array[13] - this.array[ 9] * this.array[12];
 		var b1 = this.array[ 8] * this.array[14] - this.array[10] * this.array[12];
 		var b2 = this.array[ 8] * this.array[15] - this.array[11] * this.array[12];
-		var b3 = this.array[ 9] * this.array[14] - this.array[11] * this.array[13];
-		var b4 = this.array[ 9] * this.array[15] - this.array[10] * this.array[13];
+		var b3 = this.array[ 9] * this.array[14] - this.array[10] * this.array[13];
+		var b4 = this.array[ 9] * this.array[15] - this.array[11] * this.array[13];
 		var b5 = this.array[10] * this.array[15] - this.array[11] * this.array[14];
 		
-		var det = (a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0); 
+		var det = (a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0);
 		
 		if(Math.abs(det) < glacier.EPSILON)
 			return false;
