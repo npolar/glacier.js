@@ -164,9 +164,9 @@ glacier.Matrix44.prototype = {
 	},
 	
 	toString: function() {
-		return ('[[' + this.array[ 0] + ', ' + this.array[ 1] + ', ' + this.array[ 2] + ', ' + this.array[ 3] + '], ' +
-				 '[' + this.array[ 4] + ', ' + this.array[ 5] + ', ' + this.array[ 6] + ', ' + this.array[ 7] + '], ' +
-				 '[' + this.array[ 8] + ', ' + this.array[ 9] + ', ' + this.array[10] + ', ' + this.array[11] + '], ' +
-				 '[' + this.array[12] + ', ' + this.array[13] + ', ' + this.array[14] + ', ' + this.array[15] + ']]');
+		return ('[[' + this.array[ 0].toPrecision(5) + ', ' + this.array[ 1].toPrecision(5) + ', ' + this.array[ 2].toPrecision(5) + ', ' + this.array[ 3].toPrecision(5) + '], ' +
+				 '[' + this.array[ 4].toPrecision(5) + ', ' + this.array[ 5].toPrecision(5) + ', ' + this.array[ 6].toPrecision(5) + ', ' + this.array[ 7].toPrecision(5) + '], ' +
+				 '[' + this.array[ 8].toPrecision(5) + ', ' + this.array[ 9].toPrecision(5) + ', ' + this.array[10].toPrecision(5) + ', ' + this.array[11].toPrecision(5) + '], ' +
+				 '[' + this.array[12].toPrecision(5) + ', ' + this.array[13].toPrecision(5) + ', ' + this.array[14].toPrecision(5) + ', ' + this.array[15].toPrecision(5) + ']]');
 	}
 };

@@ -120,8 +120,8 @@ glacier.Matrix33.prototype = {
 	},
 	
 	toString: function() {
-		return ('[[' + this.array[0] + ', ' + this.array[1] + ', ' + this.array[2] + '], ' +
-				 '[' + this.array[3] + ', ' + this.array[4] + ', ' + this.array[5] + '], ' +
-				 '[' + this.array[6] + ', ' + this.array[7] + ', ' + this.array[8] + ']]');
+		return ('[[' + this.array[0].toPrecision(5) + ', ' + this.array[1].toPrecision(5) + ', ' + this.array[2].toPrecision(5) + '], ' +
+				 '[' + this.array[3].toPrecision(5) + ', ' + this.array[4].toPrecision(5) + ', ' + this.array[5].toPrecision(5) + '], ' +
+				 '[' + this.array[6].toPrecision(5) + ', ' + this.array[7].toPrecision(5) + ', ' + this.array[8].toPrecision(5) + ']]');
 	}
 };
