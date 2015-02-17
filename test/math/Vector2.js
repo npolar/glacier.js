@@ -9,16 +9,16 @@ describe('Vector2', function() {
 		it('default', function() {
 			var vec2 = new glacier.Vector2();
 			
-			assert.equal(true, glacier.compare(0.0, vec2.array[0]));
-			assert.equal(true, glacier.compare(0.0, vec2.array[1]));
+			assert.equal(true, glacier.compare(0.0, vec2.x));
+			assert.equal(true, glacier.compare(0.0, vec2.y));
 		});
 		
 		it('number, number', function() {
 			var x = 1.6, y = 2.2;
 			var vec2 = new glacier.Vector2(x, y);
 			
-			assert.equal(true, glacier.compare(x, vec2.array[0]));
-			assert.equal(true, glacier.compare(y, vec2.array[1]));
+			assert.equal(true, glacier.compare(x, vec2.x));
+			assert.equal(true, glacier.compare(y, vec2.y));
 		});
 	});
 	
@@ -29,8 +29,8 @@ describe('Vector2', function() {
 			
 			vec2.add(new glacier.Vector2(x2, y2));
 			
-			assert.equal(true, glacier.compare(x1 + x2, vec2.array[0]));
-			assert.equal(true, glacier.compare(y1 + y2, vec2.array[1]));
+			assert.equal(true, glacier.compare(x1 + x2, vec2.x));
+			assert.equal(true, glacier.compare(y1 + y2, vec2.y));
 		});
 		
 		it('number', function() {
@@ -39,8 +39,8 @@ describe('Vector2', function() {
 			
 			vec2.add(n);
 			
-			assert.equal(true, glacier.compare(x + n, vec2.array[0]));
-			assert.equal(true, glacier.compare(y + n, vec2.array[1]));
+			assert.equal(true, glacier.compare(x + n, vec2.x));
+			assert.equal(true, glacier.compare(y + n, vec2.y));
 		});
 	});
 	
@@ -51,8 +51,8 @@ describe('Vector2', function() {
 			
 			vec2.assign(x2, y2);
 			
-			assert.equal(true, glacier.compare(x2, vec2.array[0]));
-			assert.equal(true, glacier.compare(y2, vec2.array[1]));
+			assert.equal(true, glacier.compare(x2, vec2.x));
+			assert.equal(true, glacier.compare(y2, vec2.y));
 		});
 	});
 	
@@ -73,8 +73,8 @@ describe('Vector2', function() {
 			
 			vec2.divide(new glacier.Vector2(x2, y2));
 			
-			assert.equal(true, glacier.compare(x1 / x2, vec2.array[0]));
-			assert.equal(true, glacier.compare(y1 / y2, vec2.array[1]));
+			assert.equal(true, glacier.compare(x1 / x2, vec2.x));
+			assert.equal(true, glacier.compare(y1 / y2, vec2.y));
 		});
 		
 		it('number', function() {
@@ -83,8 +83,8 @@ describe('Vector2', function() {
 			
 			vec2.divide(n);
 			
-			assert.equal(true, glacier.compare(x / n, vec2.array[0]));
-			assert.equal(true, glacier.compare(y / n, vec2.array[1]));
+			assert.equal(true, glacier.compare(x / n, vec2.x));
+			assert.equal(true, glacier.compare(y / n, vec2.y));
 		});
 	});
 	
@@ -114,8 +114,8 @@ describe('Vector2', function() {
 			
 			vec2.multiply(new glacier.Vector2(x2, y2));
 			
-			assert.equal(true, glacier.compare(x1 * x2, vec2.array[0]));
-			assert.equal(true, glacier.compare(y1 * y2, vec2.array[1]));
+			assert.equal(true, glacier.compare(x1 * x2, vec2.x));
+			assert.equal(true, glacier.compare(y1 * y2, vec2.y));
 		});
 		
 		it('number', function() {
@@ -124,8 +124,8 @@ describe('Vector2', function() {
 			
 			vec2.multiply(n);
 			
-			assert.equal(true, glacier.compare(x * n, vec2.array[0]));
-			assert.equal(true, glacier.compare(y * n, vec2.array[1]));
+			assert.equal(true, glacier.compare(x * n, vec2.x));
+			assert.equal(true, glacier.compare(y * n, vec2.y));
 		});
 	});
 	
@@ -146,8 +146,8 @@ describe('Vector2', function() {
 			
 			vec2.rotate(n);
 			
-			assert.equal(true, glacier.compare(vec2.array[0], (x * Math.cos(n)) - (y * Math.sin(n))));
-			assert.equal(true, glacier.compare(vec2.array[1], (x * Math.sin(n)) + (y * Math.cos(n))));
+			assert.equal(true, glacier.compare(vec2.x, (x * Math.cos(n)) - (y * Math.sin(n))));
+			assert.equal(true, glacier.compare(vec2.y, (x * Math.sin(n)) + (y * Math.cos(n))));
 		});
 	});
 	
@@ -158,8 +158,8 @@ describe('Vector2', function() {
 			
 			vec2.subtract(new glacier.Vector2(x2, y2));
 			
-			assert.equal(true, glacier.compare(x1 - x2, vec2.array[0]));
-			assert.equal(true, glacier.compare(y1 - y2, vec2.array[1]));
+			assert.equal(true, glacier.compare(x1 - x2, vec2.x));
+			assert.equal(true, glacier.compare(y1 - y2, vec2.y));
 		});
 		
 		it('number', function() {
@@ -168,18 +168,15 @@ describe('Vector2', function() {
 			
 			vec2.subtract(n);
 			
-			assert.equal(true, glacier.compare(x - n, vec2.array[0]));
-			assert.equal(true, glacier.compare(y - n, vec2.array[1]));
+			assert.equal(true, glacier.compare(x - n, vec2.x));
+			assert.equal(true, glacier.compare(y - n, vec2.y));
 		});
 	});
 	
-	describe('xy/uv', function() {
+	describe('uv', function() {
 		it('', function() {
 			var x = 8.4, y = -3.5;
 			var vec2 = new glacier.Vector2(x, y);
-			
-			assert.equal(true, glacier.compare(x, vec2.x()));
-			assert.equal(true, glacier.compare(y, vec2.y()));
 			
 			assert.equal(true, glacier.compare(x, vec2.u()));
 			assert.equal(true, glacier.compare(y, vec2.v()));

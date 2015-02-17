@@ -1,18 +1,16 @@
 glacier.Vector2 = function(x, y) {
-	this.array = new Float32Array([
-		(typeof x == 'number' ? x : 0.0),
-		(typeof y == 'number' ? y : 0.0)
-	]);
+	this.x = (typeof x == 'number' ? x : 0.0);
+	this.y = (typeof y == 'number' ? y : 0.0);
 };
 
 glacier.Vector2.prototype = {
 	add: function(value) {
 		if(value instanceof glacier.Vector2) {
-			this.array[0] += value.array[0];
-			this.array[1] += value.array[1];
+			this.x += value.x;
+			this.y += value.y;
 		} else if(typeof value == 'number') {
-			this.array[0] += value;
-			this.array[1] += value;
+			this.x += value;
+			this.y += value;
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector2.add: ' + typeof(value) + ' (expected number or Vector2)');
 		}
@@ -22,8 +20,8 @@ glacier.Vector2.prototype = {
 	
 	assign: function(x, y) {
 		if(typeof x == 'number' && typeof y == 'number') {
-			this.array[0] = x;
-			this.array[1] = y;
+			this.x = x;
+			this.y = y;
 		} else {
 			console.warn('Invalid parameter types for glacier.Vector2.assign: ' + typeof(x) + ', ' + typeof(y) + ' (expected two numbers)');
 		}
@@ -32,17 +30,17 @@ glacier.Vector2.prototype = {
 	},
 
 	distance: function(vec2) {
-		var dx = this.array[0] - vec2.array[0], dy = this.array[1] - vec2.array[1];
+		var dx = this.x - vec2.x, dy = this.y - vec2.y;
 		return Math.sqrt(dx * dx + dy * dy);
 	},
 	
 	divide: function(value) {
 		if(value instanceof glacier.Vector2) {
-			this.array[0] /= value.array[0];
-			this.array[1] /= value.array[1];
+			this.x /= value.x;
+			this.y /= value.y;
 		} else if(typeof value == 'number') {
-			this.array[0] /= value;
-			this.array[1] /= value;
+			this.x /= value;
+			this.y /= value;
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector2.divide: ' + typeof(value) + ' (expected number or Vector2)');
 		}
@@ -51,20 +49,20 @@ glacier.Vector2.prototype = {
 	},
 	
 	dotProduct: function(vec2) {
-		return ((this.array[0] * vec2.array[0]) + (this.array[1] * vec2.array[1]));
+		return ((this.x * vec2.x) + (this.y * vec2.y));
 	},
 	
 	length: function() {
-		return Math.sqrt((this.array[0] * this.array[0]) + (this.array[1] * this.array[1]));
+		return Math.sqrt((this.x * this.x) + (this.y * this.y));
 	},
 	
 	multiply: function(value) {
 		if(value instanceof glacier.Vector2) {
-			this.array[0] *= value.array[0];
-			this.array[1] *= value.array[1];
+			this.x *= value.x;
+			this.y *= value.y;
 		} else if(typeof value == 'number') {
-			this.array[0] *= value;
-			this.array[1] *= value;
+			this.x *= value;
+			this.y *= value;
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector2.multiply: ' + typeof(value) + ' (expected number or Vector2)');
 		}
@@ -75,8 +73,8 @@ glacier.Vector2.prototype = {
 	normalize: function() {
 		var inverted = 1.0 / this.length();
 		
-		this.array[0] *= inverted;
-		this.array[1] *= inverted;
+		this.x *= inverted;
+		this.y *= inverted;
 		
 		return this;
 	},
@@ -85,22 +83,22 @@ glacier.Vector2.prototype = {
 		var cosRad = Math.cos(radians);
 		var sinRad = Math.sin(radians);
 		
-		var rotX = ((this.array[0] * cosRad) - (this.array[1] * sinRad));
-		var rotY = ((this.array[0] * sinRad) + (this.array[1] * cosRad));
+		var rotX = ((this.x * cosRad) - (this.y * sinRad));
+		var rotY = ((this.x * sinRad) + (this.y * cosRad));
 		
-		this.array[0] = rotX;
-		this.array[1] = rotY;
+		this.x = rotX;
+		this.y = rotY;
 		
 		return this;
 	},
 	
 	subtract: function(value) {
 		if(value instanceof glacier.Vector2) {
-			this.array[0] -= value.array[0];
-			this.array[1] -= value.array[1];
+			this.x -= value.x;
+			this.y -= value.y;
 		} else if(typeof value == 'number') {
-			this.array[0] -= value;
-			this.array[1] -= value;
+			this.x -= value;
+			this.y -= value;
 		} else {
 			console.warn('Invalid parameter type for glacier.Vector2.subtract: ' + typeof(value) + ' (expected number or Vector2)');
 		}
@@ -108,12 +106,17 @@ glacier.Vector2.prototype = {
 		return this;
 	},
 	
-	toString: function() {
-		return ('(' + this.array[0] + ', ' + this.array[1] + ')');
+	toArray: function() {
+		return new Float32Array([
+			this.x,
+			this.y
+		]);
 	},
 	
-	x: function() { return this.array[0]; },
-	y: function() { return this.array[1]; },
-	u: function() { return this.array[0]; },
-	v: function() { return this.array[1]; }
+	toString: function() {
+		return ('(' + this.x + ', ' + this.y + ')');
+	},
+	
+	u: function() { return this.x; },
+	v: function() { return this.y; }
 };
