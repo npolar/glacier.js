@@ -89,6 +89,8 @@ glacier.Matrix44.prototype = {
 											 (this.array[(col * 4) + 3] * value.array[(3 * 4) + row]));
 				}
 			}
+			
+			this.array = temp;
 		} else if(value instanceof glacier.Matrix33) {
 			temp = new glacier.Matrix44(value);
 			this.multiply(temp);
