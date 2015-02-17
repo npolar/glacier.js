@@ -62,8 +62,17 @@ glacier.Matrix44.prototype = {
 		return (a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0);
 	},
 
-	element: function(col, row) {
-		return this.array[(col * 4) + row];
+	element: function(colOrIndex, row) {
+		if(typeof row == 'number' && typeof colOrIndex == 'number') {
+			if(row >= 0 && row <= 4 && colOrIndex >= 0 && colOrIndex <= 4) {
+				return this.array[(colOrIndex * 4) + row];
+			}
+		} else if(typeof colOrIndex == 'number') {
+			return this.array[colOrIndex];
+		}
+		
+		console.warn('Element out of range in glacier.Matrix33.element: ' + (colOrIndex + (row || 0)) + ' (expected range 0-16)');
+		return undefined;
 	},
 	
 	multiply: function() {

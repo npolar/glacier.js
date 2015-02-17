@@ -45,8 +45,17 @@ glacier.Matrix33.prototype = {
 				this.array[2] * (this.array[3] * this.array[7] - this.array[4] * this.array[6]));
 	},
 	
-	element: function(col, row) {
-		return this.array[(col * 3) + row];
+	element: function(colOrIndex, row) {
+		if(typeof row == 'number' && typeof colOrIndex == 'number') {
+			if(row >= 0 && row <= 3 && colOrIndex >= 0 && colOrIndex <= 3) {
+				return this.array[(colOrIndex * 3) + row];
+			}
+		} else if(typeof colOrIndex == 'number') {
+			return this.array[colOrIndex];
+		}
+		
+		console.warn('Element out of range in glacier.Matrix33.element: ' + (colOrIndex + (row || 0)) + ' (expected range 0-9)');
+		return undefined;
 	},
 	
 	multiply: function(value) {
