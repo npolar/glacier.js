@@ -78,4 +78,18 @@ describe('Matrix44', function() {
 			assert.equal(true, glacier.compare(num, mat44.toArray()));
 		});
 	});
+	
+	describe('determinant', function() {
+		it('', function() {
+			var arr = [ 2.0, 1.5, 1.0, 4.4, -2.6, 5.0, 2.2, 8.4, 7.5, 2.2, 6.0, 5.6, 4.2, 8.0, 2.6, -1.2 ];
+			var mat44 = new glacier.Matrix44(arr);
+			
+			var detA = (arr[ 5] * (arr[10] * arr[15] - arr[11] * arr[14])) - (arr[ 6] * (arr[ 9] * arr[15] - arr[11] * arr[13])) + (arr[ 7] * (arr[ 9] * arr[14] - arr[10] * arr[13]));
+			var detB = (arr[ 4] * (arr[10] * arr[15] - arr[11] * arr[14])) - (arr[ 6] * (arr[ 8] * arr[15] - arr[11] * arr[12])) + (arr[ 7] * (arr[ 8] * arr[14] - arr[10] * arr[12]));
+			var detC = (arr[ 4] * (arr[ 9] * arr[15] - arr[11] * arr[13])) - (arr[ 5] * (arr[ 8] * arr[15] - arr[11] * arr[12])) + (arr[ 7] * (arr[ 8] * arr[13] - arr[ 9] * arr[12]));
+			var detD = (arr[ 4] * (arr[ 9] * arr[14] - arr[10] * arr[13])) - (arr[ 5] * (arr[ 8] * arr[14] - arr[10] * arr[12])) + (arr[ 6] * (arr[ 8] * arr[13] - arr[ 9] * arr[12]));
+			
+			assert.equal(true, glacier.compare(mat44.determinant(), arr[0] * detA - arr[1] * detB + arr[2] * detC - arr[3] * detD));
+		});
+	});
 });

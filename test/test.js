@@ -119,6 +119,17 @@ describe('Matrix33', function() {
 			assert.equal(true, glacier.compare(num, mat33.toArray()));
 		});
 	});
+	
+	describe('determinant', function() {
+		it('', function() {
+			var arr = [ 2.0, 1.5, 1.0, 4.4, -2.6, 5.0, 2.2, 8.4, 7.5 ];
+			var mat33 = new glacier.Matrix33(arr);
+
+			var det = (arr[0] * (arr[4] * arr[8] - arr[5] * arr[7])) - (arr[1] * (arr[3] * arr[8] - arr[5] * arr[6])) + (arr[2] * (arr[3] * arr[7] - arr[4] * arr[6]));
+			
+			assert.equal(true, glacier.compare(mat33.determinant(), det));
+		});
+	});
 });
 
 describe('Matrix44', function() {
@@ -199,6 +210,20 @@ describe('Matrix44', function() {
 			mat44.assign(new glacier.Matrix44(num));
 			
 			assert.equal(true, glacier.compare(num, mat44.toArray()));
+		});
+	});
+	
+	describe('determinant', function() {
+		it('', function() {
+			var arr = [ 2.0, 1.5, 1.0, 4.4, -2.6, 5.0, 2.2, 8.4, 7.5, 2.2, 6.0, 5.6, 4.2, 8.0, 2.6, -1.2 ];
+			var mat44 = new glacier.Matrix44(arr);
+			
+			var detA = (arr[ 5] * (arr[10] * arr[15] - arr[11] * arr[14])) - (arr[ 6] * (arr[ 9] * arr[15] - arr[11] * arr[13])) + (arr[ 7] * (arr[ 9] * arr[14] - arr[10] * arr[13]));
+			var detB = (arr[ 4] * (arr[10] * arr[15] - arr[11] * arr[14])) - (arr[ 6] * (arr[ 8] * arr[15] - arr[11] * arr[12])) + (arr[ 7] * (arr[ 8] * arr[14] - arr[10] * arr[12]));
+			var detC = (arr[ 4] * (arr[ 9] * arr[15] - arr[11] * arr[13])) - (arr[ 5] * (arr[ 8] * arr[15] - arr[11] * arr[12])) + (arr[ 7] * (arr[ 8] * arr[13] - arr[ 9] * arr[12]));
+			var detD = (arr[ 4] * (arr[ 9] * arr[14] - arr[10] * arr[13])) - (arr[ 5] * (arr[ 8] * arr[14] - arr[10] * arr[12])) + (arr[ 6] * (arr[ 8] * arr[13] - arr[ 9] * arr[12]));
+			
+			assert.equal(true, glacier.compare(mat44.determinant(), arr[0] * detA - arr[1] * detB + arr[2] * detC - arr[3] * detD));
 		});
 	});
 });

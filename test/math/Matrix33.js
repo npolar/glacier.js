@@ -77,4 +77,15 @@ describe('Matrix33', function() {
 			assert.equal(true, glacier.compare(num, mat33.toArray()));
 		});
 	});
+	
+	describe('determinant', function() {
+		it('', function() {
+			var arr = [ 2.0, 1.5, 1.0, 4.4, -2.6, 5.0, 2.2, 8.4, 7.5 ];
+			var mat33 = new glacier.Matrix33(arr);
+
+			var det = (arr[0] * (arr[4] * arr[8] - arr[5] * arr[7])) - (arr[1] * (arr[3] * arr[8] - arr[5] * arr[6])) + (arr[2] * (arr[3] * arr[7] - arr[4] * arr[6]));
+			
+			assert.equal(true, glacier.compare(mat33.determinant(), det));
+		});
+	});
 });
