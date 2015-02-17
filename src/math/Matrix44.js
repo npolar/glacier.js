@@ -75,7 +75,7 @@ glacier.Matrix44.prototype = {
 		return undefined;
 	},
 	
-	multiply: function() {
+	multiply: function(value) {
 		var col, row, e, temp;
 		
 		if(value instanceof glacier.Matrix44) {
