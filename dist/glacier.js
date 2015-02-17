@@ -97,7 +97,7 @@ glacier.Matrix33.prototype = {
 					this.array[(col * 3) + row] = value.array[(col * 4) + row];
 				}
 			}
-		} else if(glacier.isArray(value)) {
+		} else if(glacier.isArray(value) && value.length == 9) {
 			for(e = 0; e < value.length; ++e) {
 				this.array[e] = value[e];
 			}
@@ -106,7 +106,7 @@ glacier.Matrix33.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			console.warn('Invalid parameter type for glacier.Matrix33.assign: ' + typeof(value) + ' (expected Matrix33, Matrix44, array or number)');
+			console.warn('Invalid parameter type for glacier.Matrix33.assign: ' + typeof(value) + ' (expected Matrix33, Matrix44, array[9] or number)');
 		}
 		
 		return this;
@@ -118,8 +118,17 @@ glacier.Matrix33.prototype = {
 				this.array[2] * (this.array[3] * this.array[7] - this.array[4] * this.array[6]));
 	},
 	
-	element: function(col, row) {
-		return this.array[(col * 3) + row];
+	element: function(colOrIndex, row) {
+		if(typeof row == 'number' && typeof colOrIndex == 'number') {
+			if(row >= 0 && row <= 3 && colOrIndex >= 0 && colOrIndex <= 3) {
+				return this.array[(colOrIndex * 3) + row];
+			}
+		} else if(typeof colOrIndex == 'number') {
+			return this.array[colOrIndex];
+		}
+		
+		console.warn('Element out of range in glacier.Matrix33.element: ' + (colOrIndex + (row || 0)) + ' (expected range 0-9)');
+		return undefined;
 	},
 	
 	multiply: function(value) {
@@ -135,6 +144,8 @@ glacier.Matrix33.prototype = {
 											 (this.array[(col * 3) + 2] * value.array[(2 * 3) + row]));
 				}
 			}
+			
+			this.array = temp;
 		} else if(value instanceof glacier.Matrix44) {
 			temp = new glacier.Matrix33(value);
 			this.multiply(temp);
@@ -237,7 +248,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] = value.array[e];
 			}
 			
-		} else if(glacier.isArray(value)) {
+		} else if(glacier.isArray(value) && value.length == 16) {
 			for(e = 0; e < value.length; ++e) {
 				this.array[e] = value[e];
 			}
@@ -246,7 +257,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			console.warn('Invalid parameter type for glacier.Matrix44.assign: ' + typeof(value) + ' (expected Matrix33, Matrix44, array or number)');
+			console.warn('Invalid parameter type for glacier.Matrix44.assign: ' + typeof(value) + ' (expected Matrix33, Matrix44, array[16] or number)');
 		}
 		
 		return this;
@@ -269,11 +280,20 @@ glacier.Matrix44.prototype = {
 		return (a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0);
 	},
 
-	element: function(col, row) {
-		return this.array[(col * 4) + row];
+	element: function(colOrIndex, row) {
+		if(typeof row == 'number' && typeof colOrIndex == 'number') {
+			if(row >= 0 && row <= 4 && colOrIndex >= 0 && colOrIndex <= 4) {
+				return this.array[(colOrIndex * 4) + row];
+			}
+		} else if(typeof colOrIndex == 'number') {
+			return this.array[colOrIndex];
+		}
+		
+		console.warn('Element out of range in glacier.Matrix33.element: ' + (colOrIndex + (row || 0)) + ' (expected range 0-16)');
+		return undefined;
 	},
 	
-	multiply: function() {
+	multiply: function(value) {
 		var col, row, e, temp;
 		
 		if(value instanceof glacier.Matrix44) {
@@ -287,6 +307,8 @@ glacier.Matrix44.prototype = {
 											 (this.array[(col * 4) + 3] * value.array[(3 * 4) + row]));
 				}
 			}
+			
+			this.array = temp;
 		} else if(value instanceof glacier.Matrix33) {
 			temp = new glacier.Matrix44(value);
 			this.multiply(temp);
