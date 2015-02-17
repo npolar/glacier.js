@@ -103,4 +103,59 @@ describe('Matrix33', function() {
 			assert.equal(true, glacier.compare(mat33.element(8), 2.2));
 		});
 	});
+	
+	describe('multiply', function() {
+		it('Matrix33', function() {
+			var arr1 = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
+			var arr2 = [ 3.3, 3.2, 3.1, 2.3, 2.2, 2.1, 1.3, 1.2, 1.1 ];
+			var mat33 = new glacier.Matrix33(arr1);
+			
+			mat33.multiply(new glacier.Matrix33(arr2));
+			
+			assert.equal(true, glacier.compare(mat33.element(0), (arr1[0] * arr2[0]) + (arr1[1] * arr2[3]) + (arr1[2] * arr2[6])));
+			assert.equal(true, glacier.compare(mat33.element(1), (arr1[0] * arr2[1]) + (arr1[1] * arr2[4]) + (arr1[2] * arr2[7])));
+			assert.equal(true, glacier.compare(mat33.element(2), (arr1[0] * arr2[2]) + (arr1[1] * arr2[5]) + (arr1[2] * arr2[8])));
+			assert.equal(true, glacier.compare(mat33.element(3), (arr1[3] * arr2[0]) + (arr1[4] * arr2[3]) + (arr1[5] * arr2[6])));
+			assert.equal(true, glacier.compare(mat33.element(4), (arr1[3] * arr2[1]) + (arr1[4] * arr2[4]) + (arr1[5] * arr2[7])));
+			assert.equal(true, glacier.compare(mat33.element(5), (arr1[3] * arr2[2]) + (arr1[4] * arr2[5]) + (arr1[5] * arr2[8])));
+			assert.equal(true, glacier.compare(mat33.element(6), (arr1[6] * arr2[0]) + (arr1[7] * arr2[3]) + (arr1[8] * arr2[6])));
+			assert.equal(true, glacier.compare(mat33.element(7), (arr1[6] * arr2[1]) + (arr1[7] * arr2[4]) + (arr1[8] * arr2[7])));
+			assert.equal(true, glacier.compare(mat33.element(8), (arr1[6] * arr2[2]) + (arr1[7] * arr2[5]) + (arr1[8] * arr2[8])));
+		});
+		
+		it('Matrix44', function() {
+			var arr33 = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
+			var arr44 = [ 4.4, 4.3, 4.2, 4.1, 3.4, 3.3, 3.2, 3.1, 2.4, 2.3, 2.2, 2.1, 1.4, 1.3, 1.2, 1.1 ];
+			var mat33 = new glacier.Matrix33(arr33);
+			
+			mat33.multiply(new glacier.Matrix44(arr44));
+			
+			assert.equal(true, glacier.compare(mat33.element(0), (arr33[0] * arr44[0]) + (arr33[1] * arr44[4]) + (arr33[2] * arr44[ 8])));
+			assert.equal(true, glacier.compare(mat33.element(1), (arr33[0] * arr44[1]) + (arr33[1] * arr44[5]) + (arr33[2] * arr44[ 9])));
+			assert.equal(true, glacier.compare(mat33.element(2), (arr33[0] * arr44[2]) + (arr33[1] * arr44[6]) + (arr33[2] * arr44[10])));
+			assert.equal(true, glacier.compare(mat33.element(3), (arr33[3] * arr44[0]) + (arr33[4] * arr44[4]) + (arr33[5] * arr44[ 8])));
+			assert.equal(true, glacier.compare(mat33.element(4), (arr33[3] * arr44[1]) + (arr33[4] * arr44[5]) + (arr33[5] * arr44[ 9])));
+			assert.equal(true, glacier.compare(mat33.element(5), (arr33[3] * arr44[2]) + (arr33[4] * arr44[6]) + (arr33[5] * arr44[10])));
+			assert.equal(true, glacier.compare(mat33.element(6), (arr33[6] * arr44[0]) + (arr33[7] * arr44[4]) + (arr33[8] * arr44[ 8])));
+			assert.equal(true, glacier.compare(mat33.element(7), (arr33[6] * arr44[1]) + (arr33[7] * arr44[5]) + (arr33[8] * arr44[ 9])));
+			assert.equal(true, glacier.compare(mat33.element(8), (arr33[6] * arr44[2]) + (arr33[7] * arr44[6]) + (arr33[8] * arr44[10])));
+		});
+		
+		it('number (scalar)', function() {
+			var arr = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ], num = 8.9;
+			var mat33 = new glacier.Matrix33(arr);
+			
+			mat33.multiply(num);
+			
+			assert.equal(true, glacier.compare(mat33.element(0), arr[0] * num));
+			assert.equal(true, glacier.compare(mat33.element(1), arr[1] * num));
+			assert.equal(true, glacier.compare(mat33.element(2), arr[2] * num));
+			assert.equal(true, glacier.compare(mat33.element(3), arr[3] * num));
+			assert.equal(true, glacier.compare(mat33.element(4), arr[4] * num));
+			assert.equal(true, glacier.compare(mat33.element(5), arr[5] * num));
+			assert.equal(true, glacier.compare(mat33.element(6), arr[6] * num));
+			assert.equal(true, glacier.compare(mat33.element(7), arr[7] * num));
+			assert.equal(true, glacier.compare(mat33.element(8), arr[8] * num));
+		});
+	});
 });
