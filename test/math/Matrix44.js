@@ -175,4 +175,30 @@ describe('Matrix44', function() {
 			assert.equal(true, glacier.compare(mat44.element(15), arr[15] * num));
 		});
 	});
+	
+	describe('transpose', function() {
+		it('', function() {
+			var arr = [ 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4 ];
+			var mat44 = new glacier.Matrix44(arr);
+			
+			mat44.transpose();
+			
+			assert.equal(true, glacier.compare(mat44.element( 0), arr[ 0]));
+			assert.equal(true, glacier.compare(mat44.element( 1), arr[ 4]));
+			assert.equal(true, glacier.compare(mat44.element( 2), arr[ 8]));
+			assert.equal(true, glacier.compare(mat44.element( 3), arr[12]));
+			assert.equal(true, glacier.compare(mat44.element( 4), arr[ 1]));
+			assert.equal(true, glacier.compare(mat44.element( 5), arr[ 5]));
+			assert.equal(true, glacier.compare(mat44.element( 6), arr[ 9]));
+			assert.equal(true, glacier.compare(mat44.element( 7), arr[13]));
+			assert.equal(true, glacier.compare(mat44.element( 8), arr[ 2]));
+			assert.equal(true, glacier.compare(mat44.element( 9), arr[ 6]));
+			assert.equal(true, glacier.compare(mat44.element(10), arr[10]));
+			assert.equal(true, glacier.compare(mat44.element(11), arr[14]));
+			assert.equal(true, glacier.compare(mat44.element(12), arr[ 3]));
+			assert.equal(true, glacier.compare(mat44.element(13), arr[ 7]));
+			assert.equal(true, glacier.compare(mat44.element(14), arr[11]));
+			assert.equal(true, glacier.compare(mat44.element(15), arr[15]));
+		});
+	});
 });

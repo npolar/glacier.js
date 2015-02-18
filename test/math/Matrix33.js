@@ -158,4 +158,23 @@ describe('Matrix33', function() {
 			assert.equal(true, glacier.compare(mat33.element(8), arr[8] * num));
 		});
 	});
+	
+	describe('transpose', function() {
+		it('', function() {
+			var arr = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
+			var mat33 = new glacier.Matrix33(arr);
+			
+			mat33.transpose();
+			
+			assert.equal(true, glacier.compare(mat33.element(0), arr[0]));
+			assert.equal(true, glacier.compare(mat33.element(1), arr[3]));
+			assert.equal(true, glacier.compare(mat33.element(2), arr[6]));
+			assert.equal(true, glacier.compare(mat33.element(3), arr[1]));
+			assert.equal(true, glacier.compare(mat33.element(4), arr[4]));
+			assert.equal(true, glacier.compare(mat33.element(5), arr[7]));
+			assert.equal(true, glacier.compare(mat33.element(6), arr[2]));
+			assert.equal(true, glacier.compare(mat33.element(7), arr[5]));
+			assert.equal(true, glacier.compare(mat33.element(8), arr[8]));
+		});
+	});
 });
