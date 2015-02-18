@@ -177,4 +177,14 @@ describe('Matrix33', function() {
 			assert.equal(true, glacier.compare(mat33.element(8), arr[8]));
 		});
 	});
+	
+	describe('invert', function() {
+		it('', function() {
+			var arr = [ 2.0, 1.5, 1.0, 4.4, -2.6, 5.0, 2.2, 8.4, 7.5 ];
+			var mat1 = new glacier.Matrix33(arr);
+			var mat2 = new glacier.Matrix33();
+			
+			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse()).toArray(), mat2.toArray()));
+		});
+	});
 });

@@ -201,4 +201,14 @@ describe('Matrix44', function() {
 			assert.equal(true, glacier.compare(mat44.element(15), arr[15]));
 		});
 	});
+	
+	describe('invert', function() {
+		it('', function() {
+			var arr = [ 2.0, 1.5, 1.0, 4.4, 2.5, -2.6, 5.0, 2.2, 8.4, 7.5, -4.0, 3.0, 1.0, 3.2, -2.0, 5.5 ];
+			var mat1 = new glacier.Matrix44(arr);
+			var mat2 = new glacier.Matrix44();
+			
+			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse()).toArray(), mat2.toArray()));
+		});
+	});
 });
