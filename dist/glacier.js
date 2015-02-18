@@ -404,7 +404,7 @@ glacier.Matrix44.prototype = {
 		if(glacier.compare(det, 0.0))
 			return false;
 		
-		this.array = new Float32Array([
+		var temp = new Float32Array([
 			 this.array[ 5] * b5 - this.array[ 6] * b4 + this.array[ 7] * b3,
 			-this.array[ 1] * b5 + this.array[ 2] * b4 - this.array[ 3] * b3,
 			 this.array[13] * a5 - this.array[14] * a4 + this.array[15] * a3,
@@ -422,6 +422,12 @@ glacier.Matrix44.prototype = {
 			-this.array[12] * a3 + this.array[13] * a1 - this.array[14] * a0,
 			 this.array[ 8] * a3 - this.array[ 9] * a1 + this.array[10] * a0 
 		]);
+		
+		det = 1.0 / det;
+		
+		for(var e = 0; e < temp.length; ++e) {
+			this.array[e] = (temp[e] * det);
+		}
 		
 		return true;
 	},
