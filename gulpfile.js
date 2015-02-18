@@ -29,7 +29,7 @@ gulp.task('validate', [
 ]);
 
 gulp.task('test-js', ['minify-js'], function() {
-	gulp.src(['!./test/test.js', './test/glacier.js', './test/*.js', './test/**/*.js'])
+	return gulp.src(['!./test/test.js', './test/glacier.js', './test/*.js', './test/**/*.js'])
 	.pipe(concat('test.js'))
 	.pipe(gulp.dest('./test/'))
 	.pipe(mocha({ reporter: 'spec' }));
