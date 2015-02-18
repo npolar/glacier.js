@@ -135,6 +135,22 @@ glacier.Matrix44.prototype = {
 		return this;
 	},
 	
+	transposed: function() {
+		var temp = new glacier.Matrix44(this);
+		return temp.transpose();
+	},
+	
+	inverse: function() {
+		var temp = new glacier.Matrix44(this);
+		
+		if(!temp.invert()) {
+			console.warn('Inverse matrix does not exist for glacier.Matrix44: ' + temp.toString());
+			return undefined;
+		}
+		
+		return temp;
+	},
+	
 	invert: function() {
 		var a0 = this.array[ 0] * this.array[ 5] - this.array[ 1] * this.array[ 4];
 		var a1 = this.array[ 0] * this.array[ 6] - this.array[ 2] * this.array[ 4];
@@ -151,7 +167,7 @@ glacier.Matrix44.prototype = {
 		
 		var det = (a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0);
 		
-		if(Math.abs(det) < glacier.EPSILON)
+		if(glacier.compare(det, 0.0))
 			return false;
 		
 		this.array = new Float32Array([
