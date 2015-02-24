@@ -1,33 +1,78 @@
-var glacier = {
-	VERSION: "0.0.1"
-};
+var glacier = {};
 
-if(typeof module == 'object') {
-	module.exports = glacier;
-}
-
-glacier.isArray = function(value) {
-	return (value instanceof Array || value instanceof Float32Array);
-};
-
-glacier.union = function(members, value) {
-	members = (members instanceof Array ? members : [ members ]);
+(function(glacier) {
+	var lang;
 	
-	function addProperty(index) {
-		Object.defineProperty(this, members[index], {
-			get: function() { return value; },
-			set: function(val) {
-				if(typeof val == typeof value) {
-					value = val;
+	Object.defineProperties(glacier, {
+		VERSION: {
+			value: '0.0.2',
+			writable: false
+		},
+		language: {
+			get: function() { return lang; },
+			set: function(language) {
+				if(glacier.i18n[language]) {
+					lang = language;
+				} else {
+					var fallback = (glacier.i18n.alias[language] ? glacier.i18n.alias[language][0] : null);
+					lang = (glacier.i18n[fallback] ? fallback : 'en');
+					
+					glacier.error('UNDEFINED_LANGUAGE', { language: language, fallback: lang });
 				}
 			}
-		});
-	}
+		}
+	});
 	
-	for(var m in members) {
-		addProperty.call(this, m);
+	glacier.error = function(message, params) {
+		var msg = glacier.i18n(message), match;
+		
+		if(!msg) {
+			msg = glacier.i18n('UNDEFINED_ERROR');
+			params = { error: message };
+		}
+		
+		if(typeof params == 'object' && (match = msg.match(/\{[^\}]*\}/g))) {
+			for(var m in match) {
+				var param = match[m].substr(1, match[m].length - 2);
+				
+				if(params.hasOwnProperty(param)) {
+					msg = msg.replace(match[m], params[param]);
+				}
+			}
+		}
+		
+		console.error(msg);
+	};
+	
+	glacier.isArray = function(value) {
+		return (value instanceof Array || value instanceof Float32Array);
+	};
+	
+	glacier.union = function(members, value) {
+		members = (members instanceof Array ? members : [ members ]);
+		
+		function addProperty(index) {
+			Object.defineProperty(this, members[index], {
+				get: function() { return value; },
+				set: function(val) {
+					if(typeof val == typeof value) {
+						value = val;
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { value: typeof val, expected: typeof value });
+					}
+				}
+			});
+		}
+		
+		for(var m in members) {
+			addProperty.call(this, m);
+		}
+	};
+	
+	if(typeof module == 'object') {
+		module.exports = glacier;
 	}
-};
+})(glacier);
 
 glacier.colors = {
 	WHITE:		0xFFFFFF,
@@ -46,6 +91,32 @@ glacier.colors = {
 	NAVY:		0x000080,
 	FUCHSIA:	0xFF00FF,
 	PURPLE:		0x800080
+};
+
+glacier.i18n = function(code, language) {
+	language = (language || glacier.language);
+	
+	if(glacier.i18n[language] && glacier.i18n[language][code]) {
+		return glacier.i18n[language][code];
+	} else if(glacier.i18n.alias[language]) {
+		for(var a in glacier.i18n.alias[language]) {
+			var alias = glacier.i18n.alias[language][a];
+			
+			if(glacier.i18n[alias] && glacier.i18n[alias][code]) {
+				return glacier.i18n[alias][code];
+			}
+		}
+	}
+	
+	// Use English (en) as secondary fallback
+	return (glacier.i18n.en[code] || null);
+};
+
+// Primary fallback aliases
+glacier.i18n.alias = {
+	no: [ 'nb', 'nn' ],
+	nb: [ 'nn' ],
+	nn: [ 'nb' ]
 };
 
 glacier.EPSILON = 10e-5;
@@ -135,6 +206,24 @@ glacier.Sphere = function(latitudes, longitudes, radius) {
 	}
 };
 
+glacier.i18n.en = {
+	INDEX_OUT_OF_RANGE:	'Index out of range: {index} (expected range {range}) in {method}',
+	INVALID_ASSIGNMENT:	'Invalid assigment: {value} (expected {expected}) in {method}',
+	INVALID_PARAMETER:	'Invalid parameter: {parameter} (expected {expected}) in {method}',
+	MATRIX_NO_INVERSE:	'Inverse matrix does not exist: {matrix} in {method}',
+	UNDEFINED_ERROR:	'Undefined error: {error}',
+	UNDEFINED_LANGUAGE:	'Undefined language: {language} (using {fallback} as fallback)'
+};
+
+glacier.i18n.nb = {
+	INDEX_OUT_OF_RANGE:	'Index out of range: {index} (expected range {range}) in {method}',
+	INVALID_ASSIGNMENT:	'Ugyldig tildeing av verdi: {value} (forventet {expected}) i {method}',
+	INVALID_PARAMETER:	'Ugyldig parameter: {parameter} (forventet {expected}) i {method}',
+	MATRIX_NO_INVERSE:	'Invers matrise eksisterer ikke: {matrix} i {method}',
+	UNDEFINED_ERROR:	'Udefinert feilmelding: {error}',
+	UNDEFINED_LANGUAGE:	'Udefinert språkkode: {language} (bruker {fallback})'
+};
+
 glacier.Matrix33 = function(value) {
 	this.array = new Float32Array([
 		1.0, 0.0, 0.0,
@@ -170,7 +259,7 @@ glacier.Matrix33.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			console.warn('Invalid parameter type for glacier.Matrix33.assign: ' + typeof(value) + ' (expected Matrix33, Matrix44, array[9] or number)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number, Matrix33, Matrix44 or array[9]', method: 'Matrix33.assign' });
 		}
 		
 		return this;
@@ -191,7 +280,7 @@ glacier.Matrix33.prototype = {
 			return this.array[colOrIndex];
 		}
 		
-		console.warn('Element out of range in glacier.Matrix33.element: ' + (colOrIndex + (row || 0)) + ' (expected range 0-9)');
+		glacier.error('INDEX_OUT_OF_RANGE', { index: (colOrIndex + (row || 0)), range: '0-9', method: 'Matrix33.element' });
 		return undefined;
 	},
 	
@@ -218,7 +307,7 @@ glacier.Matrix33.prototype = {
 				this.array[e] *= value;
 			}
 		} else {
-			console.warn('Invalid parameter type for glacier.Matrix33.multiply: ' + typeof(value) + ' (expected Matrix33, Matrix44 or number)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number, Matrix33 or Matrix44', method: 'Matrix33.multiply' });
 		}
 		
 		return this;
@@ -251,7 +340,7 @@ glacier.Matrix33.prototype = {
 		var temp = new glacier.Matrix33(this);
 		
 		if(!temp.invert()) {
-			console.warn('Inverse matrix does not exist for glacier.Matrix33: ' + temp.toString());
+			glacier.error('MATRIX_NO_INVERSE', { matrix: temp.toString(), method: 'Matrix33.inverse' });
 			return undefined;
 		}
 		
@@ -337,7 +426,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			console.warn('Invalid parameter type for glacier.Matrix44.assign: ' + typeof(value) + ' (expected Matrix33, Matrix44, array[16] or number)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number, Matrix33, Matrix44 or array[16]', method: 'Matrix44.assign' });
 		}
 		
 		return this;
@@ -369,7 +458,7 @@ glacier.Matrix44.prototype = {
 			return this.array[colOrIndex];
 		}
 		
-		console.warn('Element out of range in glacier.Matrix33.element: ' + (colOrIndex + (row || 0)) + ' (expected range 0-16)');
+		glacier.error('INDEX_OUT_OF_RANGE', { index: (colOrIndex + (row || 0)), range: '0-16', method: 'Matrix44.element' });
 		return undefined;
 	},
 	
@@ -397,7 +486,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] *= value;
 			}
 		} else {
-			console.warn('Invalid parameter type for glacier.Matrix4.multiply: ' + typeof(value) + ' (expected Matrix44, Matrix33 or number)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number, Matrix33 or Matrix44', method: 'Matrix44.multiply' });
 		}
 		
 		return this;
@@ -442,7 +531,7 @@ glacier.Matrix44.prototype = {
 		var temp = new glacier.Matrix44(this);
 		
 		if(!temp.invert()) {
-			console.warn('Inverse matrix does not exist for glacier.Matrix44: ' + temp.toString());
+			glacier.error('MATRIX_NO_INVERSE', { matrix: temp.toString(), method: 'Matrix44.inverse' });
 			return undefined;
 		}
 		
@@ -522,7 +611,7 @@ glacier.Vector2.prototype = {
 			this.x += value;
 			this.y += value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector2.add: ' + typeof(value) + ' (expected number or Vector2)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector2', method: 'Vector2.add' });
 		}
 		
 		return this;
@@ -533,7 +622,7 @@ glacier.Vector2.prototype = {
 			this.x = x;
 			this.y = y;
 		} else {
-			console.warn('Invalid parameter types for glacier.Vector2.assign: ' + typeof(x) + ', ' + typeof(y) + ' (expected two numbers)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof x + ', ' + typeof y, expected: 'numbers', method: 'Vector2.assign' });
 		}
 		
 		return this;
@@ -552,7 +641,7 @@ glacier.Vector2.prototype = {
 			this.x /= value;
 			this.y /= value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector2.divide: ' + typeof(value) + ' (expected number or Vector2)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector2', method: 'Vector2.divide' });
 		}
 		
 		return this;
@@ -574,7 +663,7 @@ glacier.Vector2.prototype = {
 			this.x *= value;
 			this.y *= value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector2.multiply: ' + typeof(value) + ' (expected number or Vector2)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector2', method: 'Vector2.multiply' });
 		}
 		
 		return this;
@@ -610,7 +699,7 @@ glacier.Vector2.prototype = {
 			this.x -= value;
 			this.y -= value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector2.subtract: ' + typeof(value) + ' (expected number or Vector2)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector2', method: 'Vector2.subtract' });
 		}
 		
 		return this;
@@ -645,7 +734,7 @@ glacier.Vector3.prototype = {
 			this.y += value;
 			this.z += value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector3.add: ' + typeof(value) + ' (expected number or Vector3)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector3', method: 'Vector3.add' });
 		}
 		
 		return this;
@@ -662,7 +751,7 @@ glacier.Vector3.prototype = {
 			this.y = y;
 			this.z = z;
 		} else {
-			console.warn('Invalid parameter types for glacier.Vector.assign: ' + typeof(x) + ', ' + typeof(y) + ', ' + typeof(z) + ' (expected three numbers)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof x + ', ' + typeof y + ', ' + typeof z, expected: 'numbers', method: 'Vector3.assign' });
 		}
 		
 		return this;
@@ -699,7 +788,7 @@ glacier.Vector3.prototype = {
 			this.y = (this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2)) + value.element(1, 3);
 			this.z = (this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2)) + value.element(2, 3);
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector3.divide: ' + typeof(value) + ' (expected number, Vector3, Matrix33 or Matrix44)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number, Vector3, Matrix33 or Matrix44', method: 'Vector3.divide' });
 		}
 		
 		return this;
@@ -731,7 +820,7 @@ glacier.Vector3.prototype = {
 			this.y = (this.x * value.element(1, 0)) + (this.y * value.element(1, 1)) + (this.z * value.element(1, 2)) + value.element(1, 3);
 			this.z = (this.x * value.element(2, 0)) + (this.y * value.element(2, 1)) + (this.z * value.element(2, 2)) + value.element(2, 3);
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector3.multiply: ' + typeof(value) + ' (expected number, Vector3, Matrix33 or Matrix44)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number, Vector3, Matrix33 or Matrix44', method: 'Vector3.multiply' });
 		}
 		
 		return this;
@@ -796,7 +885,7 @@ glacier.Vector3.prototype = {
 			this.y -= value;
 			this.z -= value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector3.subtract: ' + typeof(value) + ' (expected number or Vector3)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector3', method: 'Vector3.subtract' });
 		}
 		
 		return this;
