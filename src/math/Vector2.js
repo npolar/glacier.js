@@ -1,6 +1,6 @@
 glacier.Vector2 = function(x, y) {
-	this.x = (typeof x == 'number' ? x : 0.0);
-	this.y = (typeof y == 'number' ? y : 0.0);
+	glacier.union.call(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
+	glacier.union.call(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
 };
 
 glacier.Vector2.prototype = {
@@ -115,8 +115,5 @@ glacier.Vector2.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ')');
-	},
-	
-	u: function() { return this.x; },
-	v: function() { return this.y; }
+	}
 };

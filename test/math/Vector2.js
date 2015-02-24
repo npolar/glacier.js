@@ -172,14 +172,4 @@ describe('Vector2', function() {
 			assert.equal(true, glacier.compare(y - n, vec2.y));
 		});
 	});
-	
-	describe('uv', function() {
-		it('', function() {
-			var x = 8.4, y = -3.5;
-			var vec2 = new glacier.Vector2(x, y);
-			
-			assert.equal(true, glacier.compare(x, vec2.u()));
-			assert.equal(true, glacier.compare(y, vec2.v()));
-		});
-	});
 });

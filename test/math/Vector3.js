@@ -207,15 +207,4 @@ describe('Vector3', function() {
 			assert.equal(true, glacier.compare(z - n, vec3.z));
 		});
 	});
-	
-	describe('uvw', function() {
-		it('', function() {
-			var x = 8.4, y = -3.5, z = 5.2;
-			var vec3 = new glacier.Vector3(x, y, z);
-			
-			assert.equal(true, glacier.compare(x, vec3.u()));
-			assert.equal(true, glacier.compare(y, vec3.v()));
-			assert.equal(true, glacier.compare(z, vec3.w()));
-		});
-	});
 });

@@ -1,7 +1,7 @@
 glacier.Vector3 = function(x, y, z) {
-	this.x = (typeof x == 'number' ? x : 0.0);
-	this.y = (typeof y == 'number' ? y : 0.0);
-	this.z = (typeof z == 'number' ? z : 0.0);
+	glacier.union.call(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
+	glacier.union.call(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
+	glacier.union.call(this, ['z', 'w'], (typeof z == 'number' ? z : 0.0));
 };
 
 glacier.Vector3.prototype = {
@@ -182,9 +182,5 @@ glacier.Vector3.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
-	},
-	
-	u: function() { return this.x; },
-	v: function() { return this.y; },
-	w: function() { return this.z; }
+	}
 };
