@@ -15,7 +15,7 @@ glacier.Vector3.prototype = {
 			this.y += value;
 			this.z += value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector3.add: ' + typeof(value) + ' (expected number or Vector3)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector3', method: 'Vector3.add' });
 		}
 		
 		return this;
@@ -32,7 +32,7 @@ glacier.Vector3.prototype = {
 			this.y = y;
 			this.z = z;
 		} else {
-			console.warn('Invalid parameter types for glacier.Vector.assign: ' + typeof(x) + ', ' + typeof(y) + ', ' + typeof(z) + ' (expected three numbers)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof x + ', ' + typeof y + ', ' + typeof z, expected: 'numbers', method: 'Vector3.assign' });
 		}
 		
 		return this;
@@ -69,7 +69,7 @@ glacier.Vector3.prototype = {
 			this.y = (this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2)) + value.element(1, 3);
 			this.z = (this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2)) + value.element(2, 3);
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector3.divide: ' + typeof(value) + ' (expected number, Vector3, Matrix33 or Matrix44)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number, Vector3, Matrix33 or Matrix44', method: 'Vector3.divide' });
 		}
 		
 		return this;
@@ -101,7 +101,7 @@ glacier.Vector3.prototype = {
 			this.y = (this.x * value.element(1, 0)) + (this.y * value.element(1, 1)) + (this.z * value.element(1, 2)) + value.element(1, 3);
 			this.z = (this.x * value.element(2, 0)) + (this.y * value.element(2, 1)) + (this.z * value.element(2, 2)) + value.element(2, 3);
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector3.multiply: ' + typeof(value) + ' (expected number, Vector3, Matrix33 or Matrix44)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number, Vector3, Matrix33 or Matrix44', method: 'Vector3.multiply' });
 		}
 		
 		return this;
@@ -166,7 +166,7 @@ glacier.Vector3.prototype = {
 			this.y -= value;
 			this.z -= value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector3.subtract: ' + typeof(value) + ' (expected number or Vector3)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector3', method: 'Vector3.subtract' });
 		}
 		
 		return this;

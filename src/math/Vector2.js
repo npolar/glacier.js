@@ -12,7 +12,7 @@ glacier.Vector2.prototype = {
 			this.x += value;
 			this.y += value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector2.add: ' + typeof(value) + ' (expected number or Vector2)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector2', method: 'Vector2.add' });
 		}
 		
 		return this;
@@ -23,7 +23,7 @@ glacier.Vector2.prototype = {
 			this.x = x;
 			this.y = y;
 		} else {
-			console.warn('Invalid parameter types for glacier.Vector2.assign: ' + typeof(x) + ', ' + typeof(y) + ' (expected two numbers)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof x + ', ' + typeof y, expected: 'numbers', method: 'Vector2.assign' });
 		}
 		
 		return this;
@@ -42,7 +42,7 @@ glacier.Vector2.prototype = {
 			this.x /= value;
 			this.y /= value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector2.divide: ' + typeof(value) + ' (expected number or Vector2)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector2', method: 'Vector2.divide' });
 		}
 		
 		return this;
@@ -64,7 +64,7 @@ glacier.Vector2.prototype = {
 			this.x *= value;
 			this.y *= value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector2.multiply: ' + typeof(value) + ' (expected number or Vector2)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector2', method: 'Vector2.multiply' });
 		}
 		
 		return this;
@@ -100,7 +100,7 @@ glacier.Vector2.prototype = {
 			this.x -= value;
 			this.y -= value;
 		} else {
-			console.warn('Invalid parameter type for glacier.Vector2.subtract: ' + typeof(value) + ' (expected number or Vector2)');
+			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number or Vector2', method: 'Vector2.subtract' });
 		}
 		
 		return this;
