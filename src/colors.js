@@ -13,6 +13,6 @@ glacier.colors = {
 	TEAL:		0x008080,
 	BLUE:		0x0000FF,
 	NAVY:		0x000080,
-	FUSCIA:		0xFF00FF,
+	FUCHSIA:	0xFF00FF,
 	PURPLE:		0x800080
 };
