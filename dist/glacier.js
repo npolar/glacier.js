@@ -10,6 +10,25 @@ glacier.isArray = function(value) {
 	return (value instanceof Array || value instanceof Float32Array);
 };
 
+glacier.union = function(members, value) {
+	members = (members instanceof Array ? members : [ members ]);
+	
+	function addProperty(index) {
+		Object.defineProperty(this, members[index], {
+			get: function() { return value; },
+			set: function(val) {
+				if(typeof val == typeof value) {
+					value = val;
+				}
+			}
+		});
+	}
+	
+	for(var m in members) {
+		addProperty.call(this, m);
+	}
+};
+
 glacier.colors = {
 	WHITE:		0xFFFFFF,
 	SILVER:		0xC0C0C0,
@@ -25,7 +44,7 @@ glacier.colors = {
 	TEAL:		0x008080,
 	BLUE:		0x0000FF,
 	NAVY:		0x000080,
-	FUSCIA:		0xFF00FF,
+	FUCHSIA:	0xFF00FF,
 	PURPLE:		0x800080
 };
 
@@ -69,6 +88,51 @@ glacier.compare = function(value1, value2) {
 	}
 	
 	return false;
+};
+
+glacier.Sphere = function(latitudes, longitudes, radius) {
+	this.vertices	= [];
+	this.indices	= [];
+	this.normals	= [];
+	this.uvCoords	= [];
+	
+	this.latitudes	= (typeof latitudes == 'number' ? Math.Max(Math.abs(latitudes), 3) : 6);
+	this.longitudes	= (typeof longitudes == 'number' ? Math.Max(Math.abs(longitudes), 3) : 6);
+	this.radius		= (typeof radius == 'number' ? Math.abs(this.radius) : 1.0);
+	
+	var lat, lng;
+	
+	for(lat = 0; lat <= this.latitudes; ++lat) {
+		var theta = lat * (Math.PI / this.latitudes);
+		var sinTheta = Math.sin(theta);
+		var cosTheta = Math.cos(theta);
+		
+		for(lng = 0; lng <= this.longitudes; ++lng) {
+			var phi = lng * 2 * (Math.PI / this.latitudes);
+			var sinPhi = Math.sin(phi);
+			var cosPhi = Math.cos(phi);
+			
+			var x = cosPhi * sinTheta;
+			var y = cosTheta;
+			var z = sinPhi * sinTheta;
+			var u = 1 - (lng / this.longitudes);
+			var v = (lat / this.latitudes);
+			
+			this.vertices.push(this.radius * x, this.radius * y, this.radius * z);
+			this.normals.push(x, y, z);
+			this.uvCoords.push(u, v);
+		}
+	}
+	
+	for(lat = 0; lat < this.latitudes; ++lat) {
+		for(lng = 0; lng < this.longitudes; ++lng) {
+			var i = (lat * (this.longitudes + 1)) + lng;
+			var j = i + this.longitudes + 1;
+			
+			this.indices.push(i, j, i + 1);
+			this.indices.push(j, j + 1, i + 1);
+		}
+	}
 };
 
 glacier.Matrix33 = function(value) {
@@ -445,8 +509,8 @@ glacier.Matrix44.prototype = {
 };
 
 glacier.Vector2 = function(x, y) {
-	this.x = (typeof x == 'number' ? x : 0.0);
-	this.y = (typeof y == 'number' ? y : 0.0);
+	glacier.union.call(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
+	glacier.union.call(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
 };
 
 glacier.Vector2.prototype = {
@@ -561,16 +625,13 @@ glacier.Vector2.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ')');
-	},
-	
-	u: function() { return this.x; },
-	v: function() { return this.y; }
+	}
 };
 
 glacier.Vector3 = function(x, y, z) {
-	this.x = (typeof x == 'number' ? x : 0.0);
-	this.y = (typeof y == 'number' ? y : 0.0);
-	this.z = (typeof z == 'number' ? z : 0.0);
+	glacier.union.call(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
+	glacier.union.call(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
+	glacier.union.call(this, ['z', 'w'], (typeof z == 'number' ? z : 0.0));
 };
 
 glacier.Vector3.prototype = {
@@ -751,9 +812,5 @@ glacier.Vector3.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
-	},
-	
-	u: function() { return this.x; },
-	v: function() { return this.y; },
-	w: function() { return this.z; }
+	}
 };
