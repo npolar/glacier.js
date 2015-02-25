@@ -58,7 +58,7 @@ var glacier = {};
 					if(typeof val == typeof value) {
 						value = val;
 					} else {
-						glacier.error('INVALID_ASSIGNMENT', { value: typeof val, expected: typeof value });
+						glacier.error('INVALID_ASSIGNMENT', { variable: members[index], value: typeof val, expected: typeof value });
 					}
 				}
 			});
