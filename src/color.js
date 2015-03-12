@@ -1,4 +1,4 @@
-glacier.colors = {
+glacier.color = {
 	WHITE:		0xFFFFFF,
 	SILVER:		0xC0C0C0,
 	GRAY:		0x808080,
