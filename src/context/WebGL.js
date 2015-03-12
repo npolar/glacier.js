@@ -82,12 +82,12 @@ glacier.context.WebGL.prototype = {
 		}
 	},
 	resize:	function(width, height) {
-		if(typeof width != 'number' || width >= 0) {
+		if(typeof width != 'number') {
 			glacier.error('INVALID_PARAMETER', { parameter: 'width', expected: 'number', method: 'Context resize' });
 			return;
 		}
 		
-		if(typeof height != 'number' || height >= 0) {
+		if(typeof height != 'number') {
 			glacier.error('INVALID_PARAMETER', { parameter: 'height', expected: 'number', method: 'Context resize' });
 			return;
 		}
