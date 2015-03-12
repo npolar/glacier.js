@@ -43,13 +43,8 @@ gulp.task('watch', function() {
 	gulp.watch(['./src/*', './src/**/*'], ['default']);
 });
 
-gulp.task('watch-js', function() {
-	gulp.watch(['./src/**'], ['compile-js', 'minify-js']);
-});
-
 gulp.task('default', [
 	'validate',
 	'compile-js',
-	'minify-js',
-	'test-js'
+	'minify-js'
 ]);
