@@ -58,7 +58,7 @@ var glacier = {};
 					if(typeof val == typeof value) {
 						value = val;
 					} else {
-						glacier.error('INVALID_ASSIGNMENT', { value: typeof val, expected: typeof value });
+						glacier.error('INVALID_ASSIGNMENT', { variable: members[index], value: typeof val, expected: typeof value });
 					}
 				}
 			});
@@ -74,7 +74,37 @@ var glacier = {};
 	}
 })(glacier);
 
-glacier.colors = {
+glacier.context = {}; // Map of contexts
+
+glacier.Context = function(type, options) {
+	var contextTypes = [], c;
+	
+	if(typeof type == 'string') {
+		for(c in glacier.context) {
+			if(glacier.context.hasOwnProperty(c)) {
+				if(c.toLowerCase() == type.toLowerCase()) {
+					// Pass second parameter as container if string
+					if(typeof options == 'string') {
+						options = { container: options };
+					}
+					
+					return new glacier.context[c](options);
+				}
+				
+				contextTypes.push(c);
+			}
+		}
+	}
+		
+	contextTypes = contextTypes.join(', ');
+	var last = contextTypes.lastIndexOf(', ');
+	contextTypes = (last >= 0 ? contextTypes.substr(0, last) + ' or' + contextTypes.substr(last + 1) : contextTypes);
+	glacier.error('INVALID_PARAMETER', { parameter: 'type', expected: contextTypes, method: 'Context constructor' });
+	
+	return null;
+};
+
+glacier.color = {
 	WHITE:		0xFFFFFF,
 	SILVER:		0xC0C0C0,
 	GRAY:		0x808080,
@@ -161,6 +191,111 @@ glacier.compare = function(value1, value2) {
 	return false;
 };
 
+glacier.context.WebGL = function(options) {
+	options = (typeof options == 'object' ? options : {});
+	
+	var canvas, container, context;
+	
+	if(options.container instanceof HTMLElement) {
+		container = options.container;
+	} else if(typeof options.container == 'string') {
+		if(!(container = document.getElementById(options.container))) {
+			glacier.error('UNDEFINED_ELEMENT', { element: options.container, method: 'WebGL Context constructor' });
+		}
+	} else {
+		glacier.error('MISSING_PARAMETER', { parameter: 'container', method: 'WebGL Context constructor' });
+	}
+	
+	if(container instanceof HTMLCanvasElement) {
+		canvas = container;
+	} else if(container instanceof HTMLElement) {
+		canvas = document.createElement('CANVAS');
+		
+		canvas.style.position = 'relative;';
+		canvas.style.width = '100%';
+		canvas.style.height = '100%';
+		container.appendChild(canvas);
+	}
+	
+	if(canvas instanceof HTMLCanvasElement) {
+		Object.defineProperty(this, 'canvas', {
+			value: canvas,
+			writable: false
+		});
+		
+		this.canvas.width	= canvas.offsetWidth;
+		this.canvas.height	= canvas.offsetHeight;
+		
+		window.addEventListener('resize', function(event) {
+			if(canvas.width != canvas.offsetWidth || canvas.height != canvas.offsetHeight) {
+				this.resize(canvas.offsetWidth, canvas.offsetHeight);
+			}
+		}.bind(this));
+		
+		if((context = this.canvas.getContext('webgl'))) {
+			Object.defineProperty(this, 'gl', {
+				value: context,
+				writable: false
+			});
+		}
+		
+		if(this.gl) {
+			Object.defineProperty(this, 'background', {
+				get: function() {
+					var colors = this.gl.getParameter(this.gl.COLOR_CLEAR_VALUE);
+					
+					return (((colors[0] * 255) << 16) +
+							((colors[1] * 255) <<  8) +
+							((colors[2] * 255) <<  0)) >>> 0;
+				},
+				set: function(rgb) {
+					if(typeof rgb == 'number') {
+						var r = (((rgb >> 16) & 0xFF) / 255.0),
+							g = (((rgb >>  8) & 0xFF) / 255.0),
+							b = (((rgb >>  0) & 0xFF) / 255.0),
+							a = 1.0;
+						
+						this.gl.clearColor(r, g, b, a);
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.background', value: rgb, expected: 'number' });
+					}
+				}
+			});
+		}
+		
+		this.background = glacier.color.BLACK;
+		this.clear();
+	}
+};
+
+glacier.context.WebGL.prototype = {
+	clear: function() {
+		if(this.gl) {
+			this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+		}
+	},
+	resize:	function(width, height) {
+		if(typeof width != 'number' || width >= 0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'width', expected: 'number', method: 'Context resize' });
+			return;
+		}
+		
+		if(typeof height != 'number' || height >= 0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'height', expected: 'number', method: 'Context resize' });
+			return;
+		}
+		
+		if(this.canvas) {
+			this.canvas.width	= width;
+			this.canvas.height	= height;
+		}
+		
+		if(this.gl) {
+			this.gl.viewport(0, 0, width, height);
+		}
+	}
+};
+
 glacier.Sphere = function(latitudes, longitudes, radius) {
 	this.vertices	= [];
 	this.indices	= [];
@@ -208,18 +343,22 @@ glacier.Sphere = function(latitudes, longitudes, radius) {
 
 glacier.i18n.en = {
 	INDEX_OUT_OF_RANGE:	'Index out of range: {index} (expected range {range}) in {method}',
-	INVALID_ASSIGNMENT:	'Invalid assigment: {value} (expected {expected}) in {method}',
+	INVALID_ASSIGNMENT:	'Invalid assigment of {variable}: {value} (expected {expected})',
 	INVALID_PARAMETER:	'Invalid parameter: {parameter} (expected {expected}) in {method}',
 	MATRIX_NO_INVERSE:	'Inverse matrix does not exist: {matrix} in {method}',
+	MISSING_PARAMETER:	'Missing mandatory parameter: {parameter} in {method}',
+	UNDEFINED_ELEMENT:	'Undefined element ID: {element} in {method}',
 	UNDEFINED_ERROR:	'Undefined error: {error}',
 	UNDEFINED_LANGUAGE:	'Undefined language: {language} (using {fallback} as fallback)'
 };
 
 glacier.i18n.nb = {
 	INDEX_OUT_OF_RANGE:	'Index out of range: {index} (expected range {range}) in {method}',
-	INVALID_ASSIGNMENT:	'Ugyldig tildeing av verdi: {value} (forventet {expected}) i {method}',
+	INVALID_ASSIGNMENT:	'Ugyldig tildeing av {variable}: {value} (forventet {expected})',
 	INVALID_PARAMETER:	'Ugyldig parameter: {parameter} (forventet {expected}) i {method}',
 	MATRIX_NO_INVERSE:	'Invers matrise eksisterer ikke: {matrix} i {method}',
+	MISSING_PARAMETER:	'Mangler obligatorisk parameter: {parameter} i {method}',
+	UNDEFINED_ELEMENT:	'Udefinert element ID: {element} i {method}',
 	UNDEFINED_ERROR:	'Udefinert feilmelding: {error}',
 	UNDEFINED_LANGUAGE:	'Udefinert språkkode: {language} (bruker {fallback})'
 };
