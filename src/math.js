@@ -20,7 +20,7 @@ glacier.compare = function(value1, value2) {
 	} else if(val1Arr || val2Arr) {
 		var arr = (val1Arr ? value1 : value2), val = (val1Arr ? value2 : value1);
 		
-		for(e = 0; e < value1.length; ++e) {
+		for(e = 0; e < arr.length; ++e) {
 			if(typeof arr[e] == 'number' && typeof val == 'number') {
 				if(Math.abs(arr[e] - val) >= glacier.EPSILON) {
 					return false;
