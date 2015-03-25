@@ -300,7 +300,7 @@ describe('Matrix44', function() {
 			
 			mat44.assign(new glacier.Matrix33(num));
 			
-			assert.equal(true, glacier.compare(num, mat44.toArray()));
+			assert.equal(true, glacier.compare(arr, mat44.toArray()));
 		});
 		
 		it('Matrix44', function() {
