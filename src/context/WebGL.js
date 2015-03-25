@@ -1,7 +1,7 @@
 glacier.context.WebGL = function(options) {
 	options = (typeof options == 'object' ? options : {});
 	
-	var canvas, container, context;
+	var background, canvas, container, context;
 	
 	if(options.container instanceof HTMLElement) {
 		container = options.container;
@@ -49,28 +49,21 @@ glacier.context.WebGL = function(options) {
 		if(this.gl) {
 			Object.defineProperty(this, 'background', {
 				get: function() {
-					var colors = this.gl.getParameter(this.gl.COLOR_CLEAR_VALUE);
-					
-					return (((colors[0] * 255) << 16) +
-							((colors[1] * 255) <<  8) +
-							((colors[2] * 255) <<  0)) >>> 0;
+					return background;
 				},
-				set: function(rgb) {
-					if(typeof rgb == 'number') {
-						var r = (((rgb >> 16) & 0xFF) / 255.0),
-							g = (((rgb >>  8) & 0xFF) / 255.0),
-							b = (((rgb >>  0) & 0xFF) / 255.0),
-							a = 1.0;
-						
-						this.gl.clearColor(r, g, b, a);
+				set: function(color) {
+					if(color instanceof glacier.Color) {
+						background = color;
+						this.gl.clearColor(color.r, color.g, color.b, color.a);
 					} else {
-						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.background', value: rgb, expected: 'number' });
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.background', value: typeof color, expected: 'Color' });
 					}
 				}
 			});
+			
+			this.background = glacier.color.BLACK;
 		}
 		
-		this.background = glacier.color.BLACK;
 		this.clear();
 	}
 };
