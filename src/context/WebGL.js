@@ -54,7 +54,7 @@ glacier.context.WebGL = function(options) {
 				set: function(color) {
 					if(color instanceof glacier.Color) {
 						background = color;
-						this.gl.clearColor(color.r, color.g, color.b, color.a);
+						this.gl.clearColor(color.r / 255, color.g / 255, color.b / 255, color.a);
 					} else {
 						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.background', value: typeof color, expected: 'Color' });
 					}
