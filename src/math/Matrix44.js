@@ -39,7 +39,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number, Matrix33, Matrix44 or array[16]', method: 'Matrix44.assign' });
+			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number, Matrix33, Matrix44 or array[16]', method: 'Matrix44.assign' });
 		}
 		
 		return this;
@@ -99,7 +99,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] *= value;
 			}
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: typeof value, expected: 'number, Matrix33 or Matrix44', method: 'Matrix44.multiply' });
+			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number, Matrix33 or Matrix44', method: 'Matrix44.multiply' });
 		}
 		
 		return this;

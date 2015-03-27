@@ -23,7 +23,13 @@ glacier.Context = function(type, options) {
 	contextTypes = contextTypes.join(', ');
 	var last = contextTypes.lastIndexOf(', ');
 	contextTypes = (last >= 0 ? contextTypes.substr(0, last) + ' or' + contextTypes.substr(last + 1) : contextTypes);
-	glacier.error('INVALID_PARAMETER', { parameter: 'type', expected: contextTypes, method: 'Context constructor' });
+	glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: contextTypes, method: 'Context constructor' });
 	
 	return null;
+};
+
+glacier.Context.prototype = {
+	foo: function() {
+		console.log('foo');
+	}
 };
