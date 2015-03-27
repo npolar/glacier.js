@@ -17,18 +17,23 @@ var glacier = {};
 					var fallback = (glacier.i18n.alias[language] ? glacier.i18n.alias[language][0] : null);
 					lang = (glacier.i18n[fallback] ? fallback : 'en');
 					
-					glacier.error('UNDEFINED_LANGUAGE', { language: language, fallback: lang });
+					glacier.warn('UNDEFINED_LANGUAGE', { language: language, fallback: lang });
 				}
 			}
 		}
 	});
 	
-	glacier.error = function(message, params) {
+	glacier.log = function(message, type, params) {
 		var msg = glacier.i18n(message), match;
 		
 		if(!msg) {
-			msg = glacier.i18n('UNDEFINED_ERROR');
-			params = { error: message };
+			if(type == 'warning') {
+				msg = glacier.i18n('UNDEFINED_WARNING');
+				params = { warning: message };
+			} else if(type == 'error') {
+				msg = glacier.i18n('UNDEFINED_ERROR');
+				params = { error: message };
+			}
 		}
 		
 		if(typeof params == 'object' && (match = msg.match(/\{[^\}]*\}/g))) {
@@ -41,7 +46,26 @@ var glacier = {};
 			}
 		}
 		
-		console.error(msg);
+		switch(type) {
+			case 'error':
+				console.error(msg);
+				break;
+			
+			case 'warning':
+				console.warn(msg);
+				break;
+			
+			default:
+				console.log(message);
+		}
+	};
+	
+	glacier.error = function(message, params) {
+		glacier.log(message, 'error', params);
+	};
+	
+	glacier.warn = function(message, params) {
+		glacier.log(message, 'warning', params);
 	};
 	
 	glacier.isArray = function(value) {

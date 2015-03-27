@@ -6,5 +6,6 @@ glacier.i18n.en = {
 	MISSING_PARAMETER:	'Missing mandatory parameter: {parameter} in {method}',
 	UNDEFINED_ELEMENT:	'Undefined element ID: {element} in {method}',
 	UNDEFINED_ERROR:	'Undefined error: {error}',
+	UNDEFINED_WARNING:	'Undefined warning: {warning}',
 	UNDEFINED_LANGUAGE:	'Undefined language: {language} (using {fallback} as fallback)'
 };
