@@ -320,12 +320,6 @@ glacier.Context = function(type, options) {
 	return null;
 };
 
-glacier.Context.prototype = {
-	foo: function() {
-		console.log('foo');
-	}
-};
-
 glacier.i18n = function(code, language) {
 	language = (language || glacier.language);
 	
@@ -998,6 +992,31 @@ glacier.Matrix44.prototype = {
 		for(var e = 0; e < temp.length; ++e) {
 			this.array[e] = (temp[e] * det);
 		}
+		
+		return true;
+	},
+	
+	frustum: function(left, right, bottom, top, near, far) {
+		var args = 'left,right,bottom,top,near,far'.split(','), error, dX, dY, dZ, temp;
+		
+		[ left, right, bottom, top, near, far ].forEach(function(arg, index) {
+			if(typeof arg != 'number') {
+				glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof value, expected: 'number', method: 'Matrix44.frustum' });
+				error = true;
+			}
+		});
+		
+		// Ensure all arguments are numbers in valid ranges
+		if(error || near <= 0.0 || far <= 0.0 || (dX = right - left) <= 0.0 || (dY = top - bottom) <= 0.0 || (dZ = far - near) <= 0.0) {
+			return false;
+		}
+		
+		this.assign(new glacier.Matrix44([
+			2.0 * near / dX, 0.0, 0.0, 0.0,
+			0.0, 2.0 * near / dY, 0.0, 0.0,
+			(right + left) / dX, (top + bottom) / dY, -(near + far) / dZ, -1.0,
+			0.0, 0.0, -2.0 * near * far / dZ, 0.0
+		]).multiply(this));
 		
 		return true;
 	},
