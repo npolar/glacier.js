@@ -1,10 +1,8 @@
 glacier.Matrix44 = function(value) {
-	this.array = new Float32Array([
-		1.0, 0.0, 0.0, 0.0,
-		0.0, 1.0, 0.0, 0.0,
-		0.0, 0.0, 1.0, 0.0,
-		0.0, 0.0, 0.0, 1.0
-	]);
+	Object.defineProperty(this, 'array', {
+		value: new Float32Array([ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]),
+		writable: false
+	});
 	
 	if(value) {
 		this.assign(value);
@@ -79,21 +77,18 @@ glacier.Matrix44.prototype = {
 		var col, row, e, temp;
 		
 		if(value instanceof glacier.Matrix44) {
-			temp = new Float32Array(16);
+			temp = new Float32Array(this.array);
 			
 			for(col = 0; col < 4; ++col) {
 				for(row = 0; row < 4; ++row) {
-					temp[(col * 4) + row] = ((this.array[(col * 4) + 0] * value.array[(0 * 4) + row]) +
-											 (this.array[(col * 4) + 1] * value.array[(1 * 4) + row]) +
-											 (this.array[(col * 4) + 2] * value.array[(2 * 4) + row]) +
-											 (this.array[(col * 4) + 3] * value.array[(3 * 4) + row]));
+					this.array[(col * 4) + row] = ((temp[(col * 4) + 0] * value.array[(0 * 4) + row]) +
+												   (temp[(col * 4) + 1] * value.array[(1 * 4) + row]) +
+												   (temp[(col * 4) + 2] * value.array[(2 * 4) + row]) +
+												   (temp[(col * 4) + 3] * value.array[(3 * 4) + row]));
 				}
 			}
-			
-			this.array = temp;
 		} else if(value instanceof glacier.Matrix33) {
-			temp = new glacier.Matrix44(value);
-			this.multiply(temp);
+			this.multiply(new glacier.Matrix44(value));
 		} else if(typeof value == 'number') {
 			for(e in this.array) {
 				this.array[e] *= value;
@@ -196,10 +191,6 @@ glacier.Matrix44.prototype = {
 		}
 		
 		return true;
-	},
-	
-	toArray: function() {
-		return new Float32Array(this.array);
 	},
 	
 	toString: function() {

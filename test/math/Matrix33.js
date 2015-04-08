@@ -10,27 +10,27 @@ describe('Matrix33', function() {
 			var arr = [ 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 ];
 			var mat33 = new glacier.Matrix33();
 			
-			assert.equal(true, glacier.compare(arr, mat33.toArray()));
+			assert.equal(true, glacier.compare(arr, mat33.array));
 		});
 		
 		it('array', function() {
 			var arr = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
 			var mat33 = new glacier.Matrix33(arr);
 			
-			assert.equal(true, glacier.compare(arr, mat33.toArray()));
+			assert.equal(true, glacier.compare(arr, mat33.array));
 		});
 		
 		it('number', function() {
 			var num = 1.1, mat33 = new glacier.Matrix33(num);
 			
-			assert.equal(true, glacier.compare(num, mat33.toArray()));
+			assert.equal(true, glacier.compare(num, mat33.array));
 		});
 		
 		it('Matrix33', function() {
 			var arr = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
 			var mat33 = new glacier.Matrix33(new glacier.Matrix33(arr));
 			
-			assert.equal(true, glacier.compare(arr, mat33.toArray()));
+			assert.equal(true, glacier.compare(arr, mat33.array));
 		});
 		
 		it('Matrix44', function() {
@@ -39,7 +39,7 @@ describe('Matrix33', function() {
 			var mat44 = new glacier.Matrix44(arr44);
 			var mat33 = new glacier.Matrix33(mat44);
 			
-			assert.equal(true, glacier.compare(arr33, mat33.toArray()));
+			assert.equal(true, glacier.compare(arr33, mat33.array));
 		});
 	});
 	
@@ -50,7 +50,7 @@ describe('Matrix33', function() {
 			
 			mat33.assign(arr);
 			
-			assert.equal(true, glacier.compare(arr, mat33.toArray()));
+			assert.equal(true, glacier.compare(arr, mat33.array));
 		});
 		
 		it('number', function() {
@@ -58,7 +58,7 @@ describe('Matrix33', function() {
 			
 			mat33.assign(num);
 			
-			assert.equal(true, glacier.compare(num, mat33.toArray()));
+			assert.equal(true, glacier.compare(num, mat33.array));
 		});
 		
 		it('Matrix33', function() {
@@ -66,7 +66,7 @@ describe('Matrix33', function() {
 			
 			mat33.assign(new glacier.Matrix33(num));
 			
-			assert.equal(true, glacier.compare(num, mat33.toArray()));
+			assert.equal(true, glacier.compare(num, mat33.array));
 		});
 		
 		it('Matrix44', function() {
@@ -74,7 +74,7 @@ describe('Matrix33', function() {
 			
 			mat33.assign(new glacier.Matrix44(num));
 			
-			assert.equal(true, glacier.compare(num, mat33.toArray()));
+			assert.equal(true, glacier.compare(num, mat33.array));
 		});
 	});
 	
@@ -184,7 +184,7 @@ describe('Matrix33', function() {
 			var mat1 = new glacier.Matrix33(arr);
 			var mat2 = new glacier.Matrix33();
 			
-			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse()).toArray(), mat2.toArray()));
+			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse()).array, mat2.array));
 		});
 	});
 });
