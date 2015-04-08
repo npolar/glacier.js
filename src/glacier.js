@@ -23,6 +23,29 @@ var glacier = {};
 		}
 	});
 	
+	glacier.load = function(url, callback) {
+		var xhr, async = (typeof callback == 'function' ? true : false);
+		
+		try { xhr = new XMLHttpRequest(); }
+		catch(e) { return false; }
+		
+		if(async) {
+			xhr.onreadystatechange = function() {
+				if(xhr.readyState == 4 && (xhr.status == 200 || xhr.status === 0)) {
+					callback(xhr.responseText);
+				}
+			};
+		}
+		
+		try {
+			xhr.open('GET', url, async);
+			xhr.overrideMimeType('text/plain');
+			xhr.send();
+		} catch(e) { return false; }
+		
+		return (async ? true : xhr.responseText);
+	};
+	
 	glacier.log = function(message, type, params) {
 		var msg = glacier.i18n(message), match;
 		
