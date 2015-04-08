@@ -1,7 +1,7 @@
 glacier.context = {}; // Map of contexts
 
 glacier.Context = function(type, options) {
-	var contextTypes = [], c;
+	var c, contextTypes = [];
 	
 	if(typeof type == 'string') {
 		for(c in glacier.context) {
