@@ -27,9 +27,3 @@ glacier.Context = function(type, options) {
 	
 	return null;
 };
-
-glacier.Context.prototype = {
-	foo: function() {
-		console.log('foo');
-	}
-};
