@@ -189,7 +189,7 @@ glacier.Matrix44.prototype = {
 		} else if(xOrVec3 instanceof glacier.Vector3) {
 			return this.rotate(radians, xOrVec3.x, xOrVec3.y, xOrVec3.z);
 		} else {
-			var args = 'x,y,z'.split(','), error, x = xOrVec3, cosRad, sinRad, mag, oneMinusCos;
+			var args = [ 'x', 'y', 'z' ], error, x = xOrVec3, cosRad, sinRad, mag, oneMinusCos;
 			
 			[ x, y, z ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
@@ -221,7 +221,26 @@ glacier.Matrix44.prototype = {
 	},
 	
 	scale: function(xOrVec3, y, z) {
-		// TODO
+		if(xOrVec3 instanceof glacier.Vector3) {
+			return this.scale(xOrVec3.x, xOrVec3.y, xOrVec3.z);
+		} else {
+			var args = [ 'x', 'y', 'z' ], error, x = xOrVec3;
+			
+			[ x, y, z ].forEach(function(arg, index) {
+				if(typeof arg != 'number') {
+					glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Matrix44.scale' });
+					error = true;
+				}
+			});
+			
+			if(!error) {
+				this.array[ 0] *= x; this.array[ 4] *= y; this.array[ 8] *= z;
+				this.array[ 1] *= x; this.array[ 5] *= y; this.array[ 9] *= z;
+				this.array[ 2] *= x; this.array[ 6] *= y; this.array[10] *= z;
+				this.array[ 3] *= x; this.array[ 7] *= y; this.array[11] *= z;
+			}
+		}
+		
 		return this;
 	},
 	
@@ -233,7 +252,26 @@ glacier.Matrix44.prototype = {
 	},
 	
 	translate: function(xOrVec3, y, z) {
-		// TODO
+		if(xOrVec3 instanceof glacier.Vector3) {
+			return this.translate(xOrVec3.x, xOrVec3.y, xOrVec3.z);
+		} else {
+			var args = [ 'x', 'y', 'z' ], error, x = xOrVec3;
+			
+			[ x, y, z ].forEach(function(arg, index) {
+				if(typeof arg != 'number') {
+					glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Matrix44.translate' });
+					error = true;
+				}
+			});
+			
+			if(!error) {
+				this.array[12] += (this.array[ 0] * x + this.array[ 4] * y + this.array[ 8] * z);
+				this.array[13] += (this.array[ 1] * x + this.array[ 5] * y + this.array[ 9] * z);
+				this.array[14] += (this.array[ 2] * x + this.array[ 6] * y + this.array[10] * z);
+				this.array[15] += (this.array[ 3] * x + this.array[ 7] * y + this.array[11] * z);
+			}
+		}
+		
 		return this;
 	},
 	
