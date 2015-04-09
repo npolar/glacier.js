@@ -39,3 +39,21 @@ glacier.compare = function(value1, value2) {
 	
 	return false;
 };
+
+glacier.degToRad = function(degrees) {
+	if(typeof degrees == 'number') {
+		return (degrees * Math.PI / 180.0);
+	}
+	
+	glacier.error('INVALID_PARAMETER', { parameter: 'degrees', value: typeof degrees, expected: 'number', method: 'glacier.degToRad' });
+	return degrees;
+};
+
+glacier.radToDeg = function(radians) {
+	if(typeof radians == 'number') {
+		return (radians * 180.0 / Math.PI);
+	}
+	
+	glacier.error('INVALID_PARAMETER', { parameter: 'radians', value: typeof radians, expected: 'number', method: 'glacier.radToDeg' });
+	return radians;	
+};
