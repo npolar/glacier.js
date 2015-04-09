@@ -73,66 +73,29 @@ glacier.Matrix44.prototype = {
 		return undefined;
 	},
 	
-	multiply: function(value) {
-		var col, row, e, temp;
+	frustum: function(left, right, bottom, top, near, far) {
+		var args = 'left,right,bottom,top,near,far'.split(','), error, dX, dY, dZ, temp;
 		
-		if(value instanceof glacier.Matrix44) {
-			temp = new Float32Array(this.array);
-			
-			for(col = 0; col < 4; ++col) {
-				for(row = 0; row < 4; ++row) {
-					this.array[(col * 4) + row] = ((temp[(col * 4) + 0] * value.array[(0 * 4) + row]) +
-												   (temp[(col * 4) + 1] * value.array[(1 * 4) + row]) +
-												   (temp[(col * 4) + 2] * value.array[(2 * 4) + row]) +
-												   (temp[(col * 4) + 3] * value.array[(3 * 4) + row]));
-				}
+		[ left, right, bottom, top, near, far ].forEach(function(arg, index) {
+			if(typeof arg != 'number') {
+				glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Matrix44.frustum' });
+				error = true;
 			}
-		} else if(value instanceof glacier.Matrix33) {
-			this.multiply(new glacier.Matrix44(value));
-		} else if(typeof value == 'number') {
-			for(e in this.array) {
-				this.array[e] *= value;
-			}
-		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number, Matrix33 or Matrix44', method: 'Matrix44.multiply' });
+		});
+		
+		// Ensure all arguments are numbers in valid ranges
+		if(error || near <= 0.0 || far <= 0.0 || (dX = right - left) <= 0.0 || (dY = top - bottom) <= 0.0 || (dZ = far - near) <= 0.0) {
+			return false;
 		}
 		
-		return this;
-	},
-	
-	transpose: function() {
-		var temp;
+		this.assign(new glacier.Matrix44([
+			2.0 * near / dX, 0.0, 0.0, 0.0,
+			0.0, 2.0 * near / dY, 0.0, 0.0,
+			(right + left) / dX, (top + bottom) / dY, -(near + far) / dZ, -1.0,
+			0.0, 0.0, -2.0 * near * far / dZ, 0.0
+		]).multiply(this));
 		
-		temp = this.array[1];
-		this.array[1] = this.array[4];
-		this.array[4] = temp;
-		
-		temp = this.array[2];
-		this.array[2] = this.array[8];
-		this.array[8] = temp;
-		
-		temp = this.array[3];
-		this.array[3] = this.array[12];
-		this.array[12] = temp;
-		
-		temp = this.array[6];
-		this.array[6] = this.array[9];
-		this.array[9] = temp;
-		
-		temp = this.array[7];
-		this.array[7] = this.array[13];
-		this.array[13] = temp;
-		
-		temp = this.array[11];
-		this.array[11] = this.array[14];
-		this.array[14] = temp;
-		
-		return this;
-	},
-	
-	transposed: function() {
-		var temp = new glacier.Matrix44(this);
-		return temp.transpose();
+		return true;
 	},
 	
 	inverse: function() {
@@ -193,29 +156,41 @@ glacier.Matrix44.prototype = {
 		return true;
 	},
 	
-	frustum: function(left, right, bottom, top, near, far) {
-		var args = 'left,right,bottom,top,near,far'.split(','), error, dX, dY, dZ, temp;
+	multiply: function(value) {
+		var col, row, e, temp;
 		
-		[ left, right, bottom, top, near, far ].forEach(function(arg, index) {
-			if(typeof arg != 'number') {
-				glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof value, expected: 'number', method: 'Matrix44.frustum' });
-				error = true;
+		if(value instanceof glacier.Matrix44) {
+			temp = new Float32Array(this.array);
+			
+			for(col = 0; col < 4; ++col) {
+				for(row = 0; row < 4; ++row) {
+					this.array[(col * 4) + row] = ((temp[(col * 4) + 0] * value.array[(0 * 4) + row]) +
+												   (temp[(col * 4) + 1] * value.array[(1 * 4) + row]) +
+												   (temp[(col * 4) + 2] * value.array[(2 * 4) + row]) +
+												   (temp[(col * 4) + 3] * value.array[(3 * 4) + row]));
+				}
 			}
-		});
-		
-		// Ensure all arguments are numbers in valid ranges
-		if(error || near <= 0.0 || far <= 0.0 || (dX = right - left) <= 0.0 || (dY = top - bottom) <= 0.0 || (dZ = far - near) <= 0.0) {
-			return false;
+		} else if(value instanceof glacier.Matrix33) {
+			this.multiply(new glacier.Matrix44(value));
+		} else if(typeof value == 'number') {
+			for(e in this.array) {
+				this.array[e] *= value;
+			}
+		} else {
+			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number, Matrix33 or Matrix44', method: 'Matrix44.multiply' });
 		}
 		
-		this.assign(new glacier.Matrix44([
-			2.0 * near / dX, 0.0, 0.0, 0.0,
-			0.0, 2.0 * near / dY, 0.0, 0.0,
-			(right + left) / dX, (top + bottom) / dY, -(near + far) / dZ, -1.0,
-			0.0, 0.0, -2.0 * near * far / dZ, 0.0
-		]).multiply(this));
-		
-		return true;
+		return this;
+	},
+	
+	rotate: function(radians, xOrVec3, y, z) {
+		// TODO
+		return this;
+	},
+	
+	scale: function(xOrVec3, y, z) {
+		// TODO
+		return this;
 	},
 	
 	toString: function() {
@@ -223,5 +198,45 @@ glacier.Matrix44.prototype = {
 				 '[' + this.array[ 4].toPrecision(5) + ', ' + this.array[ 5].toPrecision(5) + ', ' + this.array[ 6].toPrecision(5) + ', ' + this.array[ 7].toPrecision(5) + '], ' +
 				 '[' + this.array[ 8].toPrecision(5) + ', ' + this.array[ 9].toPrecision(5) + ', ' + this.array[10].toPrecision(5) + ', ' + this.array[11].toPrecision(5) + '], ' +
 				 '[' + this.array[12].toPrecision(5) + ', ' + this.array[13].toPrecision(5) + ', ' + this.array[14].toPrecision(5) + ', ' + this.array[15].toPrecision(5) + ']]');
+	},
+	
+	translate: function(xOrVec3, y, z) {
+		// TODO
+		return this;
+	},
+	
+	transpose: function() {
+		var temp;
+		
+		temp = this.array[1];
+		this.array[1] = this.array[4];
+		this.array[4] = temp;
+		
+		temp = this.array[2];
+		this.array[2] = this.array[8];
+		this.array[8] = temp;
+		
+		temp = this.array[3];
+		this.array[3] = this.array[12];
+		this.array[12] = temp;
+		
+		temp = this.array[6];
+		this.array[6] = this.array[9];
+		this.array[9] = temp;
+		
+		temp = this.array[7];
+		this.array[7] = this.array[13];
+		this.array[13] = temp;
+		
+		temp = this.array[11];
+		this.array[11] = this.array[14];
+		this.array[14] = temp;
+		
+		return this;
+	},
+	
+	transposed: function() {
+		var temp = new glacier.Matrix44(this);
+		return temp.transpose();
 	}
 };
