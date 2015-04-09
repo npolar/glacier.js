@@ -45,7 +45,7 @@ glacier.degToRad = function(degrees) {
 		return (degrees * Math.PI / 180.0);
 	}
 	
-	glacier.error('INVALID_PARAMETER', { parameter: 'degrees', value: typeof degrees, expected: 'number', method: 'glacier.degToRad' });
+	glacier.error('INVALID_PARAMETER', { parameter: 'degrees', value: typeof degrees, expected: 'number', method: 'degToRad' });
 	return degrees;
 };
 
@@ -54,6 +54,6 @@ glacier.radToDeg = function(radians) {
 		return (radians * 180.0 / Math.PI);
 	}
 	
-	glacier.error('INVALID_PARAMETER', { parameter: 'radians', value: typeof radians, expected: 'number', method: 'glacier.radToDeg' });
+	glacier.error('INVALID_PARAMETER', { parameter: 'radians', value: typeof radians, expected: 'number', method: 'radToDeg' });
 	return radians;	
 };
