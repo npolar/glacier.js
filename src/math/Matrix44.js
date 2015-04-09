@@ -184,7 +184,39 @@ glacier.Matrix44.prototype = {
 	},
 	
 	rotate: function(radians, xOrVec3, y, z) {
-		// TODO
+		if(typeof radians != 'number') {
+			glacier.error('INVALID_PARAMETER', { parameter: 'radians', value: typeof radians, expected: 'number', method: 'Matrix44.rotate' });
+		} else if(xOrVec3 instanceof glacier.Vector3) {
+			return this.rotate(radians, xOrVec3.x, xOrVec3.y, xOrVec3.z);
+		} else {
+			var args = 'x,y,z'.split(','), error, x = xOrVec3, cosRad, sinRad, mag, oneMinusCos;
+			
+			[ x, y, z ].forEach(function(arg, index) {
+				if(typeof arg != 'number') {
+					glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Matrix44.rotate' });
+					error = true;
+				}
+			});
+			
+			if(!error) {
+				oneMinusCos = 1.0 - (cosRad = Math.cos(radians));
+				sinRad = Math.sin(radians);
+				
+				if(!isNaN((mag = Math.sqrt(x * x + y * y + z * z)))) {
+					x /= mag;
+					y /= mag;
+					z /= mag;
+					
+					this.assign(new glacier.Matrix44([
+						(oneMinusCos * (x * x)) + cosRad, (oneMinusCos * (x * y)) - (z * sinRad), (oneMinusCos * (x * z)) + (y * sinRad), 0.0,	// X rotation
+						(oneMinusCos * (y * x)) + (z * sinRad), (oneMinusCos * (y * y)) + cosRad, (oneMinusCos * (y * z)) - (x * sinRad), 0.0,	// Y rotation
+						(oneMinusCos * (z * x)) - (y * sinRad), (oneMinusCos * (z * y)) + (x * sinRad), (oneMinusCos * (z * z)) + cosRad, 0.0,	// Z rotation
+						0.0, 0.0, 0.0, 1.0
+					]).multiply(this));
+				}
+			}
+		}
+		
 		return this;
 	},
 	
