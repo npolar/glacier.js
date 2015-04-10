@@ -208,10 +208,10 @@ glacier.Matrix44.prototype = {
 		return true;
 	},
 	
-	perspective: function(yFieldOfView, xAspectRatio, near, far) {
-		var args = 'yFieldOfView,xAspectRatio,near,far'.split(','), error, height, width, temp = new glacier.Matrix44();
+	perspective: function(verticalViewAngle, aspectRatio, near, far) {
+		var args = 'verticalViewAngle,aspectRatio,near,far'.split(','), error, height, width, temp = new glacier.Matrix44();
 		
-		[ yFieldOfView, xAspectRatio, near, far ].forEach(function(arg, index) {
+		[ verticalViewAngle, aspectRatio, near, far ].forEach(function(arg, index) {
 			if(typeof arg != 'number') {
 				glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Matrix44.perspective' });
 				error = true;
@@ -222,8 +222,8 @@ glacier.Matrix44.prototype = {
 			return false;
 		}
 		
-		height = Math.tan((yFieldOfView / 360.0) * Math.PI) * near;
-		width = height * xAspectRatio;
+		height = Math.tan((verticalViewAngle / 360.0) * Math.PI) * near;
+		width = height * aspectRatio;
 		
 		if(temp.frustum(-width, width, -height, height, near, far)) {
 			this.assign(temp.multiply(this));
