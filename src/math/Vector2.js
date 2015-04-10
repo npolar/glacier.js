@@ -6,6 +6,10 @@ glacier.Vector2 = function(x, y) {
 		get: function() { return new Float32Array([ this.x, this.y ]); },
 		set: function() {}
 	});
+	
+	if(x instanceof glacier.Vector2) {
+		this.assign(x);
+	}
 };
 
 glacier.Vector2.prototype = {
@@ -23,12 +27,23 @@ glacier.Vector2.prototype = {
 		return this;
 	},
 	
-	assign: function(x, y) {
-		if(typeof x == 'number' && typeof y == 'number') {
-			this.x = x;
-			this.y = y;
+	assign: function(xOrVec2, y) {
+		if(xOrVec2 instanceof glacier.Vector2) {
+			return this.assign(xOrVec2.x, xOrVec2.y);
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof x + ', ' + typeof y, expected: 'numbers', method: 'Vector2.assign' });
+			var args = [ 'x', 'y' ], error, x = xOrVec2;
+			
+			[ x, y ].forEach(function(arg, index) {
+				if(typeof arg != 'number') {
+					glaicer.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Vector2.assign' });
+					error = true;
+				}
+			});
+			
+			if(!error) {
+				this.x = x;
+				this.y = y;
+			}
 		}
 		
 		return this;
