@@ -121,6 +121,99 @@ var glacier = {};
 	}
 })(glacier);
 
+glacier.Camera = function(verticalViewAngle, aspectRatio) {
+	var args = [ 'verticalViewAngle', 'aspectRatio' ], error;
+	
+	Object.defineProperties(this, {
+		aspectRatio: {
+			get: function() {
+				return aspectRatio;
+			},
+			set: function(value) {
+				if(typeof value == 'number' && value > 0.0) {
+					aspectRatio = value;
+					update();
+				} else {
+					glacier.error('INVALID_ASSIGNMENT', { variable: 'Camera.aspectRatio', value: value, expected: 'positive number' });
+				}
+			}
+		},
+		
+		fieldOfView: {
+			get: function() {
+				return verticalViewAngle;
+			},
+			set: function(value) {
+				if(typeof value == 'number' && value > 0.0) {
+					verticalViewAngle = value;
+					update();
+				} else {
+					glacier.error('INVALID_ASSIGNMENT', { variable: 'camera.fieldOfView', value: value, expected: 'positive number' });
+				}
+			}
+		},
+		
+		matrix: {
+			value: new glacier.Matrix44(),
+			writable: false
+		},
+		
+		position: {
+			value: new glacier.Vector3(0, 1, 1),
+			writable: false
+		},
+		
+		target: {
+			value: new glacier.Vector3(0, 0, 0),
+			writable: false
+		}
+	});
+	
+	[ verticalViewAngle, aspectRatio ].forEach(function(arg, index) {
+		if(typeof arg != 'number' || arg <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'positive number', method: 'Camera constructor' });
+			error = true;
+		}
+	});
+	
+	if(error) {
+		verticalViewAngle = (typeof verticalViewAngle == 'number' && verticalViewAngle > 0.0 ? verticalViewAngle : 60.0);
+		aspectRatio = (typeof aspectRatio == 'number' && aspectRatio > 0.0 ? aspectRatio : 16 / 9);
+	}
+	
+	this.update();
+};
+
+glacier.Camera.prototype = {
+	update: function() {
+		var z, x, y = new glacier.Vector3(0, 1, 0);
+		
+		if((z = new glacier.Vector3(this.position).subtract(this.target)).length()) {
+			z.normalize();
+		}
+		
+		if((x = y.crossProduct(z)).length()) {
+			x.normalize();
+		}
+		
+		if((y = z.crossProduct(x)).length()) {
+			y.normalize();
+		}
+		
+		// TODO: Remove hard-coded clipping planes
+		this.matrix.assign(new glacier.Matrix44());
+		this.matrix.perspective(this.fieldOfView, this.aspectRatio, 0.1, 100.0);
+		//this.matrix.ortho(-1.0, 1.0, -1.0, 1.0, 0.1, 100.0);
+		
+		this.matrix.assign(new glacier.Matrix44([
+			x.x, y.x, z.x, 0.0,
+			x.y, y.y, z.y, 0.0,
+			x.z, y.z, z.z, 0.0,
+			0.0, 0.0, 0.0, 1.0
+		]).multiply(this.matrix)).translate(-this.position.x, -this.position.y, -this.position.z);
+	}
+};
+
 glacier.Color = function(params) {
 	var a, args, vals, value = 0x000000FF; // rgba
 	
@@ -415,10 +508,10 @@ glacier.context.WebGL = function(options) {
 		container = options.container;
 	} else if(typeof options.container == 'string') {
 		if(!(container = document.getElementById(options.container))) {
-			glacier.error('UNDEFINED_ELEMENT', { element: options.container, method: 'WebGL Context constructor' });
+			glacier.error('UNDEFINED_ELEMENT', { element: options.container, method: 'context.WebGL constructor' });
 		}
 	} else {
-		glacier.error('MISSING_PARAMETER', { parameter: 'container', method: 'WebGL Context constructor' });
+		glacier.error('MISSING_PARAMETER', { parameter: 'container', method: 'context.WebGL constructor' });
 	}
 	
 	if(container instanceof HTMLCanvasElement) {
@@ -436,6 +529,37 @@ glacier.context.WebGL = function(options) {
 		Object.defineProperty(this, 'canvas', {
 			value: canvas,
 			writable: false
+		});
+		
+		Object.defineProperties(this, {
+			canvas: {
+				value: canvas,
+				writable: false
+			},
+			width: {
+				get: function() {
+					return this.canvas.width;
+				},
+				set: function(value) {
+					if(typeof value == 'number' && value > 0) {
+						this.resize(value, height);
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.width', value: value, expected: 'positive number' });
+					}
+				}
+			},
+			height: {
+				get: function() {
+					return this.canvas.height;
+				},
+				set: function(value) {
+					if(typeof value == 'number' && value > 0) {
+						this.resize(width, value);
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.height', value: value, expected: 'positive number' });
+					}
+				}
+			}
 		});
 		
 		this.canvas.width	= canvas.offsetWidth;
@@ -483,13 +607,13 @@ glacier.context.WebGL.prototype = {
 		}
 	},
 	resize:	function(width, height) {
-		if(typeof width != 'number') {
-			glacier.error('INVALID_PARAMETER', { parameter: 'width', value: typeof width, expected: 'number', method: 'Context resize' });
+		if(typeof width != 'number' || width <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'width', value: typeof width, expected: 'positive number', method: 'Context.resize' });
 			return;
 		}
 		
-		if(typeof height != 'number') {
-			glacier.error('INVALID_PARAMETER', { parameter: 'height', value: typeof height, expected: 'number', method: 'Context resize' });
+		if(typeof height != 'number' || height <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'height', value: typeof height, expected: 'positive number', method: 'Context.resize' });
 			return;
 		}
 		
@@ -510,12 +634,12 @@ glacier.context.WebGL.prototype = {
 		}
 		
 		if(!(vertShader instanceof WebGLShader)) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'vertShader', value: typeof vertShader, expected: 'WebGLShader', method: 'createProgram' });
+			glacier.error('INVALID_PARAMETER', { parameter: 'vertShader', value: typeof vertShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
 			return null;
 		}
 		
 		if(!(fragShader instanceof WebGLShader)) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'fragShader', value: typeof fragShader, expected: 'WebGLShader', method: 'createProgram' });
+			glacier.error('INVALID_PARAMETER', { parameter: 'fragShader', value: typeof fragShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
 			return null;
 		}
 		
@@ -540,14 +664,14 @@ glacier.context.WebGL.prototype = {
 		var last, shader, valid = [ this.gl.FRAGMENT_SHADER, this.gl.VERTEX_SHADER ];
 		
 		if(typeof source != 'string') {
-			glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'string', method: 'createShader' });
+			glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'string', method: 'context.WebGL.createShader' });
 			return null;
 		}
 		
 		if(valid.indexOf(type) == -1) {
 			last = (valid = valid.join(', ')).lastIndexOf(', ');
 			valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
-			glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: valid, method: 'createShader' });
+			glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: valid, method: 'context.WebGL.createShader' });
 			return null;
 		}
 		
@@ -895,7 +1019,7 @@ glacier.Matrix44.prototype = {
 	},
 	
 	frustum: function(left, right, bottom, top, near, far) {
-		var args = 'left,right,bottom,top,near,far'.split(','), error, dX, dY, dZ, temp;
+		var args = 'left,right,bottom,top,near,far'.split(','), error, dX, dY, dZ;
 		
 		[ left, right, bottom, top, near, far ].forEach(function(arg, index) {
 			if(typeof arg != 'number') {
@@ -1002,6 +1126,56 @@ glacier.Matrix44.prototype = {
 		}
 		
 		return this;
+	},
+	
+	ortho: function(left, right, bottom, top, near, far) {
+		var args = 'left,right,bottom,top,near,far'.split(','), error;
+		
+		[ left, right, bottom, top, near, far ].forEach(function(arg, index) {
+			if(typeof arg != 'number') {
+				glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Matrix44.ortho' });
+				error = true;
+			}
+		});
+		
+		// Ensure all arguments are numbers in valid ranges
+		if(error || !(dX = right - left) || !(dY = top - bottom) || !(dZ = far - near)) {
+			return false;
+		}
+		
+		this.assign(new glacier.Matrix44([
+			2.0 / dX, 0.0, 0.0, 0.0,
+			0.0, 2.0 / dY, 0.0, 0.0,
+			0.0, 0.0, -2.0 / dZ, 0.0,
+			-(right + left) / dX, -(top + bottom) / dY, -(near + far) / dZ, 1.0
+		]).multiply(this));
+		
+		return true;
+	},
+	
+	perspective: function(verticalViewAngle, aspectRatio, near, far) {
+		var args = 'verticalViewAngle,aspectRatio,near,far'.split(','), error, height, width, temp = new glacier.Matrix44();
+		
+		[ verticalViewAngle, aspectRatio, near, far ].forEach(function(arg, index) {
+			if(typeof arg != 'number') {
+				glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Matrix44.perspective' });
+				error = true;
+			}
+		});
+		
+		if(error || near <= 0.0 || far <= 0.0) {
+			return false;
+		}
+		
+		height = Math.tan((verticalViewAngle / 360.0) * Math.PI) * near;
+		width = height * aspectRatio;
+		
+		if(temp.frustum(-width, width, -height, height, near, far)) {
+			this.assign(temp.multiply(this));
+			return true;
+		}
+		
+		return false;
 	},
 	
 	rotate: function(radians, xOrVec3, y, z) {
@@ -1140,6 +1314,10 @@ glacier.Vector2 = function(x, y) {
 		get: function() { return new Float32Array([ this.x, this.y ]); },
 		set: function() {}
 	});
+	
+	if(x instanceof glacier.Vector2) {
+		this.assign(x);
+	}
 };
 
 glacier.Vector2.prototype = {
@@ -1157,12 +1335,23 @@ glacier.Vector2.prototype = {
 		return this;
 	},
 	
-	assign: function(x, y) {
-		if(typeof x == 'number' && typeof y == 'number') {
-			this.x = x;
-			this.y = y;
+	assign: function(xOrVec2, y) {
+		if(xOrVec2 instanceof glacier.Vector2) {
+			return this.assign(xOrVec2.x, xOrVec2.y);
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof x + ', ' + typeof y, expected: 'numbers', method: 'Vector2.assign' });
+			var args = [ 'x', 'y' ], error, x = xOrVec2;
+			
+			[ x, y ].forEach(function(arg, index) {
+				if(typeof arg != 'number') {
+					glaicer.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Vector2.assign' });
+					error = true;
+				}
+			});
+			
+			if(!error) {
+				this.x = x;
+				this.y = y;
+			}
 		}
 		
 		return this;
@@ -1259,6 +1448,10 @@ glacier.Vector3 = function(x, y, z) {
 		get: function() { return new Float32Array([ this.x, this.y, this.z ]); },
 		set: function() {}
 	});
+	
+	if(x instanceof glacier.Vector3) {
+		this.assign(x);
+	}
 };
 
 glacier.Vector3.prototype = {
@@ -1283,13 +1476,24 @@ glacier.Vector3.prototype = {
 		return (isNaN(angle) ? 0.0 : angle);
 	},
 	
-	assign: function(x, y, z) {
-		if(typeof x == 'number' && typeof y == 'number' && typeof z == 'number') {
-			this.x = x;
-			this.y = y;
-			this.z = z;
+	assign: function(xOrVec3, y, z) {
+		if(xOrVec3 instanceof glacier.Vector3) {
+			return this.assign(xOrVec3.x, xOrVec3.y, xOrVec3.z);
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof x + ', ' + typeof y + ', ' + typeof z, expected: 'numbers', method: 'Vector3.assign' });
+			var args = [ 'x', 'y', 'z' ], error, x = xOrVec3;
+			
+			[ x, y, z ].forEach(function(arg, index) {
+				if(typeof arg != 'number') {
+					glaicer.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Vector3.assign' });
+					error = true;
+				}
+			});
+			
+			if(!error) {
+				this.x = x;
+				this.y = y;
+				this.z = z;
+			}
 		}
 		
 		return this;
