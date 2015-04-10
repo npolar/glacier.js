@@ -7,10 +7,10 @@ glacier.context.WebGL = function(options) {
 		container = options.container;
 	} else if(typeof options.container == 'string') {
 		if(!(container = document.getElementById(options.container))) {
-			glacier.error('UNDEFINED_ELEMENT', { element: options.container, method: 'WebGL Context constructor' });
+			glacier.error('UNDEFINED_ELEMENT', { element: options.container, method: 'context.WebGL constructor' });
 		}
 	} else {
-		glacier.error('MISSING_PARAMETER', { parameter: 'container', method: 'WebGL Context constructor' });
+		glacier.error('MISSING_PARAMETER', { parameter: 'container', method: 'context.WebGL constructor' });
 	}
 	
 	if(container instanceof HTMLCanvasElement) {
@@ -28,6 +28,37 @@ glacier.context.WebGL = function(options) {
 		Object.defineProperty(this, 'canvas', {
 			value: canvas,
 			writable: false
+		});
+		
+		Object.defineProperties(this, {
+			canvas: {
+				value: canvas,
+				writable: false
+			},
+			width: {
+				get: function() {
+					return this.canvas.width;
+				},
+				set: function(value) {
+					if(typeof value == 'number' && value > 0) {
+						this.resize(value, height);
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.width', value: value, expected: 'positive number' });
+					}
+				}
+			},
+			height: {
+				get: function() {
+					return this.canvas.height;
+				},
+				set: function(value) {
+					if(typeof value == 'number' && value > 0) {
+						this.resize(width, value);
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.height', value: value, expected: 'positive number' });
+					}
+				}
+			}
 		});
 		
 		this.canvas.width	= canvas.offsetWidth;
@@ -75,13 +106,13 @@ glacier.context.WebGL.prototype = {
 		}
 	},
 	resize:	function(width, height) {
-		if(typeof width != 'number') {
-			glacier.error('INVALID_PARAMETER', { parameter: 'width', value: typeof width, expected: 'number', method: 'Context resize' });
+		if(typeof width != 'number' || width <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'width', value: typeof width, expected: 'positive number', method: 'Context.resize' });
 			return;
 		}
 		
-		if(typeof height != 'number') {
-			glacier.error('INVALID_PARAMETER', { parameter: 'height', value: typeof height, expected: 'number', method: 'Context resize' });
+		if(typeof height != 'number' || height <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'height', value: typeof height, expected: 'positive number', method: 'Context.resize' });
 			return;
 		}
 		
@@ -102,12 +133,12 @@ glacier.context.WebGL.prototype = {
 		}
 		
 		if(!(vertShader instanceof WebGLShader)) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'vertShader', value: typeof vertShader, expected: 'WebGLShader', method: 'createProgram' });
+			glacier.error('INVALID_PARAMETER', { parameter: 'vertShader', value: typeof vertShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
 			return null;
 		}
 		
 		if(!(fragShader instanceof WebGLShader)) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'fragShader', value: typeof fragShader, expected: 'WebGLShader', method: 'createProgram' });
+			glacier.error('INVALID_PARAMETER', { parameter: 'fragShader', value: typeof fragShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
 			return null;
 		}
 		
@@ -132,14 +163,14 @@ glacier.context.WebGL.prototype = {
 		var last, shader, valid = [ this.gl.FRAGMENT_SHADER, this.gl.VERTEX_SHADER ];
 		
 		if(typeof source != 'string') {
-			glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'string', method: 'createShader' });
+			glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'string', method: 'context.WebGL.createShader' });
 			return null;
 		}
 		
 		if(valid.indexOf(type) == -1) {
 			last = (valid = valid.join(', ')).lastIndexOf(', ');
 			valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
-			glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: valid, method: 'createShader' });
+			glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: valid, method: 'context.WebGL.createShader' });
 			return null;
 		}
 		
