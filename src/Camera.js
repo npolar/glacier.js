@@ -62,6 +62,40 @@ glacier.Camera = function(verticalViewAngle, aspectRatio) {
 };
 
 glacier.Camera.prototype = {
+	follow: function(target, angle, distance) {
+		if(!(target instanceof glacier.Vector3)) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'target', value: typeof target, expected: 'Vector3', method: 'Camera.follow' });
+			return;
+		}
+		
+		if(!(angle instanceof glacier.Vector2)) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'angle', value: typeof angle, expected: 'Vector2', method: 'Camera.follow' });
+			return;
+		}
+		
+		if(typeof distance != 'number' || distance <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'distance', value: typeof distance, expected: 'positive number', method: 'Camera.follow' });
+			return;
+		}
+		
+		var ver = {}, hor = {}, dir = new glacier.Vector2(glacier.limitAngle(angle.x), glacier.limitAngle(angle.y));
+		
+		ver.hyp = distance;
+		ver.opp = ver.hyp * Math.sin(glacier.degToRad(dir.y));
+		ver.adj = ver.hyp * Math.cos(glacier.degToRad(dir.y));
+		
+		hor.hyp = ver.adj;
+		hor.opp = hor.hyp * Math.sin(glacier.degToRad(dir.x));
+		hor.adj = hor.hyp * Math.cos(glacier.degToRad(dir.x));
+		
+		this.target	= target;
+		
+		this.position.x = target.x - hor.opp;
+		this.position.y = target.y + ver.opp;
+		this.position.z = target.z - hor.adj;
+		
+		this.update();
+	},
 	update: function() {
 		var z, x, y = new glacier.Vector3(0, 1, 0);
 		
