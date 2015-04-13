@@ -93,7 +93,7 @@ glacier.Sphere.prototype = {
 				x = cosPhi * sinTheta;
 				y = cosTheta;
 				z = sinPhi * sinTheta;
-				u = (lng / longitudes);
+				u = 1 - (lng / longitudes);
 				v = (lat / latitudes);
 				
 				this.vertices.push(radius * x, radius * y, radius * z);
