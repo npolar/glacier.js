@@ -585,7 +585,7 @@ glacier.limitAngle = function(angle, max, min) {
 		return null;
 	}
 	
-	if(typeof (min = (min === undefined ? 360.0 : min)) != 'number') {
+	if(typeof (min = (min === undefined ? 0.0 : min)) != 'number') {
 		glacier.error('INVALID_PARAMETER', { parameter: 'min', value: typeof min, expected: 'number', method: 'limitAngle' });
 		return null;
 	}
