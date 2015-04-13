@@ -5,7 +5,7 @@ var glacier = {};
 	
 	Object.defineProperties(glacier, {
 		VERSION: {
-			value: '0.0.3',
+			value: '0.0.4',
 			writable: false
 		},
 		language: {
@@ -185,6 +185,40 @@ glacier.Camera = function(verticalViewAngle, aspectRatio) {
 };
 
 glacier.Camera.prototype = {
+	follow: function(target, angle, distance) {
+		if(!(target instanceof glacier.Vector3)) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'target', value: typeof target, expected: 'Vector3', method: 'Camera.follow' });
+			return;
+		}
+		
+		if(!(angle instanceof glacier.Vector2)) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'angle', value: typeof angle, expected: 'Vector2', method: 'Camera.follow' });
+			return;
+		}
+		
+		if(typeof distance != 'number' || distance <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'distance', value: typeof distance, expected: 'positive number', method: 'Camera.follow' });
+			return;
+		}
+		
+		var ver = {}, hor = {}, dir = new glacier.Vector2(glacier.limitAngle(angle.x), glacier.limitAngle(angle.y));
+		
+		ver.hyp = distance;
+		ver.opp = ver.hyp * Math.sin(glacier.degToRad(dir.y));
+		ver.adj = ver.hyp * Math.cos(glacier.degToRad(dir.y));
+		
+		hor.hyp = ver.adj;
+		hor.opp = hor.hyp * Math.sin(glacier.degToRad(dir.x));
+		hor.adj = hor.hyp * Math.cos(glacier.degToRad(dir.x));
+		
+		this.target	= target;
+		
+		this.position.x = target.x - hor.opp;
+		this.position.y = target.y + ver.opp;
+		this.position.z = target.z - hor.adj;
+		
+		this.update();
+	},
 	update: function() {
 		var z, x, y = new glacier.Vector3(0, 1, 0);
 		
@@ -413,6 +447,47 @@ glacier.Context = function(type, options) {
 	return null;
 };
 
+glacier.Mesh = function() {
+	var arrays = {};
+	
+	'indices,normals,uvCoords,vertices'.split(',').forEach(function(property, index) {
+		arrays[index] = [];
+		
+		Object.defineProperty(this, property, {
+			get: function() {
+				return arrays[index];
+			},
+			set: function(value) {
+				if(glacier.isArray(value)) {
+					arrays[index] = [];
+					
+					for(var i = 0; i < value.length; ++i) {
+						arrays[index].push(value[i]);
+					}
+				} else {
+					glacier.error('INVALID_ASSIGNMENT', { variable: 'Mesh.' + property, value: typeof value, expected: 'array' });
+				}
+			}
+		});
+	}, this);
+};
+
+glacier.Mesh.prototype = {
+	generateSphere: function(latitudes, longitudes, radius) {
+		var sphere = new glacier.Sphere(latitudes, longitudes, radius);
+		
+		if(sphere.radius) {
+			this.indices = sphere.indices;
+			this.normals = sphere.normals;
+			this.uvCoords = sphere.uvCoords;
+			this.vertices = sphere.vertices;
+			return true;
+		}
+		
+		return false;
+	}
+};
+
 glacier.i18n = function(code, language) {
 	language = (language || glacier.language);
 	
@@ -497,6 +572,52 @@ glacier.radToDeg = function(radians) {
 	
 	glacier.error('INVALID_PARAMETER', { parameter: 'radians', value: typeof radians, expected: 'number', method: 'radToDeg' });
 	return radians;	
+};
+
+glacier.limitAngle = function(angle, max, min) {
+	if(typeof angle != 'number') {
+		glacier.error('INVALID_PARAMETER', { parameter: 'angle', value: typeof angle, expected: 'number', method: 'limitAngle' });
+		return null;
+	}
+	
+	if(typeof (max = (max === undefined ? 360.0 : max)) != 'number') {
+		glacier.error('INVALID_PARAMETER', { parameter: 'max', value: typeof max, expected: 'number', method: 'limitAngle' });
+		return null;
+	}
+	
+	if(typeof (min = (min === undefined ? 360.0 : min)) != 'number') {
+		glacier.error('INVALID_PARAMETER', { parameter: 'min', value: typeof min, expected: 'number', method: 'limitAngle' });
+		return null;
+	}
+	
+	if(max < min) {
+		max = min + (min = max, 0);
+	}
+	
+	while(angle > max) angle -= max;
+	while(angle < min) angle += max;
+	
+	return angle;
+};
+
+glacier.clamp = function(value, min, max) {
+	var args = [ 'value', 'min', 'max' ], error;
+	[ value, min, max ].forEach(function(arg, index) {
+		if(typeof arg != 'number') {
+			glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'clamp' });
+			error = true;
+		}
+	});
+	
+	if(!error) {
+		if(max < min) {
+			max = min + (min = max, 0);
+		}
+		
+		return Math.max(min, Math.min(max, value));
+	}
+
+	return null;
 };
 
 glacier.context.WebGL = function(options) {
@@ -688,79 +809,123 @@ glacier.context.WebGL.prototype = {
 	}
 };
 
-glacier.Mesh = function(params) {
-};
-
-glacier.Mesh.prototype = {
-	vertices:	[],
-	indices:	[],
-	normals:	[],
-	uvCoords:	[]
-};
-
 glacier.Sphere = function(latitudes, longitudes, radius) {
-	// Validate latitudes parameter
-	if(typeof latitudes != 'number' || latitudes < 3) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'latitudes', value: latitudes, expected: 'number (>= 3)', method: 'Sphere constructor' });
-		return;
-	} else latitudes = Math.abs(latitudes);
+	radius = (typeof radius == 'number' && radius >= 0.0 ? radius : 0.0);
 	
-	// Validate longitudes parameter
-	if(typeof longitudes != 'number' || longitudes < 3) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'longitudes', value: longitudes, expected: 'number (>= 3)', method: 'Sphere constructor' });
-		return;
-	} else longitudes = Math.abs(longitudes);
-	
-	// Validate radius parameter
-	if(typeof radius != 'number' || radius <= 0.0) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'radius', value: radius, expected: 'number (> 0.0)', method: 'Sphere constructor' });
-		return;
-	}
-	
-	var vertices = [], indices = [], normals = [], uvCoords = [], lat, lng;
-	
-	for(lat = 0; lat <= this.latitudes; ++lat) {
-		var theta = lat * (Math.PI / this.latitudes);
-		var sinTheta = Math.sin(theta);
-		var cosTheta = Math.cos(theta);
-		
-		for(lng = 0; lng <= this.longitudes; ++lng) {
-			var phi = lng * 2 * (Math.PI / this.latitudes);
-			var sinPhi = Math.sin(phi);
-			var cosPhi = Math.cos(phi);
-			
-			var x = cosPhi * sinTheta;
-			var y = cosTheta;
-			var z = sinPhi * sinTheta;
-			var u = 1 - (lng / this.longitudes);
-			var v = (lat / this.latitudes);
-			
-			this.vertices.push(this.radius * x, this.radius * y, this.radius * z);
-			this.normals.push(x, y, z);
-			this.uvCoords.push(u, v);
+	Object.defineProperties(this, {
+		indices: {
+			value: [],
+			writable: false
+		},
+		normals: {
+			value: [],
+			writable: false
+		},
+		radius: {
+			get: function() {
+				return radius;
+			},
+			set: function(value) {
+				if(typeof value == 'number' && value >= 0.0) {
+					
+					if(value > 0.0) {
+						this.vertices.forEach(function(vertex) {
+							vertex = (vertex / radius) * value;
+						});
+					} if(this.indices.length) {
+						this.destroy();
+					}
+					
+					radius = value;
+				} else {
+					glacier.error('INVALID_ASSIGNMENT', { variable: 'Sphere.radius', value: value, expected: 'positive number' });
+				}
+			}
+		},
+		uvCoords: {
+			value: [],
+			writable: false
+		},
+		vertices: {
+			value: [],
+			writable: false
 		}
-	}
-	
-	for(lat = 0; lat < this.latitudes; ++lat) {
-		for(lng = 0; lng < this.longitudes; ++lng) {
-			var i = (lat * (this.longitudes + 1)) + lng;
-			var j = i + this.longitudes + 1;
-			
-			this.indices.push(i, j, i + 1);
-			this.indices.push(j, j + 1, i + 1);
-		}
-	}
-	
-	glacier.Mesh.call(this, {
-		vertices: vertices,
-		indices: incides,
-		normals: normals,
-		uvCoords: uvCoords
 	});
+	
+	if(latitudes && longitudes) {
+		this.generate(latitudes, longitudes, radius || 1.0);
+	}
 };
 
-glacier.Sphere.prototype = Object.create(glacier.Mesh.prototype);
-glacier.Sphere.prototype.constructor = glacier.Sphere;
+glacier.Sphere.prototype = {
+	destroy: function() {
+		this.indices.length = 0;
+		this.normals.length = 0;
+		this.uvCoords.length = 0;
+		this.vertices.length = 0;
+		this.radius = 0.0;
+	},
+	generate: function(latitudes, longitudes, radius) {
+		// Validate latitudes parameter
+		if(typeof latitudes != 'number' || latitudes < 3) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'latitudes', value: latitudes, expected: 'number (>= 3)', method: 'Sphere.generate' });
+			return false;
+		} else latitudes = Math.round(Math.abs(latitudes));
+		
+		// Validate longitudes parameter
+		if(typeof longitudes != 'number' || longitudes < 3) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'longitudes', value: longitudes, expected: 'number (>= 3)', method: 'Sphere.generate' });
+			return false;
+		} else longitudes = Math.round(Math.abs(longitudes));
+		
+		// Validate radius parameter
+		if(radius === undefined) {
+			radius = 1.0;
+		} else if(typeof radius != 'number' || radius <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'radius', value: radius, expected: 'number (> 0.0)', method: 'Sphere.generate' });
+			return false;
+		}
+		
+		this.destroy();
+		this.radius = radius;
+		
+		var lat, lng, theta, sinTheta, cosTheta, phi, sinPhi, cosPhi, x, y, z, u, v;
+		
+		for(lat = 0; lat <= latitudes; ++lat) {
+			theta = lat * Math.PI / latitudes;
+			sinTheta = Math.sin(theta);
+			cosTheta = Math.cos(theta);
+			
+			for(lng = 0; lng <= longitudes; ++lng) {
+				phi = lng * 2 * Math.PI / longitudes;
+				sinPhi = Math.sin(phi);
+				cosPhi = Math.cos(phi);
+				
+				x = cosPhi * sinTheta;
+				y = cosTheta;
+				z = sinPhi * sinTheta;
+				u = 1 - (lng / longitudes);
+				v = (lat / latitudes);
+				
+				this.vertices.push(radius * x, radius * y, radius * z);
+				this.normals.push(x, y, z);
+				this.uvCoords.push(u, v);
+			}
+		}
+		
+		for(lat = 0; lat < latitudes; ++lat) {
+			for(lng = 0; lng < longitudes; ++lng) {
+				x = (lat * (longitudes + 1)) + lng;
+				y = x + longitudes + 1;
+				
+				this.indices.push(x, y, x + 1);
+				this.indices.push(y, y + 1, x + 1);
+			}
+		}
+		
+		return true;
+	}
+};
 
 glacier.i18n.en = {
 	CONTEXT_ERROR:		'{context} context error: {error}',
