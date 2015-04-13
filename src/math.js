@@ -57,3 +57,49 @@ glacier.radToDeg = function(radians) {
 	glacier.error('INVALID_PARAMETER', { parameter: 'radians', value: typeof radians, expected: 'number', method: 'radToDeg' });
 	return radians;	
 };
+
+glacier.limitAngle = function(angle, max, min) {
+	if(typeof angle != 'number') {
+		glacier.error('INVALID_PARAMETER', { parameter: 'angle', value: typeof angle, expected: 'number', method: 'limitAngle' });
+		return null;
+	}
+	
+	if(typeof (max = (max === undefined ? 360.0 : max)) != 'number') {
+		glacier.error('INVALID_PARAMETER', { parameter: 'max', value: typeof max, expected: 'number', method: 'limitAngle' });
+		return null;
+	}
+	
+	if(typeof (min = (min === undefined ? 360.0 : min)) != 'number') {
+		glacier.error('INVALID_PARAMETER', { parameter: 'min', value: typeof min, expected: 'number', method: 'limitAngle' });
+		return null;
+	}
+	
+	if(max < min) {
+		max = min + (min = max, 0);
+	}
+	
+	while(value > max) value -= max;
+	while(value < min) value -= max;
+	
+	return value;
+};
+
+glacier.clamp = function(value, min, max) {
+	var args = [ 'value', 'min', 'max' ], error;
+	[ value, min, max ].forEach(function(arg, index) {
+		if(typeof arg != 'number') {
+			glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'clamp' });
+			error = true;
+		}
+	});
+	
+	if(!error) {
+		if(max < min) {
+			max = min + (min = max, 0);
+		}
+		
+		return Math.max(min, Math.min(max, value));
+	}
+
+	return null;
+};
