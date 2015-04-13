@@ -35,4 +35,42 @@ describe('math', function() {
 			assert.equal(false, glacier.compare(a, z));
 		});
 	});
+	
+	describe('degToRad', function() {
+		it('number (degrees)', function() {
+			var deg = 90.0, rad = Math.PI / 2;
+			
+			assert.equal(true, glacier.compare(rad, glacier.degToRad(deg)));
+		});
+	});
+	
+	describe('radToDeg', function() {
+		it('number (radians)', function() {
+			var rad = Math.PI / 2, deg = 90.0;
+			
+			assert.equal(true, glacier.compare(deg, glacier.radToDeg(rad)));
+		});
+	});
+	
+	describe('limitAngle', function() {
+		it('number', function() {
+			assert.equal(true, glacier.compare(180.0, glacier.limitAngle(540.0)));
+			assert.equal(true, glacier.compare(270.0, glacier.limitAngle(-90.0)));
+			
+			assert.equal(true, glacier.compare(270.0, glacier.limitAngle(-90.0)));
+			assert.equal(true, glacier.compare(270.0, glacier.limitAngle(-90.0)));
+			
+			assert.equal(true, glacier.compare(15.0, glacier.limitAngle(195.0, 60.0)));
+			assert.equal(true, glacier.compare(45.0, glacier.limitAngle(-15.0, 60.0)));
+		});
+	});
+	
+	describe('clamp', function() {
+		it('number', function() {
+			assert.equal(true, glacier.compare(300.0, glacier.clamp(400.0, 100.0, 300.0)));
+			assert.equal(true, glacier.compare(200.0, glacier.clamp(200.0, 100.0, 300.0)));
+			assert.equal(true, glacier.compare(100.0, glacier.clamp(-50.0, 100.0, 300.0)));
+			assert.equal(true, glacier.compare(-50.0, glacier.clamp(100.0, -50.0, -80.0)));
+		});
+	});
 });
