@@ -91,8 +91,16 @@ var glacier = {};
 		glacier.log(message, 'warning', params);
 	};
 	
-	glacier.isArray = function(value) {
-		return (value instanceof Array || value instanceof Float32Array);
+	glacier.isArray = function(value, prototypeCheck) {
+		var arr;
+		
+		[ Array, Int8Array, Int16Array, Int32Array, Uint8Array, Uint8ClampedArray, Uint16Array, Uint32Array, Float32Array, Float64Array ].forEach(function(type) {
+			if(!arr && value instanceof type) {
+				arr = true;
+			}
+		});
+		
+		return !!arr;
 	};
 	
 	glacier.extend = function(target, source, sourceN) {
