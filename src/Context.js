@@ -1,7 +1,8 @@
 glacier.context = {}; // Map of contexts
 
+// Context base-class and factory
 glacier.Context = function(type, options) {
-	var c, contextTypes = [];
+	var c, contextTypes = [], context;
 	
 	if(typeof type == 'string') {
 		for(c in glacier.context) {
@@ -12,7 +13,14 @@ glacier.Context = function(type, options) {
 						options = { container: options };
 					}
 					
-					return new glacier.context[c](options);
+					ctor = new glacier.context[c](options);
+					
+					Object.defineProperty(ctor, 'type', {
+						value: c,
+						writable: false
+					});
+					
+					return ctor;
 				}
 				
 				contextTypes.push(c);
@@ -26,4 +34,13 @@ glacier.Context = function(type, options) {
 	glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: contextTypes, method: 'Context constructor' });
 	
 	return null;
+};
+
+glacier.Context.prototype = {
+	clear: function() {
+		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'clear', child: this.type, parent: 'Context' });
+	},
+	resize: function() {
+		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'resize', child: this.type, parent: 'Context' });
+	}
 };
