@@ -99,6 +99,96 @@ glacier.context.WebGL = function(options) {
 	}
 };
 
+/*
+glacier.extend(glacier.Context, glacier.context.WebGL, {
+	clear: function() {
+		if(this.gl) {
+			this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+		}
+	},
+	resize:	function(width, height) {
+		if(typeof width != 'number' || width <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'width', value: typeof width, expected: 'positive number', method: 'Context.resize' });
+			return;
+		}
+		
+		if(typeof height != 'number' || height <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'height', value: typeof height, expected: 'positive number', method: 'Context.resize' });
+			return;
+		}
+		
+		if(this.canvas) {
+			this.canvas.width	= width;
+			this.canvas.height	= height;
+		}
+		
+		if(this.gl) {
+			this.gl.viewport(0, 0, width, height);
+		}
+	},
+	
+	createProgram: function(vertShader, fragShader) {
+		if(!this.gl) {
+			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: 'uninitialized context' });
+			return null;
+		}
+		
+		if(!(vertShader instanceof WebGLShader)) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'vertShader', value: typeof vertShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
+			return null;
+		}
+		
+		if(!(fragShader instanceof WebGLShader)) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'fragShader', value: typeof fragShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
+			return null;
+		}
+		
+		var program = this.gl.createProgram();
+		this.gl.attachShader(program, vertShader);
+		this.gl.attachShader(program, fragShader);
+		this.gl.linkProgram(program);
+		
+		if(!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
+			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: this.gl.getProgramInfoLog(program) });
+			return null;
+		}
+		
+		return program;
+	},
+	createShader: function(type, source) {
+		if(!this.gl) {
+			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: 'uninitialized context' });
+			return null;
+		}
+		
+		var last, shader, valid = [ this.gl.FRAGMENT_SHADER, this.gl.VERTEX_SHADER ];
+		
+		if(typeof source != 'string') {
+			glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'string', method: 'context.WebGL.createShader' });
+			return null;
+		}
+		
+		if(valid.indexOf(type) == -1) {
+			last = (valid = valid.join(', ')).lastIndexOf(', ');
+			valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
+			glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: valid, method: 'context.WebGL.createShader' });
+			return null;
+		}
+		
+		shader = this.gl.createShader(type);
+		this.gl.shaderSource(shader, source);
+		this.gl.compileShader(shader);
+		
+		if(!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: this.gl.getShaderInfoLog(shader) });
+			return null;
+		}
+		
+		return shader;
+	}
+});
+*/
+
 glacier.context.WebGL.prototype = {
 	clear: function() {
 		if(this.gl) {
