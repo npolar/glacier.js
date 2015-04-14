@@ -95,6 +95,44 @@ var glacier = {};
 		return (value instanceof Array || value instanceof Float32Array);
 	};
 	
+	glacier.extend = function(target, source, sourceN) {
+		var args = arguments, n, o, obj, p, proto, protos = [];
+		
+		for(n = 1; n < args.length; ++n) {
+			if(args[n] instanceof Object) {
+				if(!(p = protos.push(function(){}) - 1)) {
+					protos[p].prototype = Object.create(args[n].prototype || args[n]);
+				} else {
+					protos[p].prototype = Object.create(protos[p - 1].prototype);
+					if((obj = args[n].prototype)) {
+						for(o in obj) {
+							if(obj.hasOwnProperty(o)) {
+								protos[p].prototype[o] = obj[o];
+							}
+						}
+					} else if((obj = args[n])) {
+						for(o in obj) {
+							if(obj.hasOwnProperty(o)) {
+								protos[p].prototype[o] = obj[o];
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		obj = target.prototype;
+		target.prototype = Object.create(protos.pop().prototype);
+		
+		for(n in obj) {
+			if(obj.hasOwnProperty(n)) {
+				target.prototype[n] = obj[n];
+			}
+		}
+		
+		return target;
+	};
+	
 	glacier.union = function(members, value) {
 		members = (members instanceof Array ? members : [ members ]);
 		
