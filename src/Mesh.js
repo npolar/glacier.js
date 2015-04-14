@@ -1,26 +1,4 @@
-glacier.Mesh = function() {
-	var arrays = {};
-	
-	'indices,normals,uvCoords,vertices'.split(',').forEach(function(property, index) {
-		arrays[index] = [];
-		
-		Object.defineProperty(this, property, {
-			get: function() {
-				return arrays[index];
-			},
-			set: function(value) {
-				if(glacier.isArray(value)) {
-					arrays[index] = [];
-					
-					for(var i = 0; i < value.length; ++i) {
-						arrays[index].push(value[i]);
-					}
-				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'Mesh.' + property, value: typeof value, expected: 'array' });
-				}
-			}
-		});
-	}, this);
+glacier.Mesh = function(context) {
 };
 
 glacier.Mesh.prototype = {
@@ -38,3 +16,22 @@ glacier.Mesh.prototype = {
 		return false;
 	}
 };
+
+'indices,normals,uvCoords,vertices'.split(',').forEach(function(property, index) {
+	var a, array = [];
+	
+	Object.defineProperty(glacier.Mesh.prototype, property, {
+		get: function() {
+			return array;
+		},
+		set: function(value) {
+			if(glacier.isArray(value)) {
+				for(a = 0; a < value.length; ++a) {
+					array.push(value[a]);
+				}
+			} else {
+				glacier.error('INVALID_ASSIGNMENT', { variable: 'Mesh.' + property, value: typeof value, expected: 'array' });
+			}
+		}
+	});
+});
