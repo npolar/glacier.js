@@ -91,8 +91,16 @@ var glacier = {};
 		glacier.log(message, 'warning', params);
 	};
 	
-	glacier.isArray = function(value) {
-		return (value instanceof Array || value instanceof Float32Array);
+	glacier.isArray = function(value, prototypeCheck) {
+		var arr;
+		
+		[ Array, Int8Array, Int16Array, Int32Array, Uint8Array, Uint8ClampedArray, Uint16Array, Uint32Array, Float32Array, Float64Array ].forEach(function(type) {
+			if(!arr && value instanceof type) {
+				arr = true;
+			}
+		});
+		
+		return !!arr;
 	};
 	
 	glacier.extend = function(target, source, sourceN) {
@@ -502,29 +510,7 @@ glacier.Context.prototype = {
 	}
 };
 
-glacier.Mesh = function() {
-	var arrays = {};
-	
-	'indices,normals,uvCoords,vertices'.split(',').forEach(function(property, index) {
-		arrays[index] = [];
-		
-		Object.defineProperty(this, property, {
-			get: function() {
-				return arrays[index];
-			},
-			set: function(value) {
-				if(glacier.isArray(value)) {
-					arrays[index] = [];
-					
-					for(var i = 0; i < value.length; ++i) {
-						arrays[index].push(value[i]);
-					}
-				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'Mesh.' + property, value: typeof value, expected: 'array' });
-				}
-			}
-		});
-	}, this);
+glacier.Mesh = function(context) {
 };
 
 glacier.Mesh.prototype = {
@@ -542,6 +528,25 @@ glacier.Mesh.prototype = {
 		return false;
 	}
 };
+
+'indices,normals,uvCoords,vertices'.split(',').forEach(function(property, index) {
+	var a, array = [];
+	
+	Object.defineProperty(glacier.Mesh.prototype, property, {
+		get: function() {
+			return array;
+		},
+		set: function(value) {
+			if(glacier.isArray(value)) {
+				for(a = 0; a < value.length; ++a) {
+					array.push(value[a]);
+				}
+			} else {
+				glacier.error('INVALID_ASSIGNMENT', { variable: 'Mesh.' + property, value: typeof value, expected: 'array' });
+			}
+		}
+	});
+});
 
 glacier.i18n = function(code, language) {
 	language = (language || glacier.language);
@@ -675,6 +680,198 @@ glacier.clamp = function(value, min, max) {
 	return null;
 };
 
+glacier.context.WebGL = function(options) {
+	options = (typeof options == 'object' ? options : {});
+	
+	var background, canvas, container, context;
+	
+	if(options.container instanceof HTMLElement) {
+		container = options.container;
+	} else if(typeof options.container == 'string') {
+		if(!(container = document.getElementById(options.container))) {
+			glacier.error('UNDEFINED_ELEMENT', { element: options.container, method: 'context.WebGL constructor' });
+		}
+	} else {
+		glacier.error('MISSING_PARAMETER', { parameter: 'container', method: 'context.WebGL constructor' });
+	}
+	
+	if(container instanceof HTMLCanvasElement) {
+		canvas = container;
+	} else if(container instanceof HTMLElement) {
+		canvas = document.createElement('CANVAS');
+		
+		canvas.style.position = 'relative;';
+		canvas.style.width = '100%';
+		canvas.style.height = '100%';
+		container.appendChild(canvas);
+	}
+	
+	if(canvas instanceof HTMLCanvasElement) {
+		Object.defineProperty(this, 'canvas', {
+			value: canvas,
+			writable: false
+		});
+		
+		Object.defineProperties(this, {
+			canvas: {
+				value: canvas,
+				writable: false
+			},
+			width: {
+				get: function() {
+					return this.canvas.width;
+				},
+				set: function(value) {
+					if(typeof value == 'number' && value > 0) {
+						this.resize(value, height);
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.width', value: value, expected: 'positive number' });
+					}
+				}
+			},
+			height: {
+				get: function() {
+					return this.canvas.height;
+				},
+				set: function(value) {
+					if(typeof value == 'number' && value > 0) {
+						this.resize(width, value);
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.height', value: value, expected: 'positive number' });
+					}
+				}
+			}
+		});
+		
+		this.canvas.width	= canvas.offsetWidth;
+		this.canvas.height	= canvas.offsetHeight;
+		
+		window.addEventListener('resize', function(event) {
+			if(canvas.width != canvas.offsetWidth || canvas.height != canvas.offsetHeight) {
+				this.resize(canvas.offsetWidth, canvas.offsetHeight);
+			}
+		}.bind(this));
+		
+		if((context = this.canvas.getContext('webgl'))) {
+			Object.defineProperty(this, 'gl', {
+				value: context,
+				writable: false
+			});
+		}
+		
+		if(this.gl) {
+			Object.defineProperty(this, 'background', {
+				get: function() {
+					return background;
+				},
+				set: function(color) {
+					if(color instanceof glacier.Color) {
+						background = color;
+						this.gl.clearColor(color.r / 255, color.g / 255, color.b / 255, color.a);
+						this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.background', value: typeof color, expected: 'Color' });
+					}
+				}
+			});
+			
+			this.background = glacier.color.BLACK;
+		}
+		
+		this.clear();
+	}
+};
+
+glacier.extend(glacier.context.WebGL, glacier.Context, {
+	// Overloaded members
+	clear: function() {
+		if(this.gl) {
+			this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+		}
+	},
+	resize:	function(width, height) {
+		if(typeof width != 'number' || width <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'width', value: typeof width, expected: 'positive number', method: 'Context.resize' });
+			return;
+		}
+		
+		if(typeof height != 'number' || height <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'height', value: typeof height, expected: 'positive number', method: 'Context.resize' });
+			return;
+		}
+		
+		if(this.canvas) {
+			this.canvas.width	= width;
+			this.canvas.height	= height;
+		}
+		
+		if(this.gl) {
+			this.gl.viewport(0, 0, width, height);
+		}
+	},
+	
+	// Unique members
+	createProgram: function(vertShader, fragShader) {
+		if(!this.gl) {
+			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: 'uninitialized context' });
+			return null;
+		}
+		
+		if(!(vertShader instanceof WebGLShader)) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'vertShader', value: typeof vertShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
+			return null;
+		}
+		
+		if(!(fragShader instanceof WebGLShader)) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'fragShader', value: typeof fragShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
+			return null;
+		}
+		
+		var program = this.gl.createProgram();
+		this.gl.attachShader(program, vertShader);
+		this.gl.attachShader(program, fragShader);
+		this.gl.linkProgram(program);
+		
+		if(!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
+			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: this.gl.getProgramInfoLog(program) });
+			return null;
+		}
+		
+		return program;
+	},
+	createShader: function(type, source) {
+		if(!this.gl) {
+			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: 'uninitialized context' });
+			return null;
+		}
+		
+		var last, shader, valid = [ this.gl.FRAGMENT_SHADER, this.gl.VERTEX_SHADER ];
+		
+		if(typeof source != 'string') {
+			glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'string', method: 'context.WebGL.createShader' });
+			return null;
+		}
+		
+		if(valid.indexOf(type) == -1) {
+			last = (valid = valid.join(', ')).lastIndexOf(', ');
+			valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
+			glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: valid, method: 'context.WebGL.createShader' });
+			return null;
+		}
+		
+		shader = this.gl.createShader(type);
+		this.gl.shaderSource(shader, source);
+		this.gl.compileShader(shader);
+		
+		if(!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: this.gl.getShaderInfoLog(shader) });
+			return null;
+		}
+		
+		return shader;
+	}
+});
+
 glacier.Sphere = function(latitudes, longitudes, radius) {
 	radius = (typeof radius == 'number' && radius >= 0.0 ? radius : 0.0);
 	
@@ -790,315 +987,6 @@ glacier.Sphere.prototype = {
 		}
 		
 		return true;
-	}
-};
-
-glacier.i18n.en = {
-	CONTEXT_ERROR:			'{context} context error: {error}',
-	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
-	INVALID_ASSIGNMENT:		'Invalid assigment of {variable}: {value} (expected {expected})',
-	INVALID_PARAMETER:		'Invalid parameter {parameter}: {value} (expected {expected}) in {method}',
-	MATRIX_NO_INVERSE:		'Inverse matrix does not exist: {matrix} in {method}',
-	MISSING_IMPLEMENTATION:	'Missing implementation: {implementation} in {child} extension of {parent}',
-	MISSING_PARAMETER:		'Missing mandatory parameter: {parameter} in {method}',
-	UNDEFINED_ELEMENT:		'Undefined element ID: {element} in {method}',
-	UNDEFINED_ERROR:		'Undefined error: {error}',
-	UNDEFINED_WARNING:		'Undefined warning: {warning}',
-	UNDEFINED_LANGUAGE:		'Undefined language: {language} (using {fallback} as fallback)',
-	UNKNOWN_PROPERTY:		'Unrecognized property: {property} in {object}'
-};
-
-glacier.i18n.nb = {
-	CONTEXT_ERROR:			'{context} kontekstfeil: {error}',
-	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
-	INVALID_ASSIGNMENT:		'Ugyldig tildeing av {variable}: {value} (forventet {expected})',
-	INVALID_PARAMETER:		'Ugyldig parameter {parameter}: {value} (forventet {expected}) i {method}',
-	MATRIX_NO_INVERSE:		'Invers matrise eksisterer ikke: {matrix} i {method}',
-	MISSING_IMPLEMENTATION:	'Mangler implementasjon: {implementation} i {child} utvidelse av {parent}',
-	MISSING_PARAMETER:		'Mangler obligatorisk parameter: {parameter} i {method}',
-	UNDEFINED_ELEMENT:		'Udefinert element ID: {element} i {method}',
-	UNDEFINED_ERROR:		'Udefinert feilmelding: {error}',
-	UNDEFINED_WARNING:		'Udefinert advarsel: {warning}',
-	UNDEFINED_LANGUAGE:		'Udefinert språkkode: {language} (bruker {fallback})',
-	UNKNOWN_PROPERTY:		'Ukjent egenskap: {property} i {object}'
-};
-
-glacier.context.WebGL = function(options) {
-	options = (typeof options == 'object' ? options : {});
-	
-	var background, canvas, container, context;
-	
-	if(options.container instanceof HTMLElement) {
-		container = options.container;
-	} else if(typeof options.container == 'string') {
-		if(!(container = document.getElementById(options.container))) {
-			glacier.error('UNDEFINED_ELEMENT', { element: options.container, method: 'context.WebGL constructor' });
-		}
-	} else {
-		glacier.error('MISSING_PARAMETER', { parameter: 'container', method: 'context.WebGL constructor' });
-	}
-	
-	if(container instanceof HTMLCanvasElement) {
-		canvas = container;
-	} else if(container instanceof HTMLElement) {
-		canvas = document.createElement('CANVAS');
-		
-		canvas.style.position = 'relative;';
-		canvas.style.width = '100%';
-		canvas.style.height = '100%';
-		container.appendChild(canvas);
-	}
-	
-	if(canvas instanceof HTMLCanvasElement) {
-		Object.defineProperty(this, 'canvas', {
-			value: canvas,
-			writable: false
-		});
-		
-		Object.defineProperties(this, {
-			canvas: {
-				value: canvas,
-				writable: false
-			},
-			width: {
-				get: function() {
-					return this.canvas.width;
-				},
-				set: function(value) {
-					if(typeof value == 'number' && value > 0) {
-						this.resize(value, height);
-					} else {
-						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.width', value: value, expected: 'positive number' });
-					}
-				}
-			},
-			height: {
-				get: function() {
-					return this.canvas.height;
-				},
-				set: function(value) {
-					if(typeof value == 'number' && value > 0) {
-						this.resize(width, value);
-					} else {
-						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.height', value: value, expected: 'positive number' });
-					}
-				}
-			}
-		});
-		
-		this.canvas.width	= canvas.offsetWidth;
-		this.canvas.height	= canvas.offsetHeight;
-		
-		window.addEventListener('resize', function(event) {
-			if(canvas.width != canvas.offsetWidth || canvas.height != canvas.offsetHeight) {
-				this.resize(canvas.offsetWidth, canvas.offsetHeight);
-			}
-		}.bind(this));
-		
-		if((context = this.canvas.getContext('webgl'))) {
-			Object.defineProperty(this, 'gl', {
-				value: context,
-				writable: false
-			});
-		}
-		
-		if(this.gl) {
-			Object.defineProperty(this, 'background', {
-				get: function() {
-					return background;
-				},
-				set: function(color) {
-					if(color instanceof glacier.Color) {
-						background = color;
-						this.gl.clearColor(color.r / 255, color.g / 255, color.b / 255, color.a);
-					} else {
-						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.background', value: typeof color, expected: 'Color' });
-					}
-				}
-			});
-			
-			this.background = glacier.color.BLACK;
-		}
-		
-		this.clear();
-	}
-};
-
-/*
-glacier.extend(glacier.Context, glacier.context.WebGL, {
-	clear: function() {
-		if(this.gl) {
-			this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-		}
-	},
-	resize:	function(width, height) {
-		if(typeof width != 'number' || width <= 0.0) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'width', value: typeof width, expected: 'positive number', method: 'Context.resize' });
-			return;
-		}
-		
-		if(typeof height != 'number' || height <= 0.0) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'height', value: typeof height, expected: 'positive number', method: 'Context.resize' });
-			return;
-		}
-		
-		if(this.canvas) {
-			this.canvas.width	= width;
-			this.canvas.height	= height;
-		}
-		
-		if(this.gl) {
-			this.gl.viewport(0, 0, width, height);
-		}
-	},
-	
-	createProgram: function(vertShader, fragShader) {
-		if(!this.gl) {
-			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: 'uninitialized context' });
-			return null;
-		}
-		
-		if(!(vertShader instanceof WebGLShader)) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'vertShader', value: typeof vertShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
-			return null;
-		}
-		
-		if(!(fragShader instanceof WebGLShader)) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'fragShader', value: typeof fragShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
-			return null;
-		}
-		
-		var program = this.gl.createProgram();
-		this.gl.attachShader(program, vertShader);
-		this.gl.attachShader(program, fragShader);
-		this.gl.linkProgram(program);
-		
-		if(!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
-			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: this.gl.getProgramInfoLog(program) });
-			return null;
-		}
-		
-		return program;
-	},
-	createShader: function(type, source) {
-		if(!this.gl) {
-			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: 'uninitialized context' });
-			return null;
-		}
-		
-		var last, shader, valid = [ this.gl.FRAGMENT_SHADER, this.gl.VERTEX_SHADER ];
-		
-		if(typeof source != 'string') {
-			glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'string', method: 'context.WebGL.createShader' });
-			return null;
-		}
-		
-		if(valid.indexOf(type) == -1) {
-			last = (valid = valid.join(', ')).lastIndexOf(', ');
-			valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
-			glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: valid, method: 'context.WebGL.createShader' });
-			return null;
-		}
-		
-		shader = this.gl.createShader(type);
-		this.gl.shaderSource(shader, source);
-		this.gl.compileShader(shader);
-		
-		if(!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: this.gl.getShaderInfoLog(shader) });
-			return null;
-		}
-		
-		return shader;
-	}
-});
-*/
-
-glacier.context.WebGL.prototype = {
-	clear: function() {
-		if(this.gl) {
-			this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-		}
-	},
-	resize:	function(width, height) {
-		if(typeof width != 'number' || width <= 0.0) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'width', value: typeof width, expected: 'positive number', method: 'Context.resize' });
-			return;
-		}
-		
-		if(typeof height != 'number' || height <= 0.0) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'height', value: typeof height, expected: 'positive number', method: 'Context.resize' });
-			return;
-		}
-		
-		if(this.canvas) {
-			this.canvas.width	= width;
-			this.canvas.height	= height;
-		}
-		
-		if(this.gl) {
-			this.gl.viewport(0, 0, width, height);
-		}
-	},
-	
-	createProgram: function(vertShader, fragShader) {
-		if(!this.gl) {
-			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: 'uninitialized context' });
-			return null;
-		}
-		
-		if(!(vertShader instanceof WebGLShader)) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'vertShader', value: typeof vertShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
-			return null;
-		}
-		
-		if(!(fragShader instanceof WebGLShader)) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'fragShader', value: typeof fragShader, expected: 'WebGLShader', method: 'context.WebGL.createProgram' });
-			return null;
-		}
-		
-		var program = this.gl.createProgram();
-		this.gl.attachShader(program, vertShader);
-		this.gl.attachShader(program, fragShader);
-		this.gl.linkProgram(program);
-		
-		if(!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
-			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: this.gl.getProgramInfoLog(program) });
-			return null;
-		}
-		
-		return program;
-	},
-	createShader: function(type, source) {
-		if(!this.gl) {
-			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: 'uninitialized context' });
-			return null;
-		}
-		
-		var last, shader, valid = [ this.gl.FRAGMENT_SHADER, this.gl.VERTEX_SHADER ];
-		
-		if(typeof source != 'string') {
-			glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'string', method: 'context.WebGL.createShader' });
-			return null;
-		}
-		
-		if(valid.indexOf(type) == -1) {
-			last = (valid = valid.join(', ')).lastIndexOf(', ');
-			valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
-			glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: valid, method: 'context.WebGL.createShader' });
-			return null;
-		}
-		
-		shader = this.gl.createShader(type);
-		this.gl.shaderSource(shader, source);
-		this.gl.compileShader(shader);
-		
-		if(!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-			glacier.error('CONTEXT_ERROR', { context: 'WebGL', error: this.gl.getShaderInfoLog(shader) });
-			return null;
-		}
-		
-		return shader;
 	}
 };
 
@@ -1948,4 +1836,34 @@ glacier.Vector3.prototype = {
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
 	}
+};
+
+glacier.i18n.en = {
+	CONTEXT_ERROR:			'{context} context error: {error}',
+	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
+	INVALID_ASSIGNMENT:		'Invalid assigment of {variable}: {value} (expected {expected})',
+	INVALID_PARAMETER:		'Invalid parameter {parameter}: {value} (expected {expected}) in {method}',
+	MATRIX_NO_INVERSE:		'Inverse matrix does not exist: {matrix} in {method}',
+	MISSING_IMPLEMENTATION:	'Missing implementation: {implementation} in {child} extension of {parent}',
+	MISSING_PARAMETER:		'Missing mandatory parameter: {parameter} in {method}',
+	UNDEFINED_ELEMENT:		'Undefined element ID: {element} in {method}',
+	UNDEFINED_ERROR:		'Undefined error: {error}',
+	UNDEFINED_WARNING:		'Undefined warning: {warning}',
+	UNDEFINED_LANGUAGE:		'Undefined language: {language} (using {fallback} as fallback)',
+	UNKNOWN_PROPERTY:		'Unrecognized property: {property} in {object}'
+};
+
+glacier.i18n.nb = {
+	CONTEXT_ERROR:			'{context} kontekstfeil: {error}',
+	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
+	INVALID_ASSIGNMENT:		'Ugyldig tildeing av {variable}: {value} (forventet {expected})',
+	INVALID_PARAMETER:		'Ugyldig parameter {parameter}: {value} (forventet {expected}) i {method}',
+	MATRIX_NO_INVERSE:		'Invers matrise eksisterer ikke: {matrix} i {method}',
+	MISSING_IMPLEMENTATION:	'Mangler implementasjon: {implementation} i {child} utvidelse av {parent}',
+	MISSING_PARAMETER:		'Mangler obligatorisk parameter: {parameter} i {method}',
+	UNDEFINED_ELEMENT:		'Udefinert element ID: {element} i {method}',
+	UNDEFINED_ERROR:		'Udefinert feilmelding: {error}',
+	UNDEFINED_WARNING:		'Udefinert advarsel: {warning}',
+	UNDEFINED_LANGUAGE:		'Udefinert språkkode: {language} (bruker {fallback})',
+	UNKNOWN_PROPERTY:		'Ukjent egenskap: {property} i {object}'
 };
