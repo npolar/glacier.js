@@ -25,15 +25,9 @@ glacier.context.WebGL = function(options) {
 	}
 	
 	if(canvas instanceof HTMLCanvasElement) {
-		Object.defineProperty(this, 'canvas', {
-			value: canvas,
-			writable: false
-		});
-		
 		Object.defineProperties(this, {
-			canvas: {
-				value: canvas,
-				writable: false
+			canvas:	{
+				value: canvas
 			},
 			width: {
 				get: function() {
@@ -71,10 +65,7 @@ glacier.context.WebGL = function(options) {
 		}.bind(this));
 		
 		if((context = this.canvas.getContext('webgl'))) {
-			Object.defineProperty(this, 'gl', {
-				value: context,
-				writable: false
-			});
+			Object.defineProperty(this, 'gl', { value: context });
 		}
 		
 		if(this.gl) {
@@ -105,6 +96,15 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 	clear: function() {
 		if(this.gl) {
 			this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+		}
+	},
+	draw: function(drawable) {
+		if(drawable.contextData instanceof glacier.context.WebGL.Drawable) {
+			drawable.contextData.draw();
+		} else if(drawable instanceof glacier.Mesh) {
+			if(this.initMesh(drawable)) {
+				this.draw(drawable);
+			}
 		}
 	},
 	resize:	function(width, height) {
@@ -187,5 +187,168 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		}
 		
 		return shader;
+	},
+	initMesh: function(mesh) {
+		if(mesh instanceof glacier.Mesh) {
+			var drawable = new glacier.context.WebGL.Drawable(this, this.gl.TRIANGLES);
+			
+			if(drawable.init(mesh.vertices, mesh.indices, mesh.normals, mesh.texCoords, mesh.colors)) {
+				mesh.contextData = drawable;
+				return true;
+			}
+			
+			return false;
+		}
+		
+		glacier.error('INVALID_PARAMETER', { parameter: 'mesh', value: typeof mesh, expected: 'Mesh', method: 'context.WebGL.initMesh' });
+		return false;
 	}
 });
+
+glacier.context.WebGL.Drawable = function(context, drawMode) {
+	if(!(context instanceof glacier.context.WebGL)) {
+		glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'context.WebGL', method: 'glacier.context.WebGL.Drawable constructor' });
+		return;
+	}
+	
+	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl._LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ];
+	
+	if(modes.indexOf(drawMode) == -1) {
+		glacier.error('INVALID_PARAMETER', { parameter: 'drawMode', value: drawMode, expected: 'valid WebGL draw mode', method: 'glacier.context.WebGL.Drawable constructor' });
+		return;
+	}
+	
+	Object.defineProperties(this, {
+		attributes:	{ value: {} },
+		buffers:	{ value: {} },
+		context:	{ value: context },
+		drawMode:	{ value: drawMode },
+		elements:	{ value: 0, configurable: true },
+		uniforms:	{ value: {} }
+	});
+};
+
+glacier.context.WebGL.Drawable.prototype = {
+	draw: function() {
+		if(this.context) {
+			/* TODO: Per Drawable Programs
+			if(this.program) {
+				gl.useProgram(this.program);
+			}
+			*/
+			
+			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl;
+				
+			if(this.buffers.color && this.attributes.color_rgba >= 0) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.color);
+				gl.enableVertexAttribArray(this.attributes.color_rgba);
+				gl.vertexAttribPointer(this.attributes.color_rgba, 4, gl.FLOAT, false, 0, 0);
+			}
+			
+			if(this.buffers.texCoord && this.attributes.texture_uv >= 0) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.texCoord);
+				gl.enableVertexAttribArray(this.attributes.texture_uv);
+				gl.vertexAttribPointer(this.attributes.texture_uv, 2, gl.FLOAT, false, 0, 0);
+			}
+			
+			if(this.buffers.normal && this.attributes.normal_xyz >= 0) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.normal);
+				gl.enableVertexAttribArray(this.attributes.normal_xyz);
+				gl.vertexAttribPointer(this.attributes.normal_xyz, 3, gl.FLOAT, false, 0, 0);
+			}
+			
+			if(this.buffers.vertex && this.attributes.vertex_xyz >= 0) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
+				gl.enableVertexAttribArray(this.attributes.vertex_xyz);
+				gl.vertexAttribPointer(this.attributes.vertex_xyz, 3, gl.FLOAT, false, 0, 0);
+			}
+				
+			/* TODO: Per Drawable Textures
+			if(this.texture) {
+				gl.activeTexture(gl.TEXTURE0);
+				gl.bindTexture(gl.TEXTURE_2D, this.texture);
+				gl.uniform1i(uniforms.tex_sampler, 0);
+			}
+			*/
+			
+			if(this.buffers.index) {
+				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
+			} else {
+				// TODO: gl.drawArrays(this.drawMode, 0, this.elements);
+			}
+		}
+	},
+	init: function(vertices, indices, normals, texCoords, colors) {
+		if(this.context) {
+			var gl = this.context.gl, array;
+			
+			if(glacier.isArray(vertices, glacier.Vector3)) {
+				array = [];
+				vertices.forEach(function(vertex) { array.push(vertex.x, vertex.y, vertex.z); });
+				
+				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.vertex = gl.createBuffer()));
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
+				this.attributes.vertex_xyz = gl.getAttribLocation(prog, 'vertex_xyz');
+			} else if(vertices) {
+				glacier.error('INVALID_PARAMETER', { parameter: 'vertices', value: typeof vertices, expected: 'Vector3 array', method: 'context.WebGL.Drawable.init' });
+				return false;
+			}
+			
+			if(glacier.isArray(indices, 'number')) {
+				array = [];
+				indices.forEach(function(index) { array.push(index); });
+				
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, (this.buffers.index = gl.createBuffer()));
+				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(array), gl.STATIC_DRAW);
+				Object.defineProperty(this, 'elements', { value: array.length });
+			} else if(indices) {
+				glacier.error('INVALID_PARAMETER', { parameter: 'indices', value: typeof indices, expected: 'number array', method: 'context.WebGL.Drawable.init' });
+				return false;
+			}
+			
+			if(glacier.isArray(normals, glacier.Vector3)) {
+				array = [];
+				normals.forEach(function(normal) { array.push(normal.x, normal.y, normal.z); });
+				
+				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.normal = gl.createBuffer()));
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
+				this.attributes.normal_xyz = gl.getAttribLocation(prog, 'normal_xyz');
+			} else if(normals) {
+				glacier.error('INVALID_PARAMETER', { parameter: 'normals', value: typeof normals, expected: 'Vector3 array', method: 'context.WebGL.Drawable.init' });
+				return false;
+			}
+			
+			if(glacier.isArray(texCoords, glacier.Vector2)) {
+				array = [];
+				texCoords.forEach(function(texCoord) { array.push(texCoord.u, texCoord.v); });
+				
+				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.texCoord = gl.createBuffer()));
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
+				this.attributes.texture_uv = gl.getAttribLocation(prog, 'texture_uv');
+			} else if(normals) {
+				glacier.error('INVALID_PARAMETER', { parameter: 'texCoords', value: typeof texCoords, expected: 'Vector2 array', method: 'context.WebGL.Drawable.init' });
+				return false;
+			}
+			
+			if(glacier.isArray(colors, glacier.Color)) {
+				array = [];
+				colors.forEach(function(color) { array.push(color.r, color.g, color.b, color.a); });
+				
+				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.color = gl.createBuffer()));
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
+				this.attributes.color_rgba = gl.getAttribLocation(prog, 'color_rgba');
+			} else if(normals) {
+				glacier.error('INVALID_PARAMETER', { parameter: 'colors', value: typeof colors, expected: 'Color array', method: 'context.WebGL.Drawable.init' });
+				return false;
+			}
+			return true;
+		}
+		
+		return false;
+	},
+	free: function() {
+		if(this.context) {
+			// TODO: Free buffers
+		}
+	}
+};
