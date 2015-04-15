@@ -1,59 +1,47 @@
-glacier.Sphere = function(latitudes, longitudes, radius) {
+glacier.Sphere = function(latitudes, longitudes, radius, context) {
+	// Call super constructor
+	glacier.Mesh.call(this, context);
+	
+	// Ensure that radius is a positive number
 	radius = (typeof radius == 'number' && radius >= 0.0 ? radius : 0.0);
 	
-	Object.defineProperties(this, {
-		indices: {
-			value: [],
-			writable: false
+	// Define getter and setter for radius member
+	Object.defineProperty(this, 'radius', {
+		get: function() {
+			return radius;
 		},
-		normals: {
-			value: [],
-			writable: false
-		},
-		radius: {
-			get: function() {
-				return radius;
-			},
-			set: function(value) {
-				if(typeof value == 'number' && value >= 0.0) {
-					
-					if(value > 0.0) {
-						this.vertices.forEach(function(vertex) {
-							vertex = (vertex / radius) * value;
-						});
-					} if(this.indices.length) {
-						this.destroy();
-					}
-					
-					radius = value;
-				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'Sphere.radius', value: value, expected: 'positive number' });
+		set: function(value) {
+			if(typeof value == 'number' && value >= 0.0) {
+				
+				if(value > 0.0) {
+					this.vertices.forEach(function(vertex) {
+						vertex = (vertex / radius) * value;
+					});
+				} else if(this.indices.length) {
+					this.destroy();
 				}
+				
+				radius = value;
+			} else {
+				glacier.error('INVALID_ASSIGNMENT', { variable: 'Sphere.radius', value: value, expected: 'positive number' });
 			}
-		},
-		uvCoords: {
-			value: [],
-			writable: false
-		},
-		vertices: {
-			value: [],
-			writable: false
 		}
 	});
 	
+	// Generate sphere is latitudes and longitudes are set
 	if(latitudes && longitudes) {
 		this.generate(latitudes, longitudes, radius || 1.0);
 	}
 };
 
-glacier.Sphere.prototype = {
+glacier.extend(glacier.Sphere, glacier.Mesh, {
+	// Overloaded members
 	destroy: function() {
-		this.indices.length = 0;
-		this.normals.length = 0;
-		this.uvCoords.length = 0;
-		this.vertices.length = 0;
+		glacier.Mesh.prototype.destroy.call(this);
 		this.radius = 0.0;
 	},
+	
+	// Unique members
 	generate: function(latitudes, longitudes, radius) {
 		// Validate latitudes parameter
 		if(typeof latitudes != 'number' || latitudes < 3) {
@@ -96,9 +84,9 @@ glacier.Sphere.prototype = {
 				u = 1 - (lng / longitudes);
 				v = (lat / latitudes);
 				
-				this.vertices.push(radius * x, radius * y, radius * z);
-				this.normals.push(x, y, z);
-				this.uvCoords.push(u, v);
+				this.vertices.push(new glacier.Vector3(radius * x, radius * y, radius * z));
+				this.normals.push(new glacier.Vector3(x, y, z));
+				this.texCoords.push(new glacier.Vector2(u, v));
 			}
 		}
 		
@@ -114,4 +102,4 @@ glacier.Sphere.prototype = {
 		
 		return true;
 	}
-};
+});
