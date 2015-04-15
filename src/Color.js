@@ -137,6 +137,36 @@ glacier.Color = function(params) {
 };
 
 glacier.Color.prototype = {
+	assign: function(rOrColor, g, b, a) {
+		if(rOrColor instanceof glacier.Color) {
+			this.rgba = rOrColor.rgba;
+		} else {
+			var args = [ 'r', 'g', 'b' ], error, r = rOrColor;
+			
+			[ r, g, b ].forEach(function(arg, index) {
+				if(typeof arg != 'number' || arg < 0 || arg > 255) {
+					glacier.error('INVALID_PARAMETER', { parameter: args[index], value: arg, expected: 'number between 0 and 255', method: 'Color.assign' });
+					error = true;
+				}
+			});
+			
+			if(a || a === 0.0) {
+				if(typeof a != 'number' || a < 0.0 || a > 1.0) {
+					glacier.error('INVALID_PARAMETER', { parameter: 'a', value: a, expected: 'number between 0.0 and 1.0', method: 'Color.assign' });
+					error = true;
+				}
+			}
+			
+			if(!error) {
+				this.r = r;
+				this.g = g;
+				this.b = b;
+				this.a = (a || a === 0.0 ? a : 1.0);
+			}
+		}
+		
+		return this;
+	},
 	toArray: function() {
 		return new Float32Array([ this.r / 255.0, this.g / 255.0, this.b / 255.0, this.a ]);
 	},
