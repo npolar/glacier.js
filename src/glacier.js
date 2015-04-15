@@ -5,7 +5,7 @@ var glacier = {};
 	
 	Object.defineProperties(glacier, {
 		VERSION: {
-			value: '0.0.4',
+			value: '0.0.5',
 			writable: false
 		},
 		language: {

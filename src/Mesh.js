@@ -37,7 +37,6 @@ glacier.Mesh.prototype = {
 		this.texCoords.length	= 0;
 		this.vertices.length	= 0;
 	},
-	
 	draw: function() {
 		if(context) {
 			context.draw(this);
