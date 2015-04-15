@@ -40,6 +40,9 @@ glacier.Context.prototype = {
 	clear: function() {
 		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'clear', child: this.type, parent: 'Context' });
 	},
+	draw: function(mesh) {
+		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'draw', child: this.type, paremt: 'Context' });
+	},
 	resize: function() {
 		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'resize', child: this.type, parent: 'Context' });
 	}
