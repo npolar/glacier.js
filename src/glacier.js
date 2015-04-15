@@ -91,14 +91,31 @@ var glacier = {};
 		glacier.log(message, 'warning', params);
 	};
 	
-	glacier.isArray = function(value, prototypeCheck) {
-		var arr;
+	glacier.isArray = function(object, type) {
+		var a, arr;
 		
 		[ Array, Int8Array, Int16Array, Int32Array, Uint8Array, Uint8ClampedArray, Uint16Array, Uint32Array, Float32Array, Float64Array ].forEach(function(type) {
-			if(!arr && value instanceof type) {
+			if(!arr && object instanceof type) {
 				arr = true;
 			}
 		});
+		
+		// Optional content type check
+		if(arr && type) {
+			if(typeof type == 'function') {
+				for(a = 0; a < object.length; ++a) {
+					if(!(object[a] instanceof type)) {
+						return false;
+					}
+				}
+			} else if(typeof type == 'string') {
+				for(a = 0; a < object.length; ++a) {
+					if(typeof object[a] != type) {
+						return false;
+					}
+				}
+			}
+		}
 		
 		return !!arr;
 	};
