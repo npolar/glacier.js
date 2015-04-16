@@ -21,5 +21,6 @@ glacier.Drawable = function Drawable() {
 };
 
 glacier.Drawable.prototype = {
+	context: null,
 	contextData: null
 };
