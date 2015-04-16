@@ -19,3 +19,7 @@ glacier.Drawable = function Drawable() {
 		});
 	}, this);
 };
+
+glacier.Drawable.prototype = {
+	contextData: null
+};
