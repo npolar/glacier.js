@@ -1,12 +1,7 @@
-glacier.Vector3 = function(x, y, z) {
+glacier.Vector3 = function Vector3(x, y, z) {
 	glacier.union.call(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
 	glacier.union.call(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
 	glacier.union.call(this, ['z', 'w'], (typeof z == 'number' ? z : 0.0));
-	
-	Object.defineProperty(this, 'array', {
-		get: function() { return new Float32Array([ this.x, this.y, this.z ]); },
-		set: function() {}
-	});
 	
 	if(x instanceof glacier.Vector3) {
 		this.assign(x);
@@ -194,5 +189,9 @@ glacier.Vector3.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
+	},
+	
+	get array() {
+		return new Float32Array([ this.x, this.y, this.z ]);
 	}
 };

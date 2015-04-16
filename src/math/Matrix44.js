@@ -1,7 +1,6 @@
-glacier.Matrix44 = function(value) {
+glacier.Matrix44 = function Matrix44(value) {
 	Object.defineProperty(this, 'array', {
 		value: new Float32Array([ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]),
-		writable: false
 	});
 	
 	if(value) {
