@@ -24,6 +24,12 @@ glacier.Drawable.prototype = {
 	context: null,
 	contextData: null,
 	
+	free: function() {
+		this.context		= null;
+		this.contextData	= null;
+		this.matrix			= new glacier.Matrix44();
+		this.visible		= true;
+	},
 	draw: function() {
 		if(context instanceof glacier.Context) {
 			context.draw(this);
