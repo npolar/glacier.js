@@ -1,4 +1,4 @@
-glacier.context.WebGL = function(options) {
+glacier.context.WebGL = function WebGLContext(options) {
 	options = (typeof options == 'object' ? options : {});
 	
 	var background, canvas, container, context;
@@ -99,13 +99,26 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		}
 	},
 	draw: function(drawable) {
-		if(drawable.contextData instanceof glacier.context.WebGL.Drawable) {
-			drawable.contextData.draw();
-		} else if(drawable instanceof glacier.Mesh) {
-			if(this.initMesh(drawable)) {
-				this.draw(drawable);
+		if(drawable instanceof glacier.Drawable) {
+			if(drawable.contextData instanceof glacier.context.WebGL.Drawable) {
+				drawable.contextData.draw();
 			}
 		}
+	},
+	init: function(drawable) {
+		if(drawable instanceof glacier.Mesh) {
+			var data = new glacier.context.WebGL.Drawable(this, this.gl.TRIANGLES);
+			
+			if(data.init(drawable.vertices, drawable.indices, drawable.normals, drawable.texCoords, drawable.colors)) {
+				drawable.contextData = data;
+				return true;
+			}
+		}
+		
+		// TODO: initialization of other drawables
+		
+		glacier.error('INVALID_PARAMETER', { parameter: 'drawable', value: typeof drawable, expected: 'Mesh', method: 'context.WebGL.init' });
+		return false;
 	},
 	resize:	function(width, height) {
 		if(typeof width != 'number' || width <= 0.0) {
@@ -187,21 +200,6 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		}
 		
 		return shader;
-	},
-	initMesh: function(mesh) {
-		if(mesh instanceof glacier.Mesh) {
-			var drawable = new glacier.context.WebGL.Drawable(this, this.gl.TRIANGLES);
-			
-			if(drawable.init(mesh.vertices, mesh.indices, mesh.normals, mesh.texCoords, mesh.colors)) {
-				mesh.contextData = drawable;
-				return true;
-			}
-			
-			return false;
-		}
-		
-		glacier.error('INVALID_PARAMETER', { parameter: 'mesh', value: typeof mesh, expected: 'Mesh', method: 'context.WebGL.initMesh' });
-		return false;
 	}
 });
 
