@@ -1,7 +1,7 @@
 glacier.context = {}; // Map of contexts
 
 // Context base-class and factory
-glacier.Context = function(type, options) {
+glacier.Context = function Context(type, options) {
 	var c, contextTypes = [], context;
 	
 	if(typeof type == 'string') {
@@ -40,10 +40,13 @@ glacier.Context.prototype = {
 	clear: function() {
 		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'clear', child: this.type, parent: 'Context' });
 	},
-	draw: function(mesh) {
+	draw: function(drawable) {
 		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'draw', child: this.type, paremt: 'Context' });
 	},
-	resize: function() {
+	init: function(drawable) {
+		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'init', child: this.type, paremt: 'Context' });
+	},
+	resize: function(width, height) {
 		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'resize', child: this.type, parent: 'Context' });
 	}
 };
