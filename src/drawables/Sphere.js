@@ -1,6 +1,6 @@
-glacier.Sphere = function(latitudes, longitudes, radius, context) {
+glacier.Sphere = function(latitudes, longitudes, radius) {
 	// Call super constructor
-	glacier.Mesh.call(this, context);
+	glacier.Mesh.call(this);
 	
 	// Ensure that radius is a positive number
 	radius = (typeof radius == 'number' && radius >= 0.0 ? radius : 0.0);
@@ -36,8 +36,8 @@ glacier.Sphere = function(latitudes, longitudes, radius, context) {
 
 glacier.extend(glacier.Sphere, glacier.Mesh, {
 	// Overloaded members
-	destroy: function() {
-		glacier.Mesh.prototype.destroy.call(this);
+	free: function() {
+		glacier.Mesh.prototype.free.call(this);
 		this.radius = 0.0;
 	},
 	
