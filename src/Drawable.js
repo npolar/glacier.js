@@ -22,5 +22,23 @@ glacier.Drawable = function Drawable() {
 
 glacier.Drawable.prototype = {
 	context: null,
-	contextData: null
+	contextData: null,
+	
+	draw: function() {
+		if(context instanceof glacier.Context) {
+			context.draw(this);
+		}
+	},
+	init: function(context) {
+		if(context instanceof glacier.Context) {
+			if(context.init(this)) {
+				this.context = context;
+				return true;
+			}
+		} else {
+			glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'Context', method: 'Drawable.init' });
+		}
+		
+		return false;
+	}
 };
