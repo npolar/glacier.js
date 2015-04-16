@@ -5,8 +5,7 @@ var glacier = {};
 	
 	Object.defineProperties(glacier, {
 		VERSION: {
-			value: '0.0.5',
-			writable: false
+			value: '0.0.5'
 		},
 		language: {
 			get: function() { return lang; },
@@ -158,14 +157,20 @@ var glacier = {};
 		return target;
 	};
 	
-	glacier.union = function(members, value) {
+	glacier.union = function(members, value, ctor) {
 		members = (members instanceof Array ? members : [ members ]);
 		
 		function addProperty(index) {
 			Object.defineProperty(this, members[index], {
 				get: function() { return value; },
 				set: function(val) {
-					if(typeof val == typeof value) {
+					if(typeof ctor == 'function') {
+						if(val instanceof ctor) {
+							value = val;
+						} else {
+							glacier.error('INVALID_ASSIGNMENT', { variable: members[index], value: typeof val, expected: ctor.name });
+						}
+					} else if(typeof val == typeof value) {
 						value = val;
 					} else {
 						glacier.error('INVALID_ASSIGNMENT', { variable: members[index], value: typeof val, expected: typeof value });
