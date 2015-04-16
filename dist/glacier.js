@@ -5,8 +5,7 @@ var glacier = {};
 	
 	Object.defineProperties(glacier, {
 		VERSION: {
-			value: '0.0.5',
-			writable: false
+			value: '0.0.6'
 		},
 		language: {
 			get: function() { return lang; },
@@ -158,14 +157,20 @@ var glacier = {};
 		return target;
 	};
 	
-	glacier.union = function(members, value) {
+	glacier.union = function(members, value, ctor) {
 		members = (members instanceof Array ? members : [ members ]);
 		
 		function addProperty(index) {
 			Object.defineProperty(this, members[index], {
 				get: function() { return value; },
 				set: function(val) {
-					if(typeof val == typeof value) {
+					if(typeof ctor == 'function') {
+						if(val instanceof ctor) {
+							value = val;
+						} else {
+							glacier.error('INVALID_ASSIGNMENT', { variable: members[index], value: typeof val, expected: ctor.name });
+						}
+					} else if(typeof val == typeof value) {
 						value = val;
 					} else {
 						glacier.error('INVALID_ASSIGNMENT', { variable: members[index], value: typeof val, expected: typeof value });
@@ -184,7 +189,7 @@ var glacier = {};
 	}
 })(glacier);
 
-glacier.Camera = function(verticalViewAngle, aspectRatio) {
+glacier.Camera = function Camera(verticalViewAngle, aspectRatio) {
 	var args = [ 'verticalViewAngle', 'aspectRatio' ], error;
 	
 	Object.defineProperties(this, {
@@ -311,7 +316,7 @@ glacier.Camera.prototype = {
 	}
 };
 
-glacier.Color = function(params) {
+glacier.Color = function Color(params) {
 	var a, args, vals, value = 0x000000FF; // rgba
 	
 	Object.defineProperties(this, {
@@ -513,7 +518,7 @@ Object.defineProperties(glacier.color, {
 glacier.context = {}; // Map of contexts
 
 // Context base-class and factory
-glacier.Context = function(type, options) {
+glacier.Context = function Context(type, options) {
 	var c, contextTypes = [], context;
 	
 	if(typeof type == 'string') {
@@ -552,37 +557,74 @@ glacier.Context.prototype = {
 	clear: function() {
 		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'clear', child: this.type, parent: 'Context' });
 	},
-	draw: function(mesh) {
+	draw: function(drawable) {
 		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'draw', child: this.type, paremt: 'Context' });
 	},
-	resize: function() {
+	init: function(drawable) {
+		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'init', child: this.type, paremt: 'Context' });
+	},
+	resize: function(width, height) {
 		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'resize', child: this.type, parent: 'Context' });
 	}
 };
 
-glacier.Mesh = function(context) {
-	if(context && !(context instanceof glacier.Context)) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'Context', method: 'Mesh constructor' });
-	} else {
-		context = (context instanceof glacier.Context ? context : null);
-	}
+glacier.Drawable = function Drawable() {
+	// Define matrix and visible members
+	glacier.union.call(this, 'matrix', new glacier.Matrix44(), glacier.Matrix44);
+	glacier.union.call(this, 'visible', true);
 	
-	Object.defineProperties(this, {
-		context: {
+	// Define getters/setters for x, y and z members
+	[ 'x', 'y', 'z' ].forEach(function(property, index) {
+		Object.defineProperty(this, property, {
 			get: function() {
-				return context;
+				return this.matrix.array[12 + index];
 			},
 			set: function(value) {
-				if(value instanceof glacier.Context) {
-					context = value;
-				} else if(context) {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'Mesh.context', value: typeof value, expected: 'Context' });
+				if(typeof value == 'number') {
+					this.matrix.array[12 + index] = value;
 				} else {
-					context = null;
+					glacier.error('INVALID_ASSIGNMENT', { variable: 'Drawable.' + property, value: typeof value, expected: 'number' });
 				}
 			}
-		},
+		});
+	}, this);
+};
+
+glacier.Drawable.prototype = {
+	context: null,
+	contextData: null,
+	
+	free: function() {
+		this.context		= null;
+		this.contextData	= null;
+		this.matrix			= new glacier.Matrix44();
+		this.visible		= true;
+	},
+	draw: function() {
+		if(context instanceof glacier.Context) {
+			context.draw(this);
+		}
+	},
+	init: function(context) {
+		if(context instanceof glacier.Context) {
+			if(context.init(this)) {
+				this.context = context;
+				return true;
+			}
+		} else {
+			glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'Context', method: 'Drawable.init' });
+		}
 		
+		return false;
+	}
+};
+
+glacier.Mesh = function Mesh() {
+	// Call super constructor
+	glacier.Drawable.call(this);
+
+	// Define buffer arrays
+	Object.defineProperties(this, {
 		colors: 	{ value: new glacier.TypedArray('Color', glacier.Color) },
 		indices:	{ value: new glacier.TypedArray('number') },
 		normals:	{ value: new glacier.TypedArray('Vector3', glacier.Vector3) },
@@ -591,22 +633,79 @@ glacier.Mesh = function(context) {
 	});
 };
 
-glacier.Mesh.prototype = {
-	destroy: function() {
+// glacier.Mesh extends glacier.Drawable
+glacier.extend(glacier.Mesh, glacier.Drawable, {
+	free: function() {
+		glacier.Drawable.prototype.free.call(this);
+		
 		this.colors.length		= 0;
 		this.indices.length	 	= 0;
 		this.normals.length		= 0;
 		this.texCoords.length	= 0;
 		this.vertices.length	= 0;
-	},
-	draw: function() {
-		if(context) {
-			context.draw(this);
+	}
+});
+
+glacier.Texture = function Texture(source) {
+	var image = null;
+	
+	Object.defineProperties(this, {
+		image: {
+			get: function() {
+				return image;
+			},
+			set: function(value) {
+				if(value instanceof Image || value === null) {
+					image = value;
+				} else {
+					glacier.error('INVALID_ASSIGNMENT', { variable: 'Texture.image', value: typeof value, expected: 'Image or null' });
+				}
+			}
 		}
+	});
+	
+	if(typeof source == 'string') {
+		this.load(source);
+	} else if(source) {
+		glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'Image', method: 'Texture constructor' });
 	}
 };
 
-glacier.TypedArray = function(type, ctor) {
+glacier.Texture.prototype = {
+	load: function(source, callback) {
+		if(typeof source != 'string') {
+			glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'string', method: 'Texture.load' });
+			return;
+		}
+		
+		if(callback && typeof callback != 'function') {
+			glacier.error('INVALID_PARAMETER', { parameter: 'callback', value: typeof callback, expected: 'function', method: 'Texture.load' });
+			return;
+		}
+		
+		var self = this;
+		
+		(self.image = new Image()).onload = function() {
+			if(self.image.width && self.image.height) {
+				if(typeof callback == 'function') {
+					callback(self, self.image);
+				}
+			}
+			
+			self.image = null;
+		};
+		
+		this.image.src = source;
+	},
+	get height() {
+		return (this.image ? this.image.height : 0);
+	},
+	get width() {
+		return (this.image ? this.image.width : 0);
+	}
+};
+
+glacier.TypedArray = function TypedArray(type, ctor) {
 	if(typeof type == 'string') {
 		if(ctor && typeof ctor != 'function') {
 			glacier.error('INVALID_PARAMETER', { parameter: 'ctor', value: typeof ctor, expected: 'function', method: 'TypedArray constructor' });
@@ -794,7 +893,7 @@ glacier.clamp = function(value, min, max) {
 	return null;
 };
 
-glacier.context.WebGL = function(options) {
+glacier.context.WebGL = function WebGLContext(options) {
 	options = (typeof options == 'object' ? options : {});
 	
 	var background, canvas, container, context;
@@ -895,13 +994,26 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		}
 	},
 	draw: function(drawable) {
-		if(drawable.contextData instanceof glacier.context.WebGL.Drawable) {
-			drawable.contextData.draw();
-		} else if(drawable instanceof glacier.Mesh) {
-			if(this.initMesh(drawable)) {
-				this.draw(drawable);
+		if(drawable instanceof glacier.Drawable) {
+			if(drawable.contextData instanceof glacier.context.WebGL.Drawable) {
+				drawable.contextData.draw();
 			}
 		}
+	},
+	init: function(drawable) {
+		if(drawable instanceof glacier.Mesh) {
+			var data = new glacier.context.WebGL.Drawable(this, this.gl.TRIANGLES);
+			
+			if(data.init(drawable.vertices, drawable.indices, drawable.normals, drawable.texCoords, drawable.colors)) {
+				drawable.contextData = data;
+				return true;
+			}
+		}
+		
+		// TODO: initialization of other drawables
+		
+		glacier.error('INVALID_PARAMETER', { parameter: 'drawable', value: typeof drawable, expected: 'Mesh', method: 'context.WebGL.init' });
+		return false;
 	},
 	resize:	function(width, height) {
 		if(typeof width != 'number' || width <= 0.0) {
@@ -983,21 +1095,6 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		}
 		
 		return shader;
-	},
-	initMesh: function(mesh) {
-		if(mesh instanceof glacier.Mesh) {
-			var drawable = new glacier.context.WebGL.Drawable(this, this.gl.TRIANGLES);
-			
-			if(drawable.init(mesh.vertices, mesh.indices, mesh.normals, mesh.texCoords, mesh.colors)) {
-				mesh.contextData = drawable;
-				return true;
-			}
-			
-			return false;
-		}
-		
-		glacier.error('INVALID_PARAMETER', { parameter: 'mesh', value: typeof mesh, expected: 'Mesh', method: 'context.WebGL.initMesh' });
-		return false;
 	}
 });
 
@@ -1149,9 +1246,9 @@ glacier.context.WebGL.Drawable.prototype = {
 	}
 };
 
-glacier.Sphere = function(latitudes, longitudes, radius, context) {
+glacier.Sphere = function Sphere(latitudes, longitudes, radius) {
 	// Call super constructor
-	glacier.Mesh.call(this, context);
+	glacier.Mesh.call(this);
 	
 	// Ensure that radius is a positive number
 	radius = (typeof radius == 'number' && radius >= 0.0 ? radius : 0.0);
@@ -1169,7 +1266,7 @@ glacier.Sphere = function(latitudes, longitudes, radius, context) {
 						vertex = (vertex / radius) * value;
 					});
 				} else if(this.indices.length) {
-					this.destroy();
+					this.free();
 				}
 				
 				radius = value;
@@ -1187,8 +1284,8 @@ glacier.Sphere = function(latitudes, longitudes, radius, context) {
 
 glacier.extend(glacier.Sphere, glacier.Mesh, {
 	// Overloaded members
-	destroy: function() {
-		glacier.Mesh.prototype.destroy.call(this);
+	free: function() {
+		glacier.Mesh.prototype.free.call(this);
 		this.radius = 0.0;
 	},
 	
@@ -1214,7 +1311,7 @@ glacier.extend(glacier.Sphere, glacier.Mesh, {
 			return false;
 		}
 		
-		this.destroy();
+		this.free();
 		this.radius = radius;
 		
 		var lat, lng, theta, sinTheta, cosTheta, phi, sinPhi, cosPhi, x, y, z, u, v;
@@ -1285,10 +1382,9 @@ glacier.i18n.nb = {
 	UNKNOWN_PROPERTY:		'Ukjent egenskap: {property} i {object}'
 };
 
-glacier.Matrix33 = function(value) {
+glacier.Matrix33 = function Matrix33(value) {
 	Object.defineProperty(this, 'array', {
 		value: new Float32Array([ 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 ]),
-		writable: false
 	});
 	
 	if(value) {
@@ -1438,10 +1534,9 @@ glacier.Matrix33.prototype = {
 	}
 };
 
-glacier.Matrix44 = function(value) {
+glacier.Matrix44 = function Matrix44(value) {
 	Object.defineProperty(this, 'array', {
 		value: new Float32Array([ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]),
-		writable: false
 	});
 	
 	if(value) {
@@ -1801,14 +1896,9 @@ glacier.Matrix44.prototype = {
 	}
 };
 
-glacier.Vector2 = function(x, y) {
+glacier.Vector2 = function Vector2(x, y) {
 	glacier.union.call(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
 	glacier.union.call(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
-	
-	Object.defineProperty(this, 'array', {
-		get: function() { return new Float32Array([ this.x, this.y ]); },
-		set: function() {}
-	});
 	
 	if(x instanceof glacier.Vector2) {
 		this.assign(x);
@@ -1931,18 +2021,17 @@ glacier.Vector2.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ')');
+	},
+	
+	get array() {
+		return new Float32Array([ this.x, this.y ]);
 	}
 };
 
-glacier.Vector3 = function(x, y, z) {
+glacier.Vector3 = function Vector3(x, y, z) {
 	glacier.union.call(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
 	glacier.union.call(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
 	glacier.union.call(this, ['z', 'w'], (typeof z == 'number' ? z : 0.0));
-	
-	Object.defineProperty(this, 'array', {
-		get: function() { return new Float32Array([ this.x, this.y, this.z ]); },
-		set: function() {}
-	});
 	
 	if(x instanceof glacier.Vector3) {
 		this.assign(x);
@@ -2130,5 +2219,9 @@ glacier.Vector3.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
+	},
+	
+	get array() {
+		return new Float32Array([ this.x, this.y, this.z ]);
 	}
 };
