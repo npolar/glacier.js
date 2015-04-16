@@ -1,4 +1,4 @@
-glacier.Camera = function(verticalViewAngle, aspectRatio) {
+glacier.Camera = function Camera(verticalViewAngle, aspectRatio) {
 	var args = [ 'verticalViewAngle', 'aspectRatio' ], error;
 	
 	Object.defineProperties(this, {

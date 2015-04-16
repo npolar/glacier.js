@@ -1,4 +1,4 @@
-glacier.Color = function(params) {
+glacier.Color = function Color(params) {
 	var a, args, vals, value = 0x000000FF; // rgba
 	
 	Object.defineProperties(this, {

@@ -1,4 +1,4 @@
-glacier.TypedArray = function(type, ctor) {
+glacier.TypedArray = function TypedArray(type, ctor) {
 	if(typeof type == 'string') {
 		if(ctor && typeof ctor != 'function') {
 			glacier.error('INVALID_PARAMETER', { parameter: 'ctor', value: typeof ctor, expected: 'function', method: 'TypedArray constructor' });
