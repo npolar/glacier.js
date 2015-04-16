@@ -14,7 +14,7 @@ gulp.task('compile-js', [], function() {
 gulp.task('minify-js', [], function() {
 	return gulp.src(['./src/glacier.js', './src/*.js', './src/**/*.js'])
 	.pipe(concat('glacier.min.js'))
-	.pipe(uglify())
+	.pipe(uglify({ mangle: { keep_fnames: true }, compress: { keep_fnames: true } }))
 	.pipe(gulp.dest('./dist/'));
 });
 
