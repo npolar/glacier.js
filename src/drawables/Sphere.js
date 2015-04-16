@@ -1,4 +1,4 @@
-glacier.Sphere = function(latitudes, longitudes, radius) {
+glacier.Sphere = function Sphere(latitudes, longitudes, radius) {
 	// Call super constructor
 	glacier.Mesh.call(this);
 	
@@ -18,7 +18,7 @@ glacier.Sphere = function(latitudes, longitudes, radius) {
 						vertex = (vertex / radius) * value;
 					});
 				} else if(this.indices.length) {
-					this.destroy();
+					this.free();
 				}
 				
 				radius = value;
@@ -63,7 +63,7 @@ glacier.extend(glacier.Sphere, glacier.Mesh, {
 			return false;
 		}
 		
-		this.destroy();
+		this.free();
 		this.radius = radius;
 		
 		var lat, lng, theta, sinTheta, cosTheta, phi, sinPhi, cosPhi, x, y, z, u, v;
