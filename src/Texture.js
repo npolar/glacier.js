@@ -36,8 +36,6 @@ glacier.Texture.prototype = {
 		
 		var self = this, image = new Image(), c;
 		
-		console.log('load tex', source);
-		
 		image.onload = function() {
 			if(!image.width || !image.height) {
 				self.image = null;
