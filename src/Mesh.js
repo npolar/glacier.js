@@ -10,6 +10,25 @@ glacier.Mesh = function Mesh() {
 		texCoords:	{ value: new glacier.TypedArray('Vector2', glacier.Vector2) },
 		vertices:	{ value: new glacier.TypedArray('Vector3', glacier.Vector3) }
 	});
+	
+	'texture,alphaMap,normalMap,specularMap'.split(',').forEach(function(property) {
+		var tex = new glacier.Texture();
+		
+		Object.defineProperty(this, property, {
+			get: function() {
+				return tex;
+			},
+			set: function(value) {
+				if(typeof value == 'string') {
+					tex.load(value);
+				} else if(value === null) {
+					tex.free();
+				} else {
+					glacier.error('INVALID_ASSIGNMENT', { variable: 'Mesh.' + property, value: typeof value, expected: 'string or null' });
+				}
+			}
+		});
+	}, this);
 };
 
 // glacier.Mesh extends glacier.Drawable
