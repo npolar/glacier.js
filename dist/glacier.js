@@ -1181,7 +1181,7 @@ glacier.context.WebGL.Drawable = function(context, drawMode, program) {
 		return;
 	}
 	
-	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl._LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ];
+	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl.LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ];
 	
 	if(modes.indexOf(drawMode) == -1) {
 		glacier.error('INVALID_PARAMETER', { parameter: 'drawMode', value: drawMode, expected: 'valid WebGL draw mode', method: 'context.WebGL.Drawable constructor' });
@@ -1261,10 +1261,14 @@ glacier.context.WebGL.Drawable.prototype = {
 			}
 			
 			[ 'base', 'alpha', 'normal', 'specular' ].forEach(function(tex, index) {
-				if(this.textures[tex] instanceof WebGLTexture && this.uniforms['tex_samp_' + index]) {
-					gl.activeTexture(gl.TEXTURE0 + index);
-					gl.bindTexture(gl.TEXTURE_2D, this.textures[tex]);
-					gl.uniform1i(this.uniforms['tex_samp_' + index], index);
+				if(this.uniforms['tex_samp_' + index]) {
+					if(this.textures[tex] instanceof WebGLTexture) {
+						gl.activeTexture(gl.TEXTURE0 + index);
+						gl.bindTexture(gl.TEXTURE_2D, this.textures[tex]);
+						gl.uniform1i(this.uniforms['tex_samp_' + index], index);
+					}
+					
+					// TODO: Disable uniform if texture does not exist
 				}
 			}, this);
 			
