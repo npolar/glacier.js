@@ -41,10 +41,10 @@ glacier.Context.prototype = {
 		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'clear', child: this.type, parent: 'Context' });
 	},
 	draw: function(drawable) {
-		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'draw', child: this.type, paremt: 'Context' });
+		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'draw', child: this.type, parent: 'Context' });
 	},
-	init: function(drawable) {
-		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'init', child: this.type, paremt: 'Context' });
+	init: function(drawable, options) {
+		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'init', child: this.type, parent: 'Context' });
 	},
 	resize: function(width, height) {
 		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'resize', child: this.type, parent: 'Context' });

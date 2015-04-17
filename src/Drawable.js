@@ -35,9 +35,14 @@ glacier.Drawable.prototype = {
 			context.draw(this);
 		}
 	},
-	init: function(context) {
+	init: function(context, options) {
 		if(context instanceof glacier.Context) {
-			if(context.init(this)) {
+			if(options && typeof options != 'object') {
+				glacier.error('INVALID_PARAMETER', { parameter: 'options', value: typeof options, expected: 'object', method: 'Drawable.init' });
+				return false;
+			}
+			
+			if(context.init(this, options)) {
 				this.context = context;
 				return true;
 			}
