@@ -337,10 +337,15 @@ glacier.context.WebGL.Drawable.prototype = {
 			}, this);
 			
 			if(this.buffers.index) {
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.index);
 				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
 			} else {
 				// TODO: gl.drawArrays(this.drawMode, 0, this.elements);
 			}
+			
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+			gl.bindTexture(gl.TEXTURE_2D, null);
 		}
 	},
 	init: function(vertices, indices, normals, texCoords, colors) {
@@ -397,6 +402,10 @@ glacier.context.WebGL.Drawable.prototype = {
 				glacier.error('INVALID_PARAMETER', { parameter: 'colors', value: typeof colors, expected: 'Color array', method: 'context.WebGL.Drawable.init' });
 				return false;
 			}
+			
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+			
 			return true;
 		}
 		
