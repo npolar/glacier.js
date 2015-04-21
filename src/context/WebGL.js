@@ -69,25 +69,28 @@ glacier.context.WebGL = function WebGLContext(options) {
 		}
 		
 		if(this.gl) {
-			Object.defineProperty(this, 'background', {
-				get: function() {
-					return background;
-				},
-				set: function(color) {
-					if(color instanceof glacier.Color) {
-						background = color;
-						this.gl.clearColor(color.r / 255, color.g / 255, color.b / 255, color.a);
-						this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-					} else {
-						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.background', value: typeof color, expected: 'Color' });
+			Object.defineProperties(this, {
+				background: {
+					get: function() {
+						return background;
+					},
+					set: function(color) {
+						if(color instanceof glacier.Color) {
+							background = color;
+							this.gl.clearColor(color.r / 255, color.g / 255, color.b / 255, color.a);
+							this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+						} else {
+							glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.background', value: typeof color, expected: 'Color' });
+						}
 					}
+				},
+				shaderBank: {
+					value: new glacier.context.WebGL.ShaderBank(this)
 				}
 			});
 			
-			// TODO: defaultProgram (using default shaders)
-			this.defaultProgram = 'not implemented';
-			
 			this.background = glacier.color.BLACK;
+			this.shaderBank.init();
 		}
 		
 		this.clear();
@@ -110,20 +113,20 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 	},
 	init: function(drawable, options) {
 		if(drawable instanceof glacier.Mesh) {
-			var program, data, self = this;
+			var shader, data, self = this;
 			
 			if(typeof options == 'object') {
-				program = (options.program instanceof WebGLProgram ? options.program : this.defaultProgram);
+				if(typeof options.shader == 'string') {
+					shader = this.shaderBank.shader(options.shader);
+				}
 			}
 			
-			data = new glacier.context.WebGL.Drawable(this, this.gl.TRIANGLES, program);
+			data = new glacier.context.WebGL.Drawable(this, this.gl.TRIANGLES, shader);
 			
 			if(data.init(drawable.vertices, drawable.indices, drawable.normals, drawable.texCoords, drawable.colors)) {
 				
 				drawable.texture.onLoad(function(image) { data.textures.base = self.createTexture(image); });
-				drawable.alphaMap.onLoad(function(image) { data.textures.alpha = self.createTexture(image); });
 				drawable.normalMap.onLoad(function(image) { data.textures.normal = self.createTexture(image); });
-				drawable.specularMap.onLoad(function(image) { data.textures.specular = self.createTexture(image); });
 				drawable.contextData = data;
 				
 				return true;
@@ -242,196 +245,3 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		return null;
 	}
 });
-
-glacier.context.WebGL.Drawable = function(context, drawMode, program) {
-	if(!(context instanceof glacier.context.WebGL)) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'context.WebGL', method: 'context.WebGL.Drawable constructor' });
-		return;
-	}
-	
-	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl.LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ];
-	
-	if(modes.indexOf(drawMode) == -1) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'drawMode', value: drawMode, expected: 'valid WebGL draw mode', method: 'context.WebGL.Drawable constructor' });
-		return;
-	}
-	
-	if(program && !(program instanceof WebGLProgram)) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'program', value: typeof program, expected: 'WebGLProgram', method: 'context.WebGL.Drawable constructor' });
-		return;
-	}
-	
-	Object.defineProperties(this, {
-		attributes:	{ value: {} },
-		buffers:	{ value: {} },
-		context:	{ value: context },
-		drawMode:	{ value: drawMode },
-		elements:	{ value: 0, configurable: true },
-		textures:	{ value: {} },
-		uniforms:	{ value: {} },
-		
-		program: {
-			get: function() {
-				return program;
-			},
-			set: function(value) {
-				if(value instanceof WebGLProgram) {
-					program = value;
-					
-					this.attributes.vertex_xyz	= gl.getAttribLocation(program, 'vertex_xyz');
-					this.attributes.normal_xyz	= gl.getAttribLocation(program, 'normal_xyz');
-					this.attributes.texture_uv	= gl.getAttribLocation(program, 'texture_uv');
-					this.attributes.color_rgba	= gl.getAttribLocation(program, 'color_rgba');
-					
-					this.uniforms.tex_samp_0	= gl.getUniformLocation(program, 'tex_samp_0');
-					this.uniforms.tex_samp_1	= gl.getUniformLocation(program, 'tex_samp_1');
-					this.uniforms.tex_samp_2	= gl.getUniformLocation(program, 'tex_samp_2');
-					this.uniforms.tex_samp_3	= gl.getUniformLocation(program, 'tex_samp_3');
-				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'context.WebGL.Drawable.program', value: typeof value, expected: 'WebGLProgram' });
-				}
-			}
-		}
-	});
-	
-	this.program = (program || context.defaultProgram);
-};
-
-glacier.context.WebGL.Drawable.prototype = {
-	draw: function() {
-		if(this.context && this.program) {
-			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl;
-			
-			gl.useProgram(this.program);
-				
-			if(this.buffers.color && this.attributes.color_rgba >= 0) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.color);
-				gl.enableVertexAttribArray(this.attributes.color_rgba);
-				gl.vertexAttribPointer(this.attributes.color_rgba, 4, gl.FLOAT, false, 0, 0);
-			}
-			
-			if(this.buffers.texCoord && this.attributes.texture_uv >= 0) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.texCoord);
-				gl.enableVertexAttribArray(this.attributes.texture_uv);
-				gl.vertexAttribPointer(this.attributes.texture_uv, 2, gl.FLOAT, false, 0, 0);
-			}
-			
-			if(this.buffers.normal && this.attributes.normal_xyz >= 0) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.normal);
-				gl.enableVertexAttribArray(this.attributes.normal_xyz);
-				gl.vertexAttribPointer(this.attributes.normal_xyz, 3, gl.FLOAT, false, 0, 0);
-			}
-			
-			if(this.buffers.vertex && this.attributes.vertex_xyz >= 0) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
-				gl.enableVertexAttribArray(this.attributes.vertex_xyz);
-				gl.vertexAttribPointer(this.attributes.vertex_xyz, 3, gl.FLOAT, false, 0, 0);
-			}
-			
-			[ 'base', 'alpha', 'normal', 'specular' ].forEach(function(tex, index) {
-				if(this.uniforms['tex_samp_' + index]) {
-					if(this.textures[tex] instanceof WebGLTexture) {
-						gl.activeTexture(gl.TEXTURE0 + index);
-						gl.bindTexture(gl.TEXTURE_2D, this.textures[tex]);
-						gl.uniform1i(this.uniforms['tex_samp_' + index], index);
-					}
-					
-					// TODO: Disable uniform if texture does not exist
-				}
-			}, this);
-			
-			if(this.buffers.index) {
-				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.index);
-				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
-			} else {
-				// TODO: gl.drawArrays(this.drawMode, 0, this.elements);
-			}
-			
-			gl.bindBuffer(gl.ARRAY_BUFFER, null);
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-			gl.bindTexture(gl.TEXTURE_2D, null);
-		}
-	},
-	init: function(vertices, indices, normals, texCoords, colors) {
-		if(this.context && this.program) {
-			var gl = this.context.gl, array;
-			
-			if(glacier.isArray(vertices, glacier.Vector3)) {
-				array = [];
-				vertices.forEach(function(vertex) { array.push(vertex.x, vertex.y, vertex.z); });
-				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.vertex = gl.createBuffer()));
-				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
-			} else if(vertices) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'vertices', value: typeof vertices, expected: 'Vector3 array', method: 'context.WebGL.Drawable.init' });
-				return false;
-			}
-			
-			if(glacier.isArray(indices, 'number')) {
-				array = [];
-				indices.forEach(function(index) { array.push(index); });
-				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, (this.buffers.index = gl.createBuffer()));
-				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(array), gl.STATIC_DRAW);
-				Object.defineProperty(this, 'elements', { value: array.length });
-			} else if(indices) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'indices', value: typeof indices, expected: 'number array', method: 'context.WebGL.Drawable.init' });
-				return false;
-			}
-			
-			if(glacier.isArray(normals, glacier.Vector3)) {
-				array = [];
-				normals.forEach(function(normal) { array.push(normal.x, normal.y, normal.z); });
-				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.normal = gl.createBuffer()));
-				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
-			} else if(normals) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'normals', value: typeof normals, expected: 'Vector3 array', method: 'context.WebGL.Drawable.init' });
-				return false;
-			}
-			
-			if(glacier.isArray(texCoords, glacier.Vector2)) {
-				array = [];
-				texCoords.forEach(function(texCoord) { array.push(texCoord.u, texCoord.v); });
-				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.texCoord = gl.createBuffer()));
-				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
-			} else if(normals) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'texCoords', value: typeof texCoords, expected: 'Vector2 array', method: 'context.WebGL.Drawable.init' });
-				return false;
-			}
-			
-			if(glacier.isArray(colors, glacier.Color)) {
-				array = [];
-				colors.forEach(function(color) { array.push(color.r, color.g, color.b, color.a); });
-				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.color = gl.createBuffer()));
-				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
-			} else if(normals) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'colors', value: typeof colors, expected: 'Color array', method: 'context.WebGL.Drawable.init' });
-				return false;
-			}
-			
-			gl.bindBuffer(gl.ARRAY_BUFFER, null);
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-			
-			return true;
-		}
-		
-		return false;
-	},
-	free: function() {
-		if(this.context) {
-			var gl = this.context.gl, i;
-			
-			for(i in this.buffers) {
-				if(this.buffers.hasOwnProperty(i)) {
-					gl.deleteBuffer(this.buffers[i]);
-					delete this.buffers[i];
-				}
-			}
-			
-			[ 'base', 'alpha', 'normal', 'specular' ].forEach(function(tex, index) {
-				if(this.textures[tex] instanceof WebGLTexture) {
-					gl.deleteTexture(this.textures[tex]);
-					delete this.textures[tex];
-				}
-			}, this);
-		}
-	}
-};
