@@ -1,18 +1,23 @@
-glacier.context.WebGL.Drawable = function(context, drawMode, shader) {
+glacier.context.WebGL.ContextData = function(drawable, context, drawMode, shader) {
+	if(!(drawable instanceof glacier.Drawable)) {
+		glacier.error('INVALID_PARAMETER', { parameter: 'drawable', value: typeof drawable, expected: 'Drawable', method: 'context.WebGL.ContextData constructor' });
+		return;
+	}
+	
 	if(!(context instanceof glacier.context.WebGL)) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'context.WebGL', method: 'context.WebGL.Drawable constructor' });
+		glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'context.WebGL', method: 'context.WebGL.ContextData constructor' });
 		return;
 	}
 	
 	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl.LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ];
 	
 	if(modes.indexOf(drawMode) == -1) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'drawMode', value: drawMode, expected: 'valid WebGL draw mode', method: 'context.WebGL.Drawable constructor' });
+		glacier.error('INVALID_PARAMETER', { parameter: 'drawMode', value: drawMode, expected: 'valid WebGL draw mode', method: 'context.WebGL.ContextData constructor' });
 		return;
 	}
 	
 	if(!(shader instanceof glacier.context.WebGL.Shader)) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'shader', value: typeof shader, expected: 'context.WebGL.Shader', method: 'context.WebGL.Drawable constructor' });
+		glacier.error('INVALID_PARAMETER', { parameter: 'shader', value: typeof shader, expected: 'context.WebGL.Shader', method: 'context.WebGL.ContextData constructor' });
 		return;
 	}
 	
@@ -21,6 +26,7 @@ glacier.context.WebGL.Drawable = function(context, drawMode, shader) {
 		context:	{ value: context },
 		drawMode:	{ value: drawMode },
 		elements:	{ value: 0, configurable: true },
+		parent:		{ value: drawable },
 		textures:	{ value: {} },
 		
 		shader: {
@@ -31,19 +37,19 @@ glacier.context.WebGL.Drawable = function(context, drawMode, shader) {
 				if(value instanceof glacier.context.WebGL.Shader) {
 					shader = value;
 				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'context.WebGL.Drawable.shader', value: typeof shader, expected: 'glacier.context.WebGL.Shader' });
+					glacier.error('INVALID_ASSIGNMENT', { variable: 'context.WebGL.ContextData.shader', value: typeof shader, expected: 'glacier.context.WebGL.Shader' });
 				}
 			}
 		}
 	});
 };
 
-glacier.context.WebGL.Drawable.prototype = {
+glacier.context.WebGL.ContextData.prototype = {
 	draw: function() {
 		if(this.context && this.shader) {
-			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl, attrib, uniform;
+			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl, attrib, uniform, mvp;
 			
-			gl.useProgram(this.shader.program);
+			this.shader.use();
 			
 			if(this.buffers.vertex && (attrib = this.shader.attribute('vertex_xyz')) !== null) {
 				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
@@ -81,6 +87,16 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.uniform1i(uniform, 1);
 			}
 			
+			if((uniform = this.shader.uniform('matrix_mvp'))) {
+				mvp = new glacier.Matrix44(this.parent.matrix);
+				
+				if(this.context.projection instanceof glacier.Matrix44) {
+					mvp.multiply(this.context.projection);
+				}
+				
+				gl.uniformMatrix4fv(uniform, false, mvp.array);
+			}
+			
 			if(this.buffers.index) {
 				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.index);
 				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
@@ -103,7 +119,7 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.vertex = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 			} else if(vertices) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'vertices', value: typeof vertices, expected: 'Vector3 array', method: 'context.WebGL.Drawable.init' });
+				glacier.error('INVALID_PARAMETER', { parameter: 'vertices', value: typeof vertices, expected: 'Vector3 array', method: 'context.WebGL.ContextData.init' });
 				return false;
 			}
 			
@@ -114,7 +130,7 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(array), gl.STATIC_DRAW);
 				Object.defineProperty(this, 'elements', { value: array.length });
 			} else if(indices) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'indices', value: typeof indices, expected: 'number array', method: 'context.WebGL.Drawable.init' });
+				glacier.error('INVALID_PARAMETER', { parameter: 'indices', value: typeof indices, expected: 'number array', method: 'context.WebGL.ContextData.init' });
 				return false;
 			}
 			
@@ -124,7 +140,7 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.normal = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 			} else if(normals) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'normals', value: typeof normals, expected: 'Vector3 array', method: 'context.WebGL.Drawable.init' });
+				glacier.error('INVALID_PARAMETER', { parameter: 'normals', value: typeof normals, expected: 'Vector3 array', method: 'context.WebGL.ContextData.init' });
 				return false;
 			}
 			
@@ -134,7 +150,7 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.texCoord = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 			} else if(normals) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'texCoords', value: typeof texCoords, expected: 'Vector2 array', method: 'context.WebGL.Drawable.init' });
+				glacier.error('INVALID_PARAMETER', { parameter: 'texCoords', value: typeof texCoords, expected: 'Vector2 array', method: 'context.WebGL.ContextData.init' });
 				return false;
 			}
 			
@@ -144,7 +160,7 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.color = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 			} else if(normals) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'colors', value: typeof colors, expected: 'Color array', method: 'context.WebGL.Drawable.init' });
+				glacier.error('INVALID_PARAMETER', { parameter: 'colors', value: typeof colors, expected: 'Color array', method: 'context.WebGL.ContextData.init' });
 				return false;
 			}
 			

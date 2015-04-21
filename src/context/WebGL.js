@@ -106,7 +106,7 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 	},
 	draw: function(drawable) {
 		if(drawable instanceof glacier.Drawable) {
-			if(drawable.contextData instanceof glacier.context.WebGL.Drawable) {
+			if(drawable.contextData instanceof glacier.context.WebGL.ContextData) {
 				drawable.contextData.draw();
 			}
 		}
@@ -121,7 +121,7 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 				}
 			}
 			
-			data = new glacier.context.WebGL.Drawable(this, this.gl.TRIANGLES, shader);
+			data = new glacier.context.WebGL.ContextData(drawable, this, this.gl.TRIANGLES, shader);
 			
 			if(data.init(drawable.vertices, drawable.indices, drawable.normals, drawable.texCoords, drawable.colors)) {
 				
