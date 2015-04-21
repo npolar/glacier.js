@@ -519,7 +519,7 @@ glacier.context = {}; // Map of contexts
 
 // Context base-class and factory
 glacier.Context = function Context(type, options) {
-	var c, contextTypes = [], context;
+	var c, contextTypes = [], context, projection = null, ctor = null;
 	
 	if(typeof type == 'string') {
 		for(c in glacier.context) {
@@ -530,27 +530,41 @@ glacier.Context = function Context(type, options) {
 						options = { container: options };
 					}
 					
-					ctor = new glacier.context[c](options);
-					
-					Object.defineProperty(ctor, 'type', {
-						value: c,
-						writable: false
-					});
-					
-					return ctor;
+					ctor = new glacier.context[(type = c)](options);
+					break;
 				}
 				
 				contextTypes.push(c);
 			}
 		}
 	}
-		
-	contextTypes = contextTypes.join(', ');
-	var last = contextTypes.lastIndexOf(', ');
-	contextTypes = (last >= 0 ? contextTypes.substr(0, last) + ' or' + contextTypes.substr(last + 1) : contextTypes);
-	glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: contextTypes, method: 'Context constructor' });
 	
-	return null;
+	if(ctor) {
+		Object.defineProperties(ctor, {
+			type: { value: type },
+			projection: {
+				get: function() {
+					return projection;
+				},
+				set: function(value) {
+					if(value instanceof glacier.Matrix44) {
+						projection = value;
+					} else if(value === null) {
+						projection = null;
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.projection', value: typeof value, expected: 'Matrix44 or null' });
+					}
+				}
+			}
+		});
+	} else {
+		contextTypes = contextTypes.join(', ');
+		var last = contextTypes.lastIndexOf(', ');
+		contextTypes = (last >= 0 ? contextTypes.substr(0, last) + ' or' + contextTypes.substr(last + 1) : contextTypes);
+		glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: contextTypes, method: 'Context constructor' });
+	}
+	
+	return ctor;
 };
 
 glacier.Context.prototype = {
@@ -601,8 +615,8 @@ glacier.Drawable.prototype = {
 		this.visible		= true;
 	},
 	draw: function() {
-		if(context instanceof glacier.Context) {
-			context.draw(this);
+		if(this.context instanceof glacier.Context) {
+			this.context.draw(this);
 		}
 	},
 	init: function(context, options) {
@@ -1038,7 +1052,7 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 	},
 	draw: function(drawable) {
 		if(drawable instanceof glacier.Drawable) {
-			if(drawable.contextData instanceof glacier.context.WebGL.Drawable) {
+			if(drawable.contextData instanceof glacier.context.WebGL.ContextData) {
 				drawable.contextData.draw();
 			}
 		}
@@ -1053,7 +1067,7 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 				}
 			}
 			
-			data = new glacier.context.WebGL.Drawable(this, this.gl.TRIANGLES, shader);
+			data = new glacier.context.WebGL.ContextData(drawable, this, this.gl.TRIANGLES, shader);
 			
 			if(data.init(drawable.vertices, drawable.indices, drawable.normals, drawable.texCoords, drawable.colors)) {
 				
@@ -1178,6 +1192,36 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 	}
 });
 
+glacier.i18n.en = {
+	CONTEXT_ERROR:			'{context} context error: {error}',
+	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
+	INVALID_ASSIGNMENT:		'Invalid assigment of {variable}: {value} (expected {expected})',
+	INVALID_PARAMETER:		'Invalid parameter {parameter}: {value} (expected {expected}) in {method}',
+	MATRIX_NO_INVERSE:		'Inverse matrix does not exist: {matrix} in {method}',
+	MISSING_IMPLEMENTATION:	'Missing implementation: {implementation} in {child} extension of {parent}',
+	MISSING_PARAMETER:		'Missing mandatory parameter: {parameter} in {method}',
+	UNDEFINED_ELEMENT:		'Undefined element ID: {element} in {method}',
+	UNDEFINED_ERROR:		'Undefined error: {error}',
+	UNDEFINED_WARNING:		'Undefined warning: {warning}',
+	UNDEFINED_LANGUAGE:		'Undefined language: {language} (using {fallback} as fallback)',
+	UNKNOWN_PROPERTY:		'Unrecognized property: {property} in {object}'
+};
+
+glacier.i18n.nb = {
+	CONTEXT_ERROR:			'{context} kontekstfeil: {error}',
+	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
+	INVALID_ASSIGNMENT:		'Ugyldig tildeing av {variable}: {value} (forventet {expected})',
+	INVALID_PARAMETER:		'Ugyldig parameter {parameter}: {value} (forventet {expected}) i {method}',
+	MATRIX_NO_INVERSE:		'Invers matrise eksisterer ikke: {matrix} i {method}',
+	MISSING_IMPLEMENTATION:	'Mangler implementasjon: {implementation} i {child} utvidelse av {parent}',
+	MISSING_PARAMETER:		'Mangler obligatorisk parameter: {parameter} i {method}',
+	UNDEFINED_ELEMENT:		'Udefinert element ID: {element} i {method}',
+	UNDEFINED_ERROR:		'Udefinert feilmelding: {error}',
+	UNDEFINED_WARNING:		'Udefinert advarsel: {warning}',
+	UNDEFINED_LANGUAGE:		'Udefinert språkkode: {language} (bruker {fallback})',
+	UNKNOWN_PROPERTY:		'Ukjent egenskap: {property} i {object}'
+};
+
 glacier.Sphere = function Sphere(latitudes, longitudes, radius) {
 	// Call super constructor
 	glacier.Mesh.call(this);
@@ -1283,36 +1327,6 @@ glacier.extend(glacier.Sphere, glacier.Mesh, {
 		return true;
 	}
 });
-
-glacier.i18n.en = {
-	CONTEXT_ERROR:			'{context} context error: {error}',
-	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
-	INVALID_ASSIGNMENT:		'Invalid assigment of {variable}: {value} (expected {expected})',
-	INVALID_PARAMETER:		'Invalid parameter {parameter}: {value} (expected {expected}) in {method}',
-	MATRIX_NO_INVERSE:		'Inverse matrix does not exist: {matrix} in {method}',
-	MISSING_IMPLEMENTATION:	'Missing implementation: {implementation} in {child} extension of {parent}',
-	MISSING_PARAMETER:		'Missing mandatory parameter: {parameter} in {method}',
-	UNDEFINED_ELEMENT:		'Undefined element ID: {element} in {method}',
-	UNDEFINED_ERROR:		'Undefined error: {error}',
-	UNDEFINED_WARNING:		'Undefined warning: {warning}',
-	UNDEFINED_LANGUAGE:		'Undefined language: {language} (using {fallback} as fallback)',
-	UNKNOWN_PROPERTY:		'Unrecognized property: {property} in {object}'
-};
-
-glacier.i18n.nb = {
-	CONTEXT_ERROR:			'{context} kontekstfeil: {error}',
-	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
-	INVALID_ASSIGNMENT:		'Ugyldig tildeing av {variable}: {value} (forventet {expected})',
-	INVALID_PARAMETER:		'Ugyldig parameter {parameter}: {value} (forventet {expected}) i {method}',
-	MATRIX_NO_INVERSE:		'Invers matrise eksisterer ikke: {matrix} i {method}',
-	MISSING_IMPLEMENTATION:	'Mangler implementasjon: {implementation} i {child} utvidelse av {parent}',
-	MISSING_PARAMETER:		'Mangler obligatorisk parameter: {parameter} i {method}',
-	UNDEFINED_ELEMENT:		'Udefinert element ID: {element} i {method}',
-	UNDEFINED_ERROR:		'Udefinert feilmelding: {error}',
-	UNDEFINED_WARNING:		'Udefinert advarsel: {warning}',
-	UNDEFINED_LANGUAGE:		'Udefinert språkkode: {language} (bruker {fallback})',
-	UNKNOWN_PROPERTY:		'Ukjent egenskap: {property} i {object}'
-};
 
 glacier.Matrix33 = function Matrix33(value) {
 	Object.defineProperty(this, 'array', {
@@ -2158,21 +2172,26 @@ glacier.Vector3.prototype = {
 	}
 };
 
-glacier.context.WebGL.Drawable = function(context, drawMode, shader) {
+glacier.context.WebGL.ContextData = function(drawable, context, drawMode, shader) {
+	if(!(drawable instanceof glacier.Drawable)) {
+		glacier.error('INVALID_PARAMETER', { parameter: 'drawable', value: typeof drawable, expected: 'Drawable', method: 'context.WebGL.ContextData constructor' });
+		return;
+	}
+	
 	if(!(context instanceof glacier.context.WebGL)) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'context.WebGL', method: 'context.WebGL.Drawable constructor' });
+		glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'context.WebGL', method: 'context.WebGL.ContextData constructor' });
 		return;
 	}
 	
 	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl.LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ];
 	
 	if(modes.indexOf(drawMode) == -1) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'drawMode', value: drawMode, expected: 'valid WebGL draw mode', method: 'context.WebGL.Drawable constructor' });
+		glacier.error('INVALID_PARAMETER', { parameter: 'drawMode', value: drawMode, expected: 'valid WebGL draw mode', method: 'context.WebGL.ContextData constructor' });
 		return;
 	}
 	
 	if(!(shader instanceof glacier.context.WebGL.Shader)) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'shader', value: typeof shader, expected: 'context.WebGL.Shader', method: 'context.WebGL.Drawable constructor' });
+		glacier.error('INVALID_PARAMETER', { parameter: 'shader', value: typeof shader, expected: 'context.WebGL.Shader', method: 'context.WebGL.ContextData constructor' });
 		return;
 	}
 	
@@ -2181,6 +2200,7 @@ glacier.context.WebGL.Drawable = function(context, drawMode, shader) {
 		context:	{ value: context },
 		drawMode:	{ value: drawMode },
 		elements:	{ value: 0, configurable: true },
+		parent:		{ value: drawable },
 		textures:	{ value: {} },
 		
 		shader: {
@@ -2191,19 +2211,19 @@ glacier.context.WebGL.Drawable = function(context, drawMode, shader) {
 				if(value instanceof glacier.context.WebGL.Shader) {
 					shader = value;
 				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'context.WebGL.Drawable.shader', value: typeof shader, expected: 'glacier.context.WebGL.Shader' });
+					glacier.error('INVALID_ASSIGNMENT', { variable: 'context.WebGL.ContextData.shader', value: typeof shader, expected: 'glacier.context.WebGL.Shader' });
 				}
 			}
 		}
 	});
 };
 
-glacier.context.WebGL.Drawable.prototype = {
+glacier.context.WebGL.ContextData.prototype = {
 	draw: function() {
 		if(this.context && this.shader) {
-			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl, attrib, uniform;
+			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl, attrib, uniform, mvp;
 			
-			gl.useProgram(this.shader.program);
+			this.shader.use();
 			
 			if(this.buffers.vertex && (attrib = this.shader.attribute('vertex_xyz')) !== null) {
 				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
@@ -2241,6 +2261,16 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.uniform1i(uniform, 1);
 			}
 			
+			if((uniform = this.shader.uniform('matrix_mvp'))) {
+				mvp = new glacier.Matrix44(this.parent.matrix);
+				
+				if(this.context.projection instanceof glacier.Matrix44) {
+					mvp.multiply(this.context.projection);
+				}
+				
+				gl.uniformMatrix4fv(uniform, false, mvp.array);
+			}
+			
 			if(this.buffers.index) {
 				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.index);
 				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
@@ -2263,7 +2293,7 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.vertex = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 			} else if(vertices) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'vertices', value: typeof vertices, expected: 'Vector3 array', method: 'context.WebGL.Drawable.init' });
+				glacier.error('INVALID_PARAMETER', { parameter: 'vertices', value: typeof vertices, expected: 'Vector3 array', method: 'context.WebGL.ContextData.init' });
 				return false;
 			}
 			
@@ -2274,7 +2304,7 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(array), gl.STATIC_DRAW);
 				Object.defineProperty(this, 'elements', { value: array.length });
 			} else if(indices) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'indices', value: typeof indices, expected: 'number array', method: 'context.WebGL.Drawable.init' });
+				glacier.error('INVALID_PARAMETER', { parameter: 'indices', value: typeof indices, expected: 'number array', method: 'context.WebGL.ContextData.init' });
 				return false;
 			}
 			
@@ -2284,7 +2314,7 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.normal = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 			} else if(normals) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'normals', value: typeof normals, expected: 'Vector3 array', method: 'context.WebGL.Drawable.init' });
+				glacier.error('INVALID_PARAMETER', { parameter: 'normals', value: typeof normals, expected: 'Vector3 array', method: 'context.WebGL.ContextData.init' });
 				return false;
 			}
 			
@@ -2294,7 +2324,7 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.texCoord = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 			} else if(normals) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'texCoords', value: typeof texCoords, expected: 'Vector2 array', method: 'context.WebGL.Drawable.init' });
+				glacier.error('INVALID_PARAMETER', { parameter: 'texCoords', value: typeof texCoords, expected: 'Vector2 array', method: 'context.WebGL.ContextData.init' });
 				return false;
 			}
 			
@@ -2304,7 +2334,7 @@ glacier.context.WebGL.Drawable.prototype = {
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.color = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 			} else if(normals) {
-				glacier.error('INVALID_PARAMETER', { parameter: 'colors', value: typeof colors, expected: 'Color array', method: 'context.WebGL.Drawable.init' });
+				glacier.error('INVALID_PARAMETER', { parameter: 'colors', value: typeof colors, expected: 'Color array', method: 'context.WebGL.ContextData.init' });
 				return false;
 			}
 			
@@ -2485,7 +2515,7 @@ glacier.context.WebGL.ShaderBank.prototype = {
 							shader.addUniforms(v.uniforms);
 							shader.addUniforms(f.uniforms);
 							
-							Object.defineProperty(this, p, { value: shader });
+							this.shaders[p] = shader;
 						}
 					}
 				}
@@ -2498,7 +2528,7 @@ glacier.context.WebGL.ShaderBank.prototype = {
 	},
 	shader: function(shader) {
 		if(typeof shader == 'string') {
-			if((shader = this.shaders[shader]) instanceof glacier.context.WebGLShader) {
+			if((shader = this.shaders[shader]) instanceof glacier.context.WebGL.Shader) {
 				return shader;
 			}
 		} else {
