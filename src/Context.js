@@ -2,7 +2,7 @@ glacier.context = {}; // Map of contexts
 
 // Context base-class and factory
 glacier.Context = function Context(type, options) {
-	var c, contextTypes = [], context;
+	var c, contextTypes = [], context, projection = null, ctor = null;
 	
 	if(typeof type == 'string') {
 		for(c in glacier.context) {
@@ -13,27 +13,41 @@ glacier.Context = function Context(type, options) {
 						options = { container: options };
 					}
 					
-					ctor = new glacier.context[c](options);
-					
-					Object.defineProperty(ctor, 'type', {
-						value: c,
-						writable: false
-					});
-					
-					return ctor;
+					ctor = new glacier.context[(type = c)](options);
+					break;
 				}
 				
 				contextTypes.push(c);
 			}
 		}
 	}
-		
-	contextTypes = contextTypes.join(', ');
-	var last = contextTypes.lastIndexOf(', ');
-	contextTypes = (last >= 0 ? contextTypes.substr(0, last) + ' or' + contextTypes.substr(last + 1) : contextTypes);
-	glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: contextTypes, method: 'Context constructor' });
 	
-	return null;
+	if(ctor) {
+		Object.defineProperties(ctor, {
+			type: { value: type },
+			projection: {
+				get: function() {
+					return projection;
+				},
+				set: function(value) {
+					if(value instanceof glacier.Matrix44) {
+						projection = value;
+					} else if(value === null) {
+						projection = null;
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.projection', value: typeof value, expected: 'Matrix44 or null' });
+					}
+				}
+			}
+		});
+	} else {
+		contextTypes = contextTypes.join(', ');
+		var last = contextTypes.lastIndexOf(', ');
+		contextTypes = (last >= 0 ? contextTypes.substr(0, last) + ' or' + contextTypes.substr(last + 1) : contextTypes);
+		glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: contextTypes, method: 'Context constructor' });
+	}
+	
+	return ctor;
 };
 
 glacier.Context.prototype = {
