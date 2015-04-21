@@ -31,8 +31,8 @@ glacier.Drawable.prototype = {
 		this.visible		= true;
 	},
 	draw: function() {
-		if(context instanceof glacier.Context) {
-			context.draw(this);
+		if(this.context instanceof glacier.Context) {
+			this.context.draw(this);
 		}
 	},
 	init: function(context, options) {
