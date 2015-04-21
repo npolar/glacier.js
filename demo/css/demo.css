@@ -1,0 +1,154 @@
+*
+{
+	margin: 0;
+	padding: 0;
+}
+
+body
+{
+	background: #D1D3D4;
+}
+
+#canvas
+{
+	display: inline-block;
+	height: 100%;
+	position: absolute;
+	width: 100%;
+}
+#console
+{
+	background: #1f001f;
+	box-sizing: border-box;
+	color: #938893;
+	font-family: monospace;
+	font-size: 14px;
+	height: 50%;
+	opacity: 0.8;
+	overflow: hidden;
+	position: absolute;
+	width: 100%;
+	transition: height 1s;
+}
+
+#console:not(.visible)
+{
+	height: 0;
+}
+
+#console ol
+{
+	border-bottom: 1px solid #938893;
+	box-sizing: border-box;
+	height: calc(100% - 40px);
+	list-style: none;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding: 10px;
+	width: 100%;
+}
+
+#console ol li.debug
+{
+	color: #576D57;
+}
+
+#console ol li.warning
+{
+	color: #6D6D57;
+}
+
+#console ol li.error
+{
+	color: #6D5757;
+}
+
+#console ol li:before
+{
+	content: '';
+	display: inline-block;
+	font-size: .7em;
+	margin-left: -10px;
+	text-align: center;
+	width: 60px;
+}
+
+#console ol li.debug:before
+{
+	content: "debug ";
+}
+
+#console ol li.warning:before
+{
+	content: "warning ";
+}
+
+#console ol li.error:before
+{
+	content: "error";
+}
+
+#console ol li a
+{
+	color: #938893;
+	text-decoration: none;
+}
+
+#console ol li a:hover
+{
+	color: #675367;
+}
+
+#console form
+{
+	box-sizing: border-box;
+	font-size: 0;
+	height: 40px;
+	overflow: hidden;
+	padding: 5px;
+}
+
+#console input
+{
+	background: #675367;
+	border: 0;
+	box-sizing: border-box;
+	color: #938893;
+	font-family: monospace;
+	font-size: 14px;
+	padding: 5px 10px;
+	height: 30px;
+}
+
+#console input[type="text"]
+{
+	width: calc(100% - 80px);
+}
+
+#console input[type="submit"]
+{
+	background: #361436;
+	margin-left: 5px;
+	width: 75px;
+}
+
+#console input[type="submit"]:hover
+{
+	border-radius: 5px;
+	text-shadow: 0 0 2px #938893;
+}
+
+#console input[type="submit"]:active
+{
+	background: #675367;
+	text-shadow: 0 0 2px #361436;
+}
+
+#info
+{
+	bottom: 10px;
+	color: #fff;
+	font-family: monospace;
+	left: 10px;
+	position: fixed;
+}

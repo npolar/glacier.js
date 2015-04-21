@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<link rel="stylesheet" href="css/demo.css" />
+	</head>
+	
+	<body>
+		<canvas id="canvas"></canvas>
+		<div id="console"></div>
+		<div id="info"></div>
+		
+		<script src="../dist/glacier.js"></script>
+		<script src="js/konsoll.min.js"></script>
+		
+		<script>
+			var konsoll = new Konsoll({
+				container: 'console',
+				toggleKey: 121,	// F10
+				history: 10,
+				scrollback: 500
+			});
+			
+			konsoll.log('<strong>glacier.js</strong> v' + glacier.VERSION);
+			konsoll.log('http://npolar.no/');
+			konsoll.log('');
+			konsoll.callback('reload', function() { window.location.reload(); });
+			
+			konsoll.callback('speed', function(args) {
+				var num = (args.length ? Math.round(Number(args[0])) : NaN);
+				
+				if(!isNaN(num)) {
+					konsoll.log('speed = ' + (speed = num) + 'x');
+				} else {
+					konsoll.log('Usage: <strong>speed &lt;integer&gt</strong>');
+				}
+			});
+			
+			var context = new glacier.Context('webgl', 'canvas');
+			var gl, rotation = 0.0, speed = 1.0;
+			var cam = new glacier.Camera(60.0, context.width / context.height);
+			var camControl = {
+				angle: new glacier.Vector2(0, 0),
+				dragStart: null,
+				target: new glacier.Vector3(0, 0, 0),
+				zoom: 10.0
+			};
+			
+			var globe = new glacier.Sphere(60, 120, 1.0);
+			var space = new glacier.Sphere(9, 18, 80.0);
+			var timestamp = Date.now(), fps = 0;
+			
+			context.canvas.addEventListener('mousedown', function(event) {
+				if(event.button === 0) {
+					camControl.dragStart = {
+						position: new glacier.Vector2(event.clientX, event.clientY),
+						angle: new glacier.Vector2(camControl.angle)
+					};
+				}
+			});
+			
+			context.canvas.addEventListener('mouseup', function(event) {
+				if(event.button === 0) {
+					camControl.dragStart = null;
+				}
+			});
+			
+			context.canvas.addEventListener('mousemove', function(event) {
+				if(camControl.dragStart) {
+					var offset = new glacier.Vector2(
+						 (event.clientX - camControl.dragStart.position.x) / context.width * 360.0,
+						-(event.clientY - camControl.dragStart.position.y) / context.height * 180.0
+					);
+					
+					camControl.angle = new glacier.Vector2(camControl.dragStart.angle).subtract(offset);
+					camControl.angle.y = glacier.clamp(camControl.angle.y, -89, 89.0);
+				}
+			});
+			
+			context.canvas.addEventListener('wheel', function(event) {
+				camControl.zoom = glacier.clamp(camControl.zoom + (event.deltaY > 0.0 ? 0.1 : (event.deltaY < 0.0 ? -0.1 : 0.0)), 1.1, 100.0);
+			});
+			
+			window.addEventListener('resize', function(event) {
+				cam = new glacier.Camera(60.0, context.width / context.height);
+				context.projection = cam.matrix;
+			});
+			
+			function init() {
+				gl = (gl || context.gl);
+				
+				gl.enable(gl.DEPTH_TEST);
+				gl.depthFunc(gl.LEQUAL);
+				
+				gl.enable(gl.BLEND);
+				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+				
+				globe.texture = 'gfx/earth.jpg';
+				globe.normalMap = 'gfx/normal_bathymetry.jpg';
+				globe.init(context, { shader: 'normalMapped' });
+				
+				space.texture = 'gfx/space.png';
+				space.init(context, { shader: 'textured' });
+				
+				context.background = glacier.color.GRAY;
+				context.projection = cam.matrix;
+			}
+			
+			function render() {
+				var dtime = (new Date().getTime() - timestamp) / 1000.0;
+				timestamp = Date.now();
+				fps = 1.0 / dtime;
+				
+				document.getElementById('info').innerHTML = 'FPS: ' + fps.toPrecision(3) + '<br/>' + 'Zoom: ' + camControl.zoom.toPrecision(3) + '<br/>' + 'Speed: ' + Math.round(speed) + 'x';
+				
+				cam.follow(camControl.target, camControl.angle, camControl.zoom);
+				
+				globe.matrix = new glacier.Matrix44();
+				globe.matrix.rotate(glacier.degToRad(-23.4), 0, 0, 1);	// Add earth inclination
+				globe.matrix.rotate(glacier.degToRad(90), 0, 1, 0);		// Center at equator
+				globe.matrix.rotate(glacier.degToRad(-rotation), 0, 1, 0);
+				
+				context.clear();
+				globe.draw();
+				space.draw();
+				
+				//rotation += 15.0 * dtime;
+				rotation = 180 + (new Date().getTime() * (360 / 86400000)) * speed;
+				requestAnimationFrame(render);
+			}
+			
+			init();
+			render();
+		</script>
+	</body>
+</html>
