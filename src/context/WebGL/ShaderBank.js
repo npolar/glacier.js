@@ -64,7 +64,7 @@ glacier.context.WebGL.ShaderBank.prototype = {
 							shader.addUniforms(v.uniforms);
 							shader.addUniforms(f.uniforms);
 							
-							Object.defineProperty(this, p, { value: shader });
+							this.shaders[p] = shader;
 						}
 					}
 				}
@@ -77,7 +77,7 @@ glacier.context.WebGL.ShaderBank.prototype = {
 	},
 	shader: function(shader) {
 		if(typeof shader == 'string') {
-			if((shader = this.shaders[shader]) instanceof glacier.context.WebGLShader) {
+			if((shader = this.shaders[shader]) instanceof glacier.context.WebGL.Shader) {
 				return shader;
 			}
 		} else {
