@@ -1,64 +1,41 @@
-glacier.Camera = function Camera(verticalViewAngle, aspectRatio) {
-	var args = [ 'verticalViewAngle', 'aspectRatio' ], error;
+glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
+	var args = [ 'fieldOfView', 'aspectRatio', 'clipNear', 'clipFar' ], error;
 	
-	Object.defineProperties(this, {
-		aspectRatio: {
-			get: function() {
-				return aspectRatio;
-			},
-			set: function(value) {
-				if(typeof value == 'number' && value > 0.0) {
-					aspectRatio = value;
-					update();
-				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'Camera.aspectRatio', value: value, expected: 'positive number' });
-				}
-			}
-		},
-		
-		fieldOfView: {
-			get: function() {
-				return verticalViewAngle;
-			},
-			set: function(value) {
-				if(typeof value == 'number' && value > 0.0) {
-					verticalViewAngle = value;
-					update();
-				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'camera.fieldOfView', value: value, expected: 'positive number' });
-				}
-			}
-		},
-		
-		matrix: {
-			value: new glacier.Matrix44(),
-			writable: false
-		},
-		
-		position: {
-			value: new glacier.Vector3(0, 1, 1),
-			writable: false
-		},
-		
-		target: {
-			value: new glacier.Vector3(0, 0, 0),
-			writable: false
-		}
-	});
+	// Set clipNear/clipFar defaults if not set
+	clipNear = (clipNear || 0.1);
+	clipFar	= (clipFar || 100.0);
 	
-	[ verticalViewAngle, aspectRatio ].forEach(function(arg, index) {
+	// Check parameters and declare members fieldOfView, aspectRatio, clipNear and clipFar
+	[ fieldOfView, aspectRatio, clipNear, clipFar ].forEach(function(arg, index) {
 		if(typeof arg != 'number' || arg <= 0.0) {
 			glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'positive number', method: 'Camera constructor' });
 			error = true;
+		} else {
+			Object.defineProperty(this, args[index], {
+				get: function() {
+					return arg;
+				},
+				set: function(value) {
+					if(typeof value == 'number' && value > 0.0) {
+						arg = value;
+						this.update();
+					} else {
+						glacier.error('INVALID_ASSIGNMENT', { variable: 'Camera.' + args[index], value: value, expected: 'positive number' });
+					}
+				}
+			});
 		}
-	});
+	}, this);
+	
+	// Declare typed members matrix, position and target
+	glacier.union.call(this, 'matrix', new glacier.Matrix44(), glacier.Matrix44);
+	glacier.union.call(this, 'position', new glacier.Vector3(0, 1, 1), glacier.Vector3);
+	glacier.union.call(this, 'target', new glacier.Vector3(0, 0, 0), glacier.Vector3);
 	
 	if(error) {
 		verticalViewAngle = (typeof verticalViewAngle == 'number' && verticalViewAngle > 0.0 ? verticalViewAngle : 60.0);
 		aspectRatio = (typeof aspectRatio == 'number' && aspectRatio > 0.0 ? aspectRatio : 16 / 9);
-	}
-	
-	this.update();
+	} else this.update();
 };
 
 glacier.Camera.prototype = {
@@ -88,7 +65,7 @@ glacier.Camera.prototype = {
 		hor.opp = hor.hyp * Math.sin(glacier.degToRad(dir.x));
 		hor.adj = hor.hyp * Math.cos(glacier.degToRad(dir.x));
 		
-		this.target	= target;
+		this.target.assign(target);
 		
 		this.position.x = target.x - hor.opp;
 		this.position.y = target.y + ver.opp;
@@ -111,9 +88,8 @@ glacier.Camera.prototype = {
 			y.normalize();
 		}
 		
-		// TODO: Remove hard-coded clipping planes
 		this.matrix.assign(new glacier.Matrix44());
-		this.matrix.perspective(this.fieldOfView, this.aspectRatio, 0.1, 100.0);
+		this.matrix.perspective(this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
 		//this.matrix.ortho(-1.0, 1.0, -1.0, 1.0, 0.1, 100.0);
 		
 		this.matrix.assign(new glacier.Matrix44([
