@@ -27,7 +27,7 @@ glacier.context.WebGL.ContextData = function(drawable, context, drawMode, shader
 		drawMode:	{ value: drawMode },
 		elements:	{ value: 0, configurable: true },
 		parent:		{ value: drawable },
-		textures:	{ value: {} },
+		textures:	{ value: [] },
 		
 		shader: {
 			get: function() {
@@ -75,17 +75,15 @@ glacier.context.WebGL.ContextData.prototype = {
 				gl.vertexAttribPointer(attrib, 4, gl.FLOAT, false, 0, 0);
 			}
 			
-			if(this.textures.base && (uniform = this.shader.uniform('sampler_texture'))) {
-				gl.activeTexture(gl.TEXTURE0);
-				gl.bindTexture(gl.TEXTURE_2D, this.textures.base);
-				gl.uniform1i(uniform, 0);
-			}
-			
-			if(this.textures.normal && (uniform = this.shader.uniform('sampler_normal_map'))) {
-				gl.activeTexture(gl.TEXTURE1);
-				gl.bindTexture(gl.TEXTURE_2D, this.textures.normal);
-				gl.uniform1i(uniform, 1);
-			}
+			this.textures.forEach(function(texture, index) {
+				if(texture instanceof WebGLTexture) {
+					if((uniform = this.shader.uniform('tex_samp_' + index))) {
+						gl.activeTexture(gl.TEXTURE0 + index);
+						gl.bindTexture(gl.TEXTURE_2D, texture);
+						gl.uniform1i(uniform, index);
+					}
+				}
+			}, this);
 			
 			if((uniform = this.shader.uniform('matrix_mvp'))) {
 				mvp = new glacier.Matrix44(this.parent.matrix);
@@ -100,8 +98,9 @@ glacier.context.WebGL.ContextData.prototype = {
 			if(this.buffers.index) {
 				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.index);
 				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
-			} else {
-				// TODO: gl.drawArrays(this.drawMode, 0, this.elements);
+			} else if(this.buffers.vertex) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
+				gl.drawArrays(this.drawMode, 0, this.elements);
 			}
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -118,6 +117,7 @@ glacier.context.WebGL.ContextData.prototype = {
 				vertices.forEach(function(vertex) { array.push(vertex.x, vertex.y, vertex.z); });
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.vertex = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
+				Object.defineProperty(this, 'elements', { value: array.length / 3 });
 			} else if(vertices) {
 				glacier.error('INVALID_PARAMETER', { parameter: 'vertices', value: typeof vertices, expected: 'Vector3 array', method: 'context.WebGL.ContextData.init' });
 				return false;
@@ -156,7 +156,7 @@ glacier.context.WebGL.ContextData.prototype = {
 			
 			if(glacier.isArray(colors, glacier.Color)) {
 				array = [];
-				colors.forEach(function(color) { array.push(color.r, color.g, color.b, color.a); });
+				colors.forEach(function(color) { array.push(color.r / 255, color.g  / 255, color.b  / 255, color.a); });
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.color = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 			} else if(normals) {
@@ -183,12 +183,13 @@ glacier.context.WebGL.ContextData.prototype = {
 				}
 			}
 			
-			[ 'base', 'alpha', 'normal', 'specular' ].forEach(function(tex, index) {
-				if(this.textures[tex] instanceof WebGLTexture) {
-					gl.deleteTexture(this.textures[tex]);
-					delete this.textures[tex];
+			this.textures.forEach(function(texture) {
+				if(texture instanceof WebGLTexture) {
+					gl.deleteTexture(texture);
 				}
-			}, this);
+			});
+			
+			this.textures.length = 0;
 		}
 	}
 };
