@@ -5,7 +5,7 @@ var glacier = {};
 	
 	Object.defineProperties(glacier, {
 		VERSION: {
-			value: '0.0.8'
+			value: '0.0.9'
 		},
 		language: {
 			get: function() { return lang; },
@@ -471,25 +471,24 @@ glacier.Color.prototype = {
 };
 
 // Pre-defined colors
-glacier.color = {};
-Object.defineProperties(glacier.color, {
-	WHITE:		{ get: function() { return new glacier.Color(0xFFFFFF, 1.0); } },
-	SILVER:		{ get: function() { return new glacier.Color(0xC0C0C0, 1.0); } },
-	GRAY:		{ get: function() { return new glacier.Color(0x808080, 1.0); } },
-	BLACK:		{ get: function() { return new glacier.Color(0x000000, 1.0); } },
-	RED:		{ get: function() { return new glacier.Color(0xFF0000, 1.0); } },
-	MAROON:		{ get: function() { return new glacier.Color(0x800000, 1.0); } },
-	YELLOW:		{ get: function() { return new glacier.Color(0xFFFF00, 1.0); } },
-	OLIVE:		{ get: function() { return new glacier.Color(0x808000, 1.0); } },
-	LIME:		{ get: function() { return new glacier.Color(0x00FF00, 1.0); } },
-	GREEN:		{ get: function() { return new glacier.Color(0x008000, 1.0); } },
-	AQUA:		{ get: function() { return new glacier.Color(0x00FFFF, 1.0); } },
-	TEAL:		{ get: function() { return new glacier.Color(0x008080, 1.0); } },
-	BLUE:		{ get: function() { return new glacier.Color(0x0000FF, 1.0); } },
-	NAVY:		{ get: function() { return new glacier.Color(0x000080, 1.0); } },
-	FUCHSIA:	{ get: function() { return new glacier.Color(0xFF00FF, 1.0); } },
-	PURPLE:		{ get: function() { return new glacier.Color(0x800080, 1.0); } }
-});
+glacier.color = {
+	get WHITE()		{ return new glacier.Color(0xFFFFFF, 1.0); },
+	get SILVER()	{ return new glacier.Color(0xC0C0C0, 1.0); },
+	get GRAY()		{ return new glacier.Color(0x808080, 1.0); },
+	get BLACK()		{ return new glacier.Color(0x000000, 1.0); },
+	get RED()		{ return new glacier.Color(0xFF0000, 1.0); },
+	get MAROON()	{ return new glacier.Color(0x800000, 1.0); },
+	get YELLOW()	{ return new glacier.Color(0xFFFF00, 1.0); },
+	get OLIVE()		{ return new glacier.Color(0x808000, 1.0); },
+	get LIME()		{ return new glacier.Color(0x00FF00, 1.0); },
+	get GREEN()		{ return new glacier.Color(0x008000, 1.0); },
+	get AQUA()		{ return new glacier.Color(0x00FFFF, 1.0); },
+	get TEAL()		{ return new glacier.Color(0x008080, 1.0); },
+	get BLUE()		{ return new glacier.Color(0x0000FF, 1.0); },
+	get NAVY()		{ return new glacier.Color(0x000080, 1.0); },
+	get FUCHSIA()	{ return new glacier.Color(0xFF00FF, 1.0); },
+	get PURPLE()	{ return new glacier.Color(0x800080, 1.0); }
+};
 
 glacier.context = {}; // Map of contexts
 
@@ -613,52 +612,6 @@ glacier.Drawable.prototype = {
 		return false;
 	}
 };
-
-glacier.Mesh = function Mesh() {
-	// Call super constructor
-	glacier.Drawable.call(this);
-
-	// Define buffer arrays
-	Object.defineProperties(this, {
-		colors: 	{ value: new glacier.TypedArray('Color', glacier.Color) },
-		indices:	{ value: new glacier.TypedArray('number') },
-		normals:	{ value: new glacier.TypedArray('Vector3', glacier.Vector3) },
-		texCoords:	{ value: new glacier.TypedArray('Vector2', glacier.Vector2) },
-		vertices:	{ value: new glacier.TypedArray('Vector3', glacier.Vector3) }
-	});
-	
-	[ 'texture', 'normalMap' ].forEach(function(property) {
-		var tex = new glacier.Texture();
-		
-		Object.defineProperty(this, property, {
-			get: function() {
-				return tex;
-			},
-			set: function(value) {
-				if(typeof value == 'string') {
-					tex.load(value);
-				} else if(value === null) {
-					tex.free();
-				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'Mesh.' + property, value: typeof value, expected: 'string or null' });
-				}
-			}
-		});
-	}, this);
-};
-
-// glacier.Mesh extends glacier.Drawable
-glacier.extend(glacier.Mesh, glacier.Drawable, {
-	free: function() {
-		glacier.Drawable.prototype.free.call(this);
-		
-		this.colors.length		= 0;
-		this.indices.length	 	= 0;
-		this.normals.length		= 0;
-		this.texCoords.length	= 0;
-		this.vertices.length	= 0;
-	}
-});
 
 glacier.Texture = function Texture(source) {
 	var image = null;
@@ -920,111 +873,118 @@ glacier.clamp = function(value, min, max) {
 	return null;
 };
 
-glacier.Sphere = function Sphere(latitudes, longitudes, radius) {
+glacier.Mesh = function Mesh() {
 	// Call super constructor
-	glacier.Mesh.call(this);
-	
-	// Ensure that radius is a positive number
-	radius = (typeof radius == 'number' && radius >= 0.0 ? radius : 0.0);
-	
-	// Define getter and setter for radius member
-	Object.defineProperty(this, 'radius', {
-		get: function() {
-			return radius;
-		},
-		set: function(value) {
-			if(typeof value == 'number' && value >= 0.0) {
-				
-				if(value > 0.0) {
-					this.vertices.forEach(function(vertex) {
-						vertex = (vertex / radius) * value;
-					});
-				} else if(this.indices.length) {
-					this.free();
-				}
-				
-				radius = value;
-			} else {
-				glacier.error('INVALID_ASSIGNMENT', { variable: 'Sphere.radius', value: value, expected: 'positive number' });
-			}
-		}
+	glacier.Drawable.call(this);
+
+	// Define buffer arrays
+	Object.defineProperties(this, {
+		colors: 	{ value: new glacier.TypedArray('Color', glacier.Color) },
+		indices:	{ value: new glacier.TypedArray('number') },
+		normals:	{ value: new glacier.TypedArray('Vector3', glacier.Vector3) },
+		texCoords:	{ value: new glacier.TypedArray('Vector2', glacier.Vector2) },
+		vertices:	{ value: new glacier.TypedArray('Vector3', glacier.Vector3) }
 	});
 	
-	// Generate sphere is latitudes and longitudes are set
-	if(latitudes && longitudes) {
-		this.generate(latitudes, longitudes, radius || 1.0);
-	}
+	[ 0, 1, 2, 3 ].forEach(function(number) {
+		var tex = new glacier.Texture(), property = 'texture' + number;
+		
+		Object.defineProperty(this, property, {
+			get: function() {
+				return tex;
+			},
+			set: function(value) {
+				if(typeof value == 'string') {
+					tex.load(value);
+				} else if(value === null) {
+					tex.free();
+				} else {
+					glacier.error('INVALID_ASSIGNMENT', { variable: 'Mesh.' + property, value: typeof value, expected: 'string or null' });
+				}
+			}
+		});
+	}, this);
 };
 
-glacier.extend(glacier.Sphere, glacier.Mesh, {
-	// Overloaded members
+// glacier.Mesh extends glacier.Drawable
+glacier.extend(glacier.Mesh, glacier.Drawable, {
 	free: function() {
-		glacier.Mesh.prototype.free.call(this);
-		this.radius = 0.0;
-	},
-	
-	// Unique members
-	generate: function(latitudes, longitudes, radius) {
-		// Validate latitudes parameter
-		if(typeof latitudes != 'number' || latitudes < 3) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'latitudes', value: latitudes, expected: 'number (>= 3)', method: 'Sphere.generate' });
-			return false;
-		} else latitudes = Math.round(Math.abs(latitudes));
+		glacier.Drawable.prototype.free.call(this);
 		
-		// Validate longitudes parameter
-		if(typeof longitudes != 'number' || longitudes < 3) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'longitudes', value: longitudes, expected: 'number (>= 3)', method: 'Sphere.generate' });
-			return false;
-		} else longitudes = Math.round(Math.abs(longitudes));
-		
-		// Validate radius parameter
-		if(radius === undefined) {
-			radius = 1.0;
-		} else if(typeof radius != 'number' || radius <= 0.0) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'radius', value: radius, expected: 'number (> 0.0)', method: 'Sphere.generate' });
-			return false;
-		}
-		
-		this.free();
-		this.radius = radius;
-		
-		var lat, lng, theta, sinTheta, cosTheta, phi, sinPhi, cosPhi, x, y, z, u, v;
-		
-		for(lat = 0; lat <= latitudes; ++lat) {
-			theta = lat * Math.PI / latitudes;
-			sinTheta = Math.sin(theta);
-			cosTheta = Math.cos(theta);
-			
-			for(lng = 0; lng <= longitudes; ++lng) {
-				phi = lng * 2 * Math.PI / longitudes;
-				sinPhi = Math.sin(phi);
-				cosPhi = Math.cos(phi);
-				
-				x = cosPhi * sinTheta;
-				y = cosTheta;
-				z = sinPhi * sinTheta;
-				u = 1 - (lng / longitudes);
-				v = (lat / latitudes);
-				
-				this.vertices.push(new glacier.Vector3(radius * x, radius * y, radius * z));
-				this.normals.push(new glacier.Vector3(x, y, z));
-				this.texCoords.push(new glacier.Vector2(u, v));
-			}
-		}
-		
-		for(lat = 0; lat < latitudes; ++lat) {
-			for(lng = 0; lng < longitudes; ++lng) {
-				x = (lat * (longitudes + 1)) + lng;
-				y = x + longitudes + 1;
-				
-				this.indices.push(x, y, x + 1);
-				this.indices.push(y, y + 1, x + 1);
-			}
-		}
-		
-		return true;
+		this.colors.length		= 0;
+		this.indices.length	 	= 0;
+		this.normals.length		= 0;
+		this.texCoords.length	= 0;
+		this.vertices.length	= 0;
 	}
 });
+
+glacier.PointCollection = function PointCollection() {
+	// Call super constructor
+	glacier.Drawable.call(this);
+	
+	// Define buffer arrays
+	Object.defineProperties(this, {
+		colors: 	{ value: new glacier.TypedArray('Color', glacier.Color) },
+		vertices:	{ value: new glacier.TypedArray('Vector3', glacier.Vector3) }
+	});
+};
+
+// glacier.PointCollection extends glacier.Drawable
+glacier.extend(glacier.PointCollection, glacier.Drawable, {
+	addPoint: function(vec3, color) {
+		if(vec3 instanceof glacier.Vector3) {
+			if(!color || (color instanceof glacier.Color)) {
+				this.colors.push(color || glacier.color.WHITE);
+			} else {
+				glacier.error('INVALID_PARAMETER', { parameter: 'color', value: typeof color, expected: 'Color', method: 'PointCollection.addPoint' });
+				return false;
+			}
+			
+			this.vertices.push(vec3);
+			return true;
+		}
+		
+		glacier.error('INVALID_PARAMETER', { parameter: 'vec3', value: typeof vec3, expected: 'Vector3', method: 'PointCollection.addPoint' });
+		return false;
+	},
+	free: function() {
+		glacier.Drawable.prototype.free.call(this);
+		
+		this.colors.length		= 0;
+		this.vertices.length	= 0;
+	}
+});
+
+glacier.i18n.en = {
+	CONTEXT_ERROR:			'{context} context error: {error}',
+	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
+	INVALID_ASSIGNMENT:		'Invalid assigment of {variable}: {value} (expected {expected})',
+	INVALID_PARAMETER:		'Invalid parameter {parameter}: {value} (expected {expected}) in {method}',
+	MATRIX_NO_INVERSE:		'Inverse matrix does not exist: {matrix} in {method}',
+	MISSING_IMPLEMENTATION:	'Missing implementation: {implementation} in {child} extension of {parent}',
+	MISSING_PARAMETER:		'Missing mandatory parameter: {parameter} in {method}',
+	UNDEFINED_ELEMENT:		'Undefined element ID: {element} in {method}',
+	UNDEFINED_ERROR:		'Undefined error: {error}',
+	UNDEFINED_WARNING:		'Undefined warning: {warning}',
+	UNDEFINED_LANGUAGE:		'Undefined language: {language} (using {fallback} as fallback)',
+	UNKNOWN_PROPERTY:		'Unrecognized property: {property} in {object}'
+};
+
+glacier.i18n.nb = {
+	CONTEXT_ERROR:			'{context} kontekstfeil: {error}',
+	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
+	INVALID_ASSIGNMENT:		'Ugyldig tildeing av {variable}: {value} (forventet {expected})',
+	INVALID_PARAMETER:		'Ugyldig parameter {parameter}: {value} (forventet {expected}) i {method}',
+	MATRIX_NO_INVERSE:		'Invers matrise eksisterer ikke: {matrix} i {method}',
+	MISSING_IMPLEMENTATION:	'Mangler implementasjon: {implementation} i {child} utvidelse av {parent}',
+	MISSING_PARAMETER:		'Mangler obligatorisk parameter: {parameter} i {method}',
+	UNDEFINED_ELEMENT:		'Udefinert element ID: {element} i {method}',
+	UNDEFINED_ERROR:		'Udefinert feilmelding: {error}',
+	UNDEFINED_WARNING:		'Udefinert advarsel: {warning}',
+	UNDEFINED_LANGUAGE:		'Udefinert språkkode: {language} (bruker {fallback})',
+	UNKNOWN_PROPERTY:		'Ukjent egenskap: {property} i {object}'
+};
 
 glacier.context.WebGL = function WebGLContext(options) {
 	options = (typeof options == 'object' ? options : {});
@@ -1140,27 +1100,34 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		}
 	},
 	init: function(drawable, options) {
-		if(drawable instanceof glacier.Mesh) {
-			var shader, data, self = this;
-			
-			if(typeof options == 'object') {
-				if(typeof options.shader == 'string') {
-					shader = this.shaderBank.shader(options.shader);
-				}
+		var data, self = this, shader = self.shaderBank.shader('generic');
+		
+		if(typeof options == 'object') {
+			if(typeof options.shader == 'string') {
+				shader = self.shaderBank.shader(options.shader);
 			}
-			
-			data = new glacier.context.WebGL.ContextData(drawable, this, this.gl.TRIANGLES, shader);
+		}
+		
+		if(drawable instanceof glacier.Mesh) {
+			data = new glacier.context.WebGL.ContextData(drawable, self, self.gl.TRIANGLES, shader);
 			
 			if(data.init(drawable.vertices, drawable.indices, drawable.normals, drawable.texCoords, drawable.colors)) {
-				
-				drawable.texture.onLoad(function(image) { data.textures.base = self.createTexture(image); });
-				drawable.normalMap.onLoad(function(image) { data.textures.normal = self.createTexture(image); });
+				drawable.texture0.onLoad(function(image) { data.textures[0] = self.createTexture(image); });
+				drawable.texture1.onLoad(function(image) { data.textures[1] = self.createTexture(image); });
+				drawable.texture2.onLoad(function(image) { data.textures[2] = self.createTexture(image); });
+				drawable.texture3.onLoad(function(image) { data.textures[3] = self.createTexture(image); });
 				drawable.contextData = data;
-				
 				return true;
 			}
 			
 			return false;
+		} else if(drawable instanceof glacier.PointCollection) {
+			data = new glacier.context.WebGL.ContextData(drawable, self, self.gl.POINTS, shader);
+			
+			if(data.init(drawable.vertices, null, null, null, drawable.colors)) {
+				drawable.contextData = data;
+				return true;
+			}
 		}
 		
 		// TODO: initialization of other drawables
@@ -1273,36 +1240,6 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		return null;
 	}
 });
-
-glacier.i18n.en = {
-	CONTEXT_ERROR:			'{context} context error: {error}',
-	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
-	INVALID_ASSIGNMENT:		'Invalid assigment of {variable}: {value} (expected {expected})',
-	INVALID_PARAMETER:		'Invalid parameter {parameter}: {value} (expected {expected}) in {method}',
-	MATRIX_NO_INVERSE:		'Inverse matrix does not exist: {matrix} in {method}',
-	MISSING_IMPLEMENTATION:	'Missing implementation: {implementation} in {child} extension of {parent}',
-	MISSING_PARAMETER:		'Missing mandatory parameter: {parameter} in {method}',
-	UNDEFINED_ELEMENT:		'Undefined element ID: {element} in {method}',
-	UNDEFINED_ERROR:		'Undefined error: {error}',
-	UNDEFINED_WARNING:		'Undefined warning: {warning}',
-	UNDEFINED_LANGUAGE:		'Undefined language: {language} (using {fallback} as fallback)',
-	UNKNOWN_PROPERTY:		'Unrecognized property: {property} in {object}'
-};
-
-glacier.i18n.nb = {
-	CONTEXT_ERROR:			'{context} kontekstfeil: {error}',
-	INDEX_OUT_OF_RANGE:		'Index out of range: {index} (expected range {range}) in {method}',
-	INVALID_ASSIGNMENT:		'Ugyldig tildeing av {variable}: {value} (forventet {expected})',
-	INVALID_PARAMETER:		'Ugyldig parameter {parameter}: {value} (forventet {expected}) i {method}',
-	MATRIX_NO_INVERSE:		'Invers matrise eksisterer ikke: {matrix} i {method}',
-	MISSING_IMPLEMENTATION:	'Mangler implementasjon: {implementation} i {child} utvidelse av {parent}',
-	MISSING_PARAMETER:		'Mangler obligatorisk parameter: {parameter} i {method}',
-	UNDEFINED_ELEMENT:		'Udefinert element ID: {element} i {method}',
-	UNDEFINED_ERROR:		'Udefinert feilmelding: {error}',
-	UNDEFINED_WARNING:		'Udefinert advarsel: {warning}',
-	UNDEFINED_LANGUAGE:		'Udefinert språkkode: {language} (bruker {fallback})',
-	UNKNOWN_PROPERTY:		'Ukjent egenskap: {property} i {object}'
-};
 
 glacier.Matrix33 = function Matrix33(value) {
 	Object.defineProperty(this, 'array', {
@@ -2148,6 +2085,112 @@ glacier.Vector3.prototype = {
 	}
 };
 
+glacier.Sphere = function Sphere(latitudes, longitudes, radius) {
+	// Call super constructor
+	glacier.Mesh.call(this);
+	
+	// Ensure that radius is a positive number
+	radius = (typeof radius == 'number' && radius >= 0.0 ? radius : 0.0);
+	
+	// Define getter and setter for radius member
+	Object.defineProperty(this, 'radius', {
+		get: function() {
+			return radius;
+		},
+		set: function(value) {
+			if(typeof value == 'number' && value >= 0.0) {
+				
+				if(value > 0.0) {
+					this.vertices.forEach(function(vertex) {
+						vertex = (vertex / radius) * value;
+					});
+				} else if(this.indices.length) {
+					this.free();
+				}
+				
+				radius = value;
+			} else {
+				glacier.error('INVALID_ASSIGNMENT', { variable: 'Sphere.radius', value: value, expected: 'positive number' });
+			}
+		}
+	});
+	
+	// Generate sphere is latitudes and longitudes are set
+	if(latitudes && longitudes) {
+		this.generate(latitudes, longitudes, radius || 1.0);
+	}
+};
+
+glacier.extend(glacier.Sphere, glacier.Mesh, {
+	// Overloaded members
+	free: function() {
+		glacier.Mesh.prototype.free.call(this);
+		this.radius = 0.0;
+	},
+	
+	// Unique members
+	generate: function(latitudes, longitudes, radius) {
+		// Validate latitudes parameter
+		if(typeof latitudes != 'number' || latitudes < 3) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'latitudes', value: latitudes, expected: 'number (>= 3)', method: 'Sphere.generate' });
+			return false;
+		} else latitudes = Math.round(Math.abs(latitudes));
+		
+		// Validate longitudes parameter
+		if(typeof longitudes != 'number' || longitudes < 3) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'longitudes', value: longitudes, expected: 'number (>= 3)', method: 'Sphere.generate' });
+			return false;
+		} else longitudes = Math.round(Math.abs(longitudes));
+		
+		// Validate radius parameter
+		if(radius === undefined) {
+			radius = 1.0;
+		} else if(typeof radius != 'number' || radius <= 0.0) {
+			glacier.error('INVALID_PARAMETER', { parameter: 'radius', value: radius, expected: 'number (> 0.0)', method: 'Sphere.generate' });
+			return false;
+		}
+		
+		this.free();
+		this.radius = radius;
+		
+		var lat, lng, theta, sinTheta, cosTheta, phi, sinPhi, cosPhi, x, y, z, u, v;
+		
+		for(lat = 0; lat <= latitudes; ++lat) {
+			theta = lat * Math.PI / latitudes;
+			sinTheta = Math.sin(theta);
+			cosTheta = Math.cos(theta);
+			
+			for(lng = 0; lng <= longitudes; ++lng) {
+				phi = lng * 2 * Math.PI / longitudes;
+				sinPhi = Math.sin(phi);
+				cosPhi = Math.cos(phi);
+				
+				x = cosPhi * sinTheta;
+				y = cosTheta;
+				z = sinPhi * sinTheta;
+				u = 1 - (lng / longitudes);
+				v = (lat / latitudes);
+				
+				this.vertices.push(new glacier.Vector3(radius * x, radius * y, radius * z));
+				this.normals.push(new glacier.Vector3(x, y, z));
+				this.texCoords.push(new glacier.Vector2(u, v));
+			}
+		}
+		
+		for(lat = 0; lat < latitudes; ++lat) {
+			for(lng = 0; lng < longitudes; ++lng) {
+				x = (lat * (longitudes + 1)) + lng;
+				y = x + longitudes + 1;
+				
+				this.indices.push(x, y, x + 1);
+				this.indices.push(y, y + 1, x + 1);
+			}
+		}
+		
+		return true;
+	}
+});
+
 glacier.context.WebGL.ContextData = function(drawable, context, drawMode, shader) {
 	if(!(drawable instanceof glacier.Drawable)) {
 		glacier.error('INVALID_PARAMETER', { parameter: 'drawable', value: typeof drawable, expected: 'Drawable', method: 'context.WebGL.ContextData constructor' });
@@ -2177,7 +2220,7 @@ glacier.context.WebGL.ContextData = function(drawable, context, drawMode, shader
 		drawMode:	{ value: drawMode },
 		elements:	{ value: 0, configurable: true },
 		parent:		{ value: drawable },
-		textures:	{ value: {} },
+		textures:	{ value: [] },
 		
 		shader: {
 			get: function() {
@@ -2225,17 +2268,15 @@ glacier.context.WebGL.ContextData.prototype = {
 				gl.vertexAttribPointer(attrib, 4, gl.FLOAT, false, 0, 0);
 			}
 			
-			if(this.textures.base && (uniform = this.shader.uniform('sampler_texture'))) {
-				gl.activeTexture(gl.TEXTURE0);
-				gl.bindTexture(gl.TEXTURE_2D, this.textures.base);
-				gl.uniform1i(uniform, 0);
-			}
-			
-			if(this.textures.normal && (uniform = this.shader.uniform('sampler_normal_map'))) {
-				gl.activeTexture(gl.TEXTURE1);
-				gl.bindTexture(gl.TEXTURE_2D, this.textures.normal);
-				gl.uniform1i(uniform, 1);
-			}
+			this.textures.forEach(function(texture, index) {
+				if(texture instanceof WebGLTexture) {
+					if((uniform = this.shader.uniform('tex_samp_' + index))) {
+						gl.activeTexture(gl.TEXTURE0 + index);
+						gl.bindTexture(gl.TEXTURE_2D, texture);
+						gl.uniform1i(uniform, index);
+					}
+				}
+			}, this);
 			
 			if((uniform = this.shader.uniform('matrix_mvp'))) {
 				mvp = new glacier.Matrix44(this.parent.matrix);
@@ -2250,8 +2291,9 @@ glacier.context.WebGL.ContextData.prototype = {
 			if(this.buffers.index) {
 				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.index);
 				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
-			} else {
-				// TODO: gl.drawArrays(this.drawMode, 0, this.elements);
+			} else if(this.buffers.vertex) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
+				gl.drawArrays(this.drawMode, 0, this.elements);
 			}
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -2268,6 +2310,7 @@ glacier.context.WebGL.ContextData.prototype = {
 				vertices.forEach(function(vertex) { array.push(vertex.x, vertex.y, vertex.z); });
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.vertex = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
+				Object.defineProperty(this, 'elements', { value: array.length / 3 });
 			} else if(vertices) {
 				glacier.error('INVALID_PARAMETER', { parameter: 'vertices', value: typeof vertices, expected: 'Vector3 array', method: 'context.WebGL.ContextData.init' });
 				return false;
@@ -2306,7 +2349,7 @@ glacier.context.WebGL.ContextData.prototype = {
 			
 			if(glacier.isArray(colors, glacier.Color)) {
 				array = [];
-				colors.forEach(function(color) { array.push(color.r, color.g, color.b, color.a); });
+				colors.forEach(function(color) { array.push(color.r / 255, color.g  / 255, color.b  / 255, color.a); });
 				gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.color = gl.createBuffer()));
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 			} else if(normals) {
@@ -2333,12 +2376,13 @@ glacier.context.WebGL.ContextData.prototype = {
 				}
 			}
 			
-			[ 'base', 'alpha', 'normal', 'specular' ].forEach(function(tex, index) {
-				if(this.textures[tex] instanceof WebGLTexture) {
-					gl.deleteTexture(this.textures[tex]);
-					delete this.textures[tex];
+			this.textures.forEach(function(texture) {
+				if(texture instanceof WebGLTexture) {
+					gl.deleteTexture(texture);
 				}
-			}, this);
+			});
+			
+			this.textures.length = 0;
 		}
 	}
 };
@@ -2517,7 +2561,7 @@ glacier.context.WebGL.ShaderBank.prototype = {
 
 glacier.context.WebGL.shaders = {
 	vertex: {
-		general: [
+		generic: [
 			'attribute highp vec3 vertex_xyz;',
 			'attribute highp vec3 normal_xyz;',
 			'attribute highp vec2 texture_uv;',
@@ -2525,42 +2569,74 @@ glacier.context.WebGL.shaders = {
 			'uniform highp mat4 matrix_mvp;',
 			'varying mediump vec2 tex_coords;',
 			'varying mediump vec4 frag_color;',
+			'varying mediump vec3 mvp_normal;',
 			'void main()',
 			'{',
+				'gl_PointSize = 2.0;',
 				'gl_Position = matrix_mvp * vec4(vertex_xyz, 1.0);',
 				'tex_coords = texture_uv; frag_color = color_rgba;',
+				'mvp_normal = normalize(matrix_mvp * vec4(normal_xyz, 1.0)).xyz;',
 			'}'
 		]
 	},
 	fragment: {
-		textured: [
-			'precision mediump float;',
-			'uniform sampler2D sampler_texture;',
-			'varying mediump vec2 tex_coords;',
+		generic: [
 			'varying mediump vec4 frag_color;',
 			'void main()',
 			'{',
-				'gl_FragColor = texture2D(sampler_texture, tex_coords);',
+				'gl_FragColor = frag_color;',
+			'}'
+		],
+		globe: [
+			'precision mediump float;',
+			'uniform sampler2D tex_samp_0;',
+			'uniform sampler2D tex_samp_1;',
+			'uniform sampler2D tex_samp_2;',
+			'varying mediump vec2 tex_coords;',
+			'varying mediump vec4 frag_color;',
+			'varying mediump vec3 mvp_normal;',
+			'void main()',
+			'{',
+				'vec3 lightPos = normalize(vec3(-28.0, 2.0, 12.0));',
+				'vec3 normal = normalize(texture2D(tex_samp_2, tex_coords).rgb * 2.0 - 1.0);',
+				'float diffuse = max(dot(mvp_normal, lightPos), 0.0);',
+				'vec3 dayColor = texture2D(tex_samp_0, tex_coords).rgb * diffuse;',
+				'vec3 nightColor = texture2D(tex_samp_1, tex_coords).rgb * (1.0 - diffuse);',
+				//'gl_FragColor = vec4(dayColor + nightColor, 1.0);',
+				
+				'gl_FragColor = vec4(nightColor + dayColor * max(dot(normal, lightPos), 0.3), 1.0);',
 			'}'
 		],
 		normalMapped: [
 			'precision mediump float;',
-			'uniform sampler2D sampler_texture;',
-			'uniform sampler2D sampler_normal_map;',
+			'uniform sampler2D tex_samp_0;',
+			'uniform sampler2D tex_samp_1;',
 			'varying mediump vec2 tex_coords;',
 			'varying mediump vec4 frag_color;',
 			'void main()',
 			'{',
 				'vec3 lightPos = normalize(vec3(1.0, 1.0, 1.0));',
 				'vec4 fragColor = vec4(1.0, 1.0, 1.0, 1.0);',
-				'vec3 normal = normalize(texture2D(sampler_normal_map, tex_coords).rgb * 2.0 - 1.0);',
+				'vec3 normal = normalize(texture2D(tex_samp_1, tex_coords).rgb * 2.0 - 1.0);',
 				'float diffuse = max(dot(normal, lightPos), 0.0);',
-				'gl_FragColor = vec4(diffuse * texture2D(sampler_texture, tex_coords).rgb, 1.0);',
+				'gl_FragColor = vec4(diffuse * texture2D(tex_samp_0, tex_coords).rgb, 1.0);',
+			'}'
+		],
+		textured: [
+			'precision mediump float;',
+			'uniform sampler2D tex_samp_0;',
+			'varying mediump vec2 tex_coords;',
+			'varying mediump vec4 frag_color;',
+			'void main()',
+			'{',
+				'gl_FragColor = texture2D(tex_samp_0, tex_coords);',
 			'}'
 		]
 	},
 	programs: {
-		textured: { vertex: 'general', fragment: 'textured' },
-		normalMapped: { vertex: 'general', fragment: 'normalMapped' }
+		generic: { vertex: 'generic', fragment: 'generic' },
+		globe: { vertex: 'generic', fragment: 'globe' },
+		normalMapped: { vertex: 'generic', fragment: 'normalMapped' },
+		textured: { vertex: 'generic', fragment: 'textured' }
 	}
 };
