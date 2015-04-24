@@ -11,8 +11,8 @@ glacier.Mesh = function Mesh() {
 		vertices:	{ value: new glacier.TypedArray('Vector3', glacier.Vector3) }
 	});
 	
-	[ 'texture', 'normalMap' ].forEach(function(property) {
-		var tex = new glacier.Texture();
+	[ 0, 1, 2, 3 ].forEach(function(number) {
+		var tex = new glacier.Texture(), property = 'texture' + number;
 		
 		Object.defineProperty(this, property, {
 			get: function() {
