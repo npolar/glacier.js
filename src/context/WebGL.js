@@ -112,27 +112,34 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		}
 	},
 	init: function(drawable, options) {
-		if(drawable instanceof glacier.Mesh) {
-			var shader, data, self = this;
-			
-			if(typeof options == 'object') {
-				if(typeof options.shader == 'string') {
-					shader = this.shaderBank.shader(options.shader);
-				}
+		var data, self = this, shader = self.shaderBank.shader('generic');
+		
+		if(typeof options == 'object') {
+			if(typeof options.shader == 'string') {
+				shader = self.shaderBank.shader(options.shader);
 			}
-			
-			data = new glacier.context.WebGL.ContextData(drawable, this, this.gl.TRIANGLES, shader);
+		}
+		
+		if(drawable instanceof glacier.Mesh) {
+			data = new glacier.context.WebGL.ContextData(drawable, self, self.gl.TRIANGLES, shader);
 			
 			if(data.init(drawable.vertices, drawable.indices, drawable.normals, drawable.texCoords, drawable.colors)) {
-				
-				drawable.texture.onLoad(function(image) { data.textures.base = self.createTexture(image); });
-				drawable.normalMap.onLoad(function(image) { data.textures.normal = self.createTexture(image); });
+				drawable.texture0.onLoad(function(image) { data.textures[0] = self.createTexture(image); });
+				drawable.texture1.onLoad(function(image) { data.textures[1] = self.createTexture(image); });
+				drawable.texture2.onLoad(function(image) { data.textures[2] = self.createTexture(image); });
+				drawable.texture3.onLoad(function(image) { data.textures[3] = self.createTexture(image); });
 				drawable.contextData = data;
-				
 				return true;
 			}
 			
 			return false;
+		} else if(drawable instanceof glacier.PointCollection) {
+			data = new glacier.context.WebGL.ContextData(drawable, self, self.gl.POINTS, shader);
+			
+			if(data.init(drawable.vertices, null, null, null, drawable.colors)) {
+				drawable.contextData = data;
+				return true;
+			}
 		}
 		
 		// TODO: initialization of other drawables
