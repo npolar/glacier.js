@@ -38,18 +38,37 @@
 			
 			var context = new glacier.Context('webgl', 'canvas');
 			var gl, rotation = 0.0, speed = 1.0;
-			var cam = new glacier.Camera(60.0, context.width / context.height, 0.1, 1000.0);
+			var cam = new glacier.Camera(60.0, context.width / context.height, 0.1, 100000.0);
+			var timestamp = Date.now(), fps = 0;
+			var space = new glacier.Sphere(12, 12, 50000.0);
+			
+			var earth = {
+				mesh: 		new glacier.Sphere(50, 50, 1.0),
+				obliquity:	23.4,
+				position:	new glacier.Vector3(0, 0, 0),
+				rotation:	0.0,
+				scale:		1.0,
+				
+				draw: function() {
+					this.mesh.matrix = new glacier.Matrix44();
+					this.mesh.matrix.translate(this.position);
+					this.mesh.matrix.scale(this.scale, this.scale, this.scale);
+					//this.mesh.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
+					this.mesh.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
+					this.mesh.draw();
+				},
+				update: function(dtime) {
+					//this.rotation += 15.0 * dtime;
+				}
+			};
+			
 			var camControl = {
 				angle: new glacier.Vector2(0, 0),
 				dragStart: null,
-				target: new glacier.Vector3(0, 0, 0),
-				zoom: 10.0
+				follow: earth.position,
+				zoomSpeed: 0.2,
+				zoom: 10.0,
 			};
-			
-			var earth = new glacier.Sphere(90, 90, 1.0);
-			var moon = new glacier.Sphere(30, 30, 0.3);
-			var space = new glacier.Sphere(12, 12, 300.0);
-			var timestamp = Date.now(), fps = 0;
 			
 			context.canvas.addEventListener('mousedown', function(event) {
 				if(event.button === 0) {
@@ -79,48 +98,27 @@
 			});
 			
 			context.canvas.addEventListener('wheel', function(event) {
-				camControl.zoom = glacier.clamp(camControl.zoom + (event.deltaY > 0.0 ? 0.1 : (event.deltaY < 0.0 ? -0.1 : 0.0)), 1.1, 20.0);
+				camControl.zoom = glacier.clamp(camControl.zoom + (event.deltaY > 0.0 ? camControl.zoomSpeed : (event.deltaY < 0.0 ? -camControl.zoomSpeed : 0.0)), 1.2, 100.0);
 			});
 			
 			window.addEventListener('resize', function(event) {
 				cam.aspectRatio = (context.width / context.height);
 			});
 			
-			function init() {
-				gl = (gl || context.gl);
+			function latLngToVec3(lat, lng, radius) {
+				var theta = glacier.degToRad(lng),
+					phi = glacier.degToRad(lat);
 				
-				gl.enable(gl.DEPTH_TEST);
-				gl.depthFunc(gl.LEQUAL);
-				
-				gl.enable(gl.BLEND);
-				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-				
-				earth.texture = 'gfx/earth.jpg';
-				earth.normalMap = 'gfx/normal_bathymetry.jpg';
-				earth.init(context, { shader: 'normalMapped' });
-				
-				moon.texture = 'gfx/moon.jpg';
-				moon.init(context, { shader: 'textured' });
-				
-				space.texture = 'gfx/space.png';
-				space.init(context, { shader: 'textured' });
-				
-				context.background = glacier.color.GRAY;
-				context.projection = cam.matrix;
+				return new glacier.Vector3(
+					-radius * Math.cos(phi) * Math.cos(theta),
+					 radius * Math.sin(phi),
+					 radius * Math.cos(phi) * Math.sin(theta)
+				);
 			}
 			
-			var moonData = {
-				dir: 0.0,
-				dist: 60.3,
-				scale: 1.0,
-				get pos() {
-					return new glacier.Vector3(
-						 this.dist * Math.cos(glacier.degToRad(this.dir)),
-						 this.dist * Math.sin(glacier.degToRad(5.14)) * Math.sin(glacier.degToRad(this.dir)),
-						-this.dist * Math.sin(glacier.degToRad(this.dir))
-					);
-				}
-			};
+			var points = new glacier.PointCollection();
+			points.addPoint(latLngToVec3(82.2, 16.5, 1.0), glacier.color.AQUA);		// Lance
+			points.addPoint(latLngToVec3(69.68, 18.94, 1.0), glacier.color.RED);	// Npolar
 			
 			function render() {
 				var dtime = (Date.now() - timestamp) / 1000.0;
@@ -129,32 +127,43 @@
 				
 				document.getElementById('info').innerHTML = 'FPS: ' + fps.toPrecision(3) + '<br/>' + 'Zoom: ' + camControl.zoom.toPrecision(3) + '<br/>' + 'Speed: ' + Math.round(speed) + 'x';
 				
-				cam.follow(camControl.target, camControl.angle, camControl.zoom);
-				
-				earth.matrix = new glacier.Matrix44();
-				earth.matrix.rotate(glacier.degToRad(-23.4), 0, 0, 1);	// Add earth inclination
-				earth.matrix.rotate(glacier.degToRad(90.0 - rotation), 0, 1, 0);
-				
-				moon.matrix = new glacier.Matrix44();
-				moon.matrix.translate(moonData.pos);
-				moon.matrix.scale(moonData.scale, moonData.scale, moonData.scale);
-				moon.matrix.rotate(glacier.degToRad(-6.6), 0, 0, 1);	// Add moon inclination
-				moon.matrix.rotate(glacier.degToRad(-moonData.dir), 0, 1, 0);
+				cam.follow(camControl.follow, camControl.angle, camControl.zoom);
+				earth.update(dtime * speed);
 				
 				context.clear();
-				earth.draw();
-				moon.draw();
 				space.draw();
+				earth.draw();
+				points.draw();
 				
-				moonData.dir += 13.3 * dtime * speed;
-				rotation += 15.0 * dtime * speed;
-				
-				//rotation = 180 + (new Date().getTime() * (360 / 86400000)) * speed;
 				requestAnimationFrame(render);
 			}
 			
-			init();
-			render();
+			(function init() {
+				if(!(gl = (gl || context.gl))) {
+					return;
+				}
+				
+				gl.enable(gl.DEPTH_TEST);
+				gl.depthFunc(gl.LEQUAL);
+				
+				gl.enable(gl.BLEND);
+				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+				
+				space.texture0 = 'gfx/space.png';
+				space.init(context, { shader: 'textured' });
+				
+				earth.mesh.texture0 = 'gfx/earth.jpg';
+				earth.mesh.texture1 = 'gfx/earth_night.jpg';
+				earth.mesh.texture2 = 'gfx/normal_bathymetry.jpg';
+				earth.mesh.init(context, { shader: 'globe' });
+				
+				points.init(context, { shader: 'generic' });
+				
+				context.background = glacier.color.GRAY;
+				context.projection = cam.matrix;
+				
+				render();
+			})();
 		</script>
 	</body>
 </html>
