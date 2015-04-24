@@ -177,22 +177,21 @@ glacier.Color.prototype = {
 };
 
 // Pre-defined colors
-glacier.color = {};
-Object.defineProperties(glacier.color, {
-	WHITE:		{ get: function() { return new glacier.Color(0xFFFFFF, 1.0); } },
-	SILVER:		{ get: function() { return new glacier.Color(0xC0C0C0, 1.0); } },
-	GRAY:		{ get: function() { return new glacier.Color(0x808080, 1.0); } },
-	BLACK:		{ get: function() { return new glacier.Color(0x000000, 1.0); } },
-	RED:		{ get: function() { return new glacier.Color(0xFF0000, 1.0); } },
-	MAROON:		{ get: function() { return new glacier.Color(0x800000, 1.0); } },
-	YELLOW:		{ get: function() { return new glacier.Color(0xFFFF00, 1.0); } },
-	OLIVE:		{ get: function() { return new glacier.Color(0x808000, 1.0); } },
-	LIME:		{ get: function() { return new glacier.Color(0x00FF00, 1.0); } },
-	GREEN:		{ get: function() { return new glacier.Color(0x008000, 1.0); } },
-	AQUA:		{ get: function() { return new glacier.Color(0x00FFFF, 1.0); } },
-	TEAL:		{ get: function() { return new glacier.Color(0x008080, 1.0); } },
-	BLUE:		{ get: function() { return new glacier.Color(0x0000FF, 1.0); } },
-	NAVY:		{ get: function() { return new glacier.Color(0x000080, 1.0); } },
-	FUCHSIA:	{ get: function() { return new glacier.Color(0xFF00FF, 1.0); } },
-	PURPLE:		{ get: function() { return new glacier.Color(0x800080, 1.0); } }
-});
+glacier.color = {
+	get WHITE()		{ return new glacier.Color(0xFFFFFF, 1.0); },
+	get SILVER()	{ return new glacier.Color(0xC0C0C0, 1.0); },
+	get GRAY()		{ return new glacier.Color(0x808080, 1.0); },
+	get BLACK()		{ return new glacier.Color(0x000000, 1.0); },
+	get RED()		{ return new glacier.Color(0xFF0000, 1.0); },
+	get MAROON()	{ return new glacier.Color(0x800000, 1.0); },
+	get YELLOW()	{ return new glacier.Color(0xFFFF00, 1.0); },
+	get OLIVE()		{ return new glacier.Color(0x808000, 1.0); },
+	get LIME()		{ return new glacier.Color(0x00FF00, 1.0); },
+	get GREEN()		{ return new glacier.Color(0x008000, 1.0); },
+	get AQUA()		{ return new glacier.Color(0x00FFFF, 1.0); },
+	get TEAL()		{ return new glacier.Color(0x008080, 1.0); },
+	get BLUE()		{ return new glacier.Color(0x0000FF, 1.0); },
+	get NAVY()		{ return new glacier.Color(0x000080, 1.0); },
+	get FUCHSIA()	{ return new glacier.Color(0xFF00FF, 1.0); },
+	get PURPLE()	{ return new glacier.Color(0x800080, 1.0); }
+};
