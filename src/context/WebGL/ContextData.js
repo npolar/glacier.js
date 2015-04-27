@@ -32,6 +32,14 @@ glacier.context.WebGL.ContextData = function(drawable, context, drawMode, shader
 			set: function(value) {
 				if(value instanceof glacier.context.WebGL.Shader) {
 					shader = value;
+				} else if(typeof value == 'string') {
+					var bankShader = context.shaderBank.shader(value);
+					
+					if(bankShader instanceof glacier.context.WebGL.Shader) {
+						shader = bankShader;
+					} else {
+						console.warn('Undefined WebGL shader program: ' + value);
+					}
 				} else {
 					throw new glacier.exception.InvalidAssignment('shader', typeof shader, 'glacier.context.WebGL.Shader', 'context.WebGL.ContextData');
 				}
