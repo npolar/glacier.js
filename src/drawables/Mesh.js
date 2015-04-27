@@ -11,6 +11,7 @@ glacier.Mesh = function Mesh() {
 		vertices:	{ value: new glacier.TypedArray('Vector3', glacier.Vector3) }
 	});
 	
+	// Define texture properties
 	[ 0, 1, 2, 3 ].forEach(function(number) {
 		var tex = new glacier.Texture(), property = 'texture' + number;
 		
