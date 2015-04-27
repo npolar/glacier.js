@@ -53,12 +53,12 @@
 					this.mesh.matrix = new glacier.Matrix44();
 					this.mesh.matrix.translate(this.position);
 					this.mesh.matrix.scale(this.scale, this.scale, this.scale);
-					//this.mesh.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
+					this.mesh.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
 					this.mesh.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
 					this.mesh.draw();
 				},
 				update: function(dtime) {
-					//this.rotation += 15.0 * dtime;
+					this.rotation += 15.0 * dtime;
 				}
 			};
 			
@@ -129,6 +129,11 @@
 				
 				cam.follow(camControl.follow, camControl.angle, camControl.zoom);
 				earth.update(dtime * speed);
+				
+				points.matrix = new glacier.Matrix44();
+				points.matrix.translate(earth.position);
+				points.matrix.rotate(glacier.degToRad(-earth.obliquity), 0, 0, 1);
+				points.matrix.rotate(glacier.degToRad(earth.rotation), 0, 1, 0);
 				
 				context.clear();
 				space.draw();
