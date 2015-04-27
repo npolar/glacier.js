@@ -19,7 +19,7 @@ glacier.Vector3.prototype = {
 			this.y += value;
 			this.z += value;
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number or Vector3', method: 'Vector3.add' });
+			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector3', 'add', 'Vector3');
 		}
 		
 		return this;
@@ -34,20 +34,17 @@ glacier.Vector3.prototype = {
 		if(xOrVec3 instanceof glacier.Vector3) {
 			return this.assign(xOrVec3.x, xOrVec3.y, xOrVec3.z);
 		} else {
-			var args = [ 'x', 'y', 'z' ], error, x = xOrVec3;
+			var args = [ 'x', 'y', 'z' ], x = xOrVec3;
 			
 			[ x, y, z ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					glaicer.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Vector3.assign' });
-					error = true;
+					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'assign', 'Vector3');
 				}
 			});
 			
-			if(!error) {
-				this.x = x;
-				this.y = y;
-				this.z = z;
-			}
+			this.x = x;
+			this.y = y;
+			this.z = z;
 		}
 		
 		return this;
@@ -84,7 +81,7 @@ glacier.Vector3.prototype = {
 			this.y = (this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2)) + value.element(1, 3);
 			this.z = (this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2)) + value.element(2, 3);
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number, Vector3, Matrix33 or Matrix44', method: 'Vector3.divide' });
+			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Vector3, Matrix33 or Matrix44', 'divide', 'Vector3');
 		}
 		
 		return this;
@@ -116,7 +113,7 @@ glacier.Vector3.prototype = {
 			this.y = (this.x * value.element(1, 0)) + (this.y * value.element(1, 1)) + (this.z * value.element(1, 2)) + value.element(1, 3);
 			this.z = (this.x * value.element(2, 0)) + (this.y * value.element(2, 1)) + (this.z * value.element(2, 2)) + value.element(2, 3);
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number, Vector3, Matrix33 or Matrix44', method: 'Vector3.multiply' });
+			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Vector3, Matrix33 or Matrix44', 'multiply', 'Vector3');
 		}
 		
 		return this;
@@ -181,7 +178,7 @@ glacier.Vector3.prototype = {
 			this.y -= value;
 			this.z -= value;
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number or Vector3', method: 'Vector3.subtract' });
+			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector3', 'subtract', 'Vector3');
 		}
 		
 		return this;

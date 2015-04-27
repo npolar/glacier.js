@@ -11,7 +11,7 @@ glacier.Texture = function Texture(source) {
 				if(value instanceof Image || value === null) {
 					image = value;
 				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'Texture.image', value: typeof value, expected: 'Image or null' });
+					throw new glacier.exception.InvalidAssignment('image', typeof value, 'Image or null', 'Texture');
 				}
 			}
 		}
@@ -20,7 +20,7 @@ glacier.Texture = function Texture(source) {
 	if(typeof source == 'string') {
 		this.load(source);
 	} else if(source) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'Image', method: 'Texture constructor' });
+		throw new glacier.exception.InvalidParameter('source', typeof source, 'Image', '(constructor)', 'Texture');
 	}
 };
 
@@ -30,8 +30,7 @@ glacier.Texture.prototype = {
 	},
 	load: function(source) {
 		if(typeof source != 'string') {
-			glacier.error('INVALID_PARAMETER', { parameter: 'source', value: typeof source, expected: 'string', method: 'Texture.load' });
-			return;
+			throw new glacier.exception.InvalidParameter('source', typeof source, 'string', 'load', 'Texture');
 		}
 		
 		var self = this, image = new Image(), c;

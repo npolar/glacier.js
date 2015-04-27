@@ -12,20 +12,17 @@ glacier.PointCollection = function PointCollection() {
 // glacier.PointCollection extends glacier.Drawable
 glacier.extend(glacier.PointCollection, glacier.Drawable, {
 	addPoint: function(vec3, color) {
-		if(vec3 instanceof glacier.Vector3) {
-			if(!color || (color instanceof glacier.Color)) {
-				this.colors.push(color || glacier.color.WHITE);
-			} else {
-				glacier.error('INVALID_PARAMETER', { parameter: 'color', value: typeof color, expected: 'Color', method: 'PointCollection.addPoint' });
-				return false;
-			}
-			
-			this.vertices.push(vec3);
-			return true;
+		if(!(vec3 instanceof glacier.Vector3)) {
+			throw new glacier.exception.InvalidParameter('vec3', typeof vec3, 'Vector3', 'addPoint', 'PointCollection');
 		}
 		
-		glacier.error('INVALID_PARAMETER', { parameter: 'vec3', value: typeof vec3, expected: 'Vector3', method: 'PointCollection.addPoint' });
-		return false;
+		if(!color || (color instanceof glacier.Color)) {
+			this.colors.push(color || glacier.color.WHITE);
+		} else {
+			throw new glacier.exception.InvalidParameter('color', typeof color, 'Color', 'addPoint', 'PointCollection');
+		}
+		
+		this.vertices.push(vec3);
 	},
 	free: function() {
 		glacier.Drawable.prototype.free.call(this);

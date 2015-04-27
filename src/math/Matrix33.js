@@ -31,7 +31,7 @@ glacier.Matrix33.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number, Matrix33, Matrix44 or array[9]', method: 'Matrix33.assign' });
+			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Matrix33, Matrix44 or array[9]', 'assign', 'Matrix33');
 		}
 		
 		return this;
@@ -52,8 +52,7 @@ glacier.Matrix33.prototype = {
 			return this.array[colOrIndex];
 		}
 		
-		glacier.error('INDEX_OUT_OF_RANGE', { index: (colOrIndex + (row || 0)), range: '0-9', method: 'Matrix33.element' });
-		return undefined;
+		throw new glacier.exception.IndexOutOfRange(colOrIndex + (row || 0), '0-9', 'element', 'Matrix33');
 	},
 	
 	multiply: function(value) {
@@ -76,7 +75,7 @@ glacier.Matrix33.prototype = {
 				this.array[e] *= value;
 			}
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number, Matrix33 or Matrix44', method: 'Matrix33.multiply' });
+			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix33');
 		}
 		
 		return this;
@@ -109,7 +108,7 @@ glacier.Matrix33.prototype = {
 		var temp = new glacier.Matrix33(this);
 		
 		if(!temp.invert()) {
-			glacier.error('MATRIX_NO_INVERSE', { matrix: temp.toString(), method: 'Matrix33.inverse' });
+			console.warn('Inverse matrix does not exist: ' + temp.toString());
 			return undefined;
 		}
 		

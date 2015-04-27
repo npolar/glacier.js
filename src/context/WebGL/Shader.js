@@ -1,12 +1,10 @@
 glacier.context.WebGL.Shader = function(context, program) {
 	if(!(context instanceof glacier.context.WebGL)) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'context.WebGL', method: 'context.WebGL.Shader constructor' });
-		return;
+		throw new glacier.exception.InvalidParameter('context', typeof context, 'context.WebGL', '(constructor)', 'context.WebGL.Shader');
 	}
 	
 	if(!(program instanceof WebGLProgram)) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'program', value: typeof program, expected: 'WebGLProgram', method: 'context.WebGL.Shader constructor' });
-		return;
+		throw new glacier.exception.InvalidParameter('program', typeof program, 'WebGLProgram', '(constructor)', 'context.WebGL.Shader');
 	}
 	
 	Object.defineProperties(this, {
@@ -30,7 +28,7 @@ glacier.context.WebGL.Shader.prototype = {
 				}
 			}, this);
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'attributeArray', value: typeof attributeArray, expected: 'string array', method: 'glacier.WebGL.Shader.addAttributes' });
+			throw new glacier.exception.InvalidParameter('attributeArray', typeof attributeArray, 'string array', 'addAttributes', 'context.WebGL.Shader');
 		}
 	},
 	addUniforms: function(uniformArray) {
@@ -45,27 +43,27 @@ glacier.context.WebGL.Shader.prototype = {
 				}
 			}, this);
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'uniformArray', value: typeof uniformArray, expected: 'string array', method: 'glacier.WebGL.Shader.addUniforms' });
+			throw new glacier.exception.InvalidParameter('uniformArray', typeof uniformArray, 'string array', 'addUniforms', 'context.WebGL.Shader');
 		}
 	},
 	attribute: function(attribute) {
-		if(typeof attribute == 'string') {
-			if(typeof (attribute = this.attributes[attribute]) == 'number') {
-				return (attribute >= 0 ? attribute : null);
-			}
-		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'attribute', value: typeof attribute, expected: 'string', method: 'context.WebGL.Shader.attribute' });
+		if(typeof attribute != 'string') {
+			throw new glacier.exception.InvalidParameter('attribute', typeof attribute, 'string', 'attribute', 'context.WebGL.Shader');
+		}
+		
+		if(typeof (attribute = this.attributes[attribute]) == 'number') {
+			return (attribute >= 0 ? attribute : null);
 		}
 		
 		return null;
 	},
 	uniform: function(uniform) {
-		if(typeof uniform == 'string') {
-			if((uniform = this.uniforms[uniform]) instanceof WebGLUniformLocation) {
-				return uniform;
-			}
-		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'uniform', value: typeof uniform, expected: 'string', method: 'context.WebGL.Shader.uniform' });
+		if(typeof uniform != 'string') {
+			throw new glacier.exception.InvalidParameter('uniform', typeof uniform, 'string', 'uniform', 'context.WebGL.Shader');
+		}
+		
+		if((uniform = this.uniforms[uniform]) instanceof WebGLUniformLocation) {
+			return uniform;
 		}
 		
 		return null;

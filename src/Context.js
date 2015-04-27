@@ -35,7 +35,7 @@ glacier.Context = function Context(type, options) {
 					} else if(value === null) {
 						projection = null;
 					} else {
-						glacier.error('INVALID_ASSIGNMENT', { variable: 'Context.projection', value: typeof value, expected: 'Matrix44 or null' });
+						throw new glacier.exception.InvalidAssignment('projection', typeof value, 'Matrix44 or null', 'Context');
 					}
 				}
 			}
@@ -44,7 +44,7 @@ glacier.Context = function Context(type, options) {
 		contextTypes = contextTypes.join(', ');
 		var last = contextTypes.lastIndexOf(', ');
 		contextTypes = (last >= 0 ? contextTypes.substr(0, last) + ' or' + contextTypes.substr(last + 1) : contextTypes);
-		glacier.error('INVALID_PARAMETER', { parameter: 'type', value: type, expected: contextTypes, method: 'Context constructor' });
+		throw new glacier.exception.InvalidParameter('type', type, contextTypes, '(constructor)', 'Context'); 
 	}
 	
 	return ctor;
@@ -52,15 +52,15 @@ glacier.Context = function Context(type, options) {
 
 glacier.Context.prototype = {
 	clear: function() {
-		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'clear', child: this.type, parent: 'Context' });
+		console.warn('Missing implementation for Context.clear in derived class: ' + this.type);
 	},
 	draw: function(drawable) {
-		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'draw', child: this.type, parent: 'Context' });
+		console.warn('Missing implementation for Context.draw in derived class: ' + this.type);
 	},
 	init: function(drawable, options) {
-		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'init', child: this.type, parent: 'Context' });
+		console.warn('Missing implementation for Context.init in derived class: ' + this.type);
 	},
 	resize: function(width, height) {
-		glacier.warn('MISSING_IMPLEMENTATION', { implementation: 'resize', child: this.type, parent: 'Context' });
+		console.warn('Missing implementation for Context.resize in derived class: ' + this.type);
 	}
 };

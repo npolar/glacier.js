@@ -16,7 +16,7 @@ glacier.Vector2.prototype = {
 			this.x += value;
 			this.y += value;
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number or Vector2', method: 'Vector2.add' });
+			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'add', 'Vector2');
 		}
 		
 		return this;
@@ -26,19 +26,16 @@ glacier.Vector2.prototype = {
 		if(xOrVec2 instanceof glacier.Vector2) {
 			return this.assign(xOrVec2.x, xOrVec2.y);
 		} else {
-			var args = [ 'x', 'y' ], error, x = xOrVec2;
+			var args = [ 'x', 'y' ], x = xOrVec2;
 			
 			[ x, y ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					glaicer.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'number', method: 'Vector2.assign' });
-					error = true;
+					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'assign', 'Vector2');
 				}
 			});
 			
-			if(!error) {
-				this.x = x;
-				this.y = y;
-			}
+			this.x = x;
+			this.y = y;
 		}
 		
 		return this;
@@ -57,7 +54,7 @@ glacier.Vector2.prototype = {
 			this.x /= value;
 			this.y /= value;
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number or Vector2', method: 'Vector2.divide' });
+			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'divide', 'Vector2');
 		}
 		
 		return this;
@@ -79,7 +76,7 @@ glacier.Vector2.prototype = {
 			this.x *= value;
 			this.y *= value;
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number or Vector2', method: 'Vector2.multiply' });
+			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'multiply', 'Vector2');
 		}
 		
 		return this;
@@ -115,7 +112,7 @@ glacier.Vector2.prototype = {
 			this.x -= value;
 			this.y -= value;
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'value', value: typeof value, expected: 'number or Vector2', method: 'Vector2.subtract' });
+			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'subtract', 'Vector2');
 		}
 		
 		return this;

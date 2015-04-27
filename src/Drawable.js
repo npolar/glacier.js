@@ -13,7 +13,7 @@ glacier.Drawable = function Drawable() {
 				if(typeof value == 'number') {
 					this.matrix.array[12 + index] = value;
 				} else {
-					glacier.error('INVALID_ASSIGNMENT', { variable: 'Drawable.' + property, value: typeof value, expected: 'number' });
+					throw new glacier.exception.InvalidAssignment(property, typeof value, 'number', 'Drawable');
 				}
 			}
 		});
@@ -38,8 +38,7 @@ glacier.Drawable.prototype = {
 	init: function(context, options) {
 		if(context instanceof glacier.Context) {
 			if(options && typeof options != 'object') {
-				glacier.error('INVALID_PARAMETER', { parameter: 'options', value: typeof options, expected: 'object', method: 'Drawable.init' });
-				return false;
+				throw new glacier.exception.InvalidParameter('options', typeof options, 'object', 'init', 'Drawable');
 			}
 			
 			if(context.init(this, options)) {
@@ -47,7 +46,7 @@ glacier.Drawable.prototype = {
 				return true;
 			}
 		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'Context', method: 'Drawable.init' });
+			throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', 'init', 'Drawable');
 		}
 		
 		return false;

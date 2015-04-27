@@ -1,7 +1,6 @@
 glacier.context.WebGL.ShaderBank = function(context) {
 	if(!(context instanceof glacier.context.WebGL)) {
-		glacier.error('INVALID_PARAMETER', { parameter: 'context', value: typeof context, expected: 'context.WebGL', method: 'context.WebGL.ShaderBank constructor' });
-		return;
+		throw new glacier.exception.InvalidParameter('context', typeof context, 'context.WebGL', '(constructor)', 'context.WebGL.ShaderBank');
 	}
 	
 	Object.defineProperties(this, {
@@ -76,12 +75,12 @@ glacier.context.WebGL.ShaderBank.prototype = {
 		return false;
 	},
 	shader: function(shader) {
-		if(typeof shader == 'string') {
-			if((shader = this.shaders[shader]) instanceof glacier.context.WebGL.Shader) {
-				return shader;
-			}
-		} else {
-			glacier.error('INVALID_PARAMETER', { parameter: 'shader', value: typeof shader, expected: 'string', method: 'context.WebGL.ShaderBank.shader' });
+		if(typeof shader != 'string') {
+			throw new glacier.exception.InvalidParameter('shader', typeof shader, 'string', 'shader', 'context.WebGL.ShaderBank');
+		}
+		
+		if((shader = this.shaders[shader]) instanceof glacier.context.WebGL.Shader) {
+			return shader;
 		}
 		
 		return null;

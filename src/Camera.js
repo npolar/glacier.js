@@ -1,5 +1,5 @@
 glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
-	var args = [ 'fieldOfView', 'aspectRatio', 'clipNear', 'clipFar' ], error;
+	var args = [ 'fieldOfView', 'aspectRatio', 'clipNear', 'clipFar' ];
 	
 	// Set clipNear/clipFar defaults if not set
 	clipNear = (clipNear || 0.1);
@@ -8,8 +8,7 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 	// Check parameters and declare members fieldOfView, aspectRatio, clipNear and clipFar
 	[ fieldOfView, aspectRatio, clipNear, clipFar ].forEach(function(arg, index) {
 		if(typeof arg != 'number' || arg <= 0.0) {
-			glacier.error('INVALID_PARAMETER', { parameter: args[index], value: typeof arg, expected: 'positive number', method: 'Camera constructor' });
-			error = true;
+			throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'positive number', '(constructor)', 'Camera');
 		} else {
 			Object.defineProperty(this, args[index], {
 				get: function() {
@@ -20,7 +19,7 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 						arg = value;
 						this.update();
 					} else {
-						glacier.error('INVALID_ASSIGNMENT', { variable: 'Camera.' + args[index], value: value, expected: 'positive number' });
+						throw new glacier.exception.InvalidAssignment(args[index], value, 'positive number', 'Camera');
 					}
 				}
 			});
@@ -32,27 +31,21 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 	glacier.union.call(this, 'position', new glacier.Vector3(0, 1, 1), glacier.Vector3);
 	glacier.union.call(this, 'target', new glacier.Vector3(0, 0, 0), glacier.Vector3);
 	
-	if(error) {
-		verticalViewAngle = (typeof verticalViewAngle == 'number' && verticalViewAngle > 0.0 ? verticalViewAngle : 60.0);
-		aspectRatio = (typeof aspectRatio == 'number' && aspectRatio > 0.0 ? aspectRatio : 16 / 9);
-	} else this.update();
+	this.update();
 };
 
 glacier.Camera.prototype = {
 	follow: function(target, angle, distance) {
 		if(!(target instanceof glacier.Vector3)) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'target', value: typeof target, expected: 'Vector3', method: 'Camera.follow' });
-			return;
+			throw new glacier.exception.InvalidParameter('target', typeof target, 'Vector3', 'follow', 'Camera');
 		}
 		
 		if(!(angle instanceof glacier.Vector2)) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'angle', value: typeof angle, expected: 'Vector2', method: 'Camera.follow' });
-			return;
+			throw new glacier.exception.InvalidParameter('angle', typeof target, 'Vector2', 'follow', 'Camera');
 		}
 		
 		if(typeof distance != 'number' || distance <= 0.0) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'distance', value: typeof distance, expected: 'positive number', method: 'Camera.follow' });
-			return;
+			throw new glacier.exception.InvalidParameter('distance', distance, 'positive number', 'follow', 'Camera');
 		}
 		
 		var ver = {}, hor = {}, dir = new glacier.Vector2(glacier.limitAngle(angle.x), glacier.limitAngle(angle.y));

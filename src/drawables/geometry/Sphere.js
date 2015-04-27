@@ -23,7 +23,7 @@ glacier.Sphere = function Sphere(latitudes, longitudes, radius) {
 				
 				radius = value;
 			} else {
-				glacier.error('INVALID_ASSIGNMENT', { variable: 'Sphere.radius', value: value, expected: 'positive number' });
+				throw new glacier.exception.InvalidAssignment('radius', value, 'positive number', 'Sphere');
 			}
 		}
 	});
@@ -45,22 +45,19 @@ glacier.extend(glacier.Sphere, glacier.Mesh, {
 	generate: function(latitudes, longitudes, radius) {
 		// Validate latitudes parameter
 		if(typeof latitudes != 'number' || latitudes < 3) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'latitudes', value: latitudes, expected: 'number (>= 3)', method: 'Sphere.generate' });
-			return false;
+			throw new glacier.exception.InvalidParameter('latitudes', latitudes, 'number (>= 3)', 'generate', 'Sphere');
 		} else latitudes = Math.round(Math.abs(latitudes));
 		
 		// Validate longitudes parameter
 		if(typeof longitudes != 'number' || longitudes < 3) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'longitudes', value: longitudes, expected: 'number (>= 3)', method: 'Sphere.generate' });
-			return false;
+			throw new glacier.exception.InvalidParameter('longitudes', longitudes, 'number (>= 3)', 'generate', 'Sphere');
 		} else longitudes = Math.round(Math.abs(longitudes));
 		
 		// Validate radius parameter
 		if(radius === undefined) {
 			radius = 1.0;
 		} else if(typeof radius != 'number' || radius <= 0.0) {
-			glacier.error('INVALID_PARAMETER', { parameter: 'radius', value: radius, expected: 'number (> 0.0)', method: 'Sphere.generate' });
-			return false;
+			throw new glacier.exception.InvalidParameter('radius', radius, 'number (> 0.0)', 'generate', 'Sphere');
 		}
 		
 		this.free();
