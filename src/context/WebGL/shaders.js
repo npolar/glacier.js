@@ -41,8 +41,6 @@ glacier.context.WebGL.shaders = {
 				'float diffuse = max(dot(mvp_normal, lightPos), 0.0);',
 				'vec3 dayColor = texture2D(tex_samp_0, tex_coords).rgb * diffuse;',
 				'vec3 nightColor = texture2D(tex_samp_1, tex_coords).rgb * (1.0 - diffuse);',
-				//'gl_FragColor = vec4(dayColor + nightColor, 1.0);',
-				
 				'gl_FragColor = vec4(nightColor + dayColor * max(dot(normal, lightPos), 0.3), 1.0);',
 			'}'
 		],
