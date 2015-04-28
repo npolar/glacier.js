@@ -238,5 +238,39 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		}
 		
 		throw new glacier.exception.InvalidParameter('image', typeof image, 'Image', 'createTexture', 'context.WebGL');
+	},
+	worldToScreen: function(point, modelView) {
+		if(point instanceof glacier.Vector3) {
+			var matrix, vec4;
+			
+			if(!modelView || (modelView instanceof glacier.Matrix44)) {
+				matrix = new glacier.Matrix44(modelView || null);
+			} else {
+				throw new glacier.exception.InvalidParameter('modelView', typeof modelView, 'Matrix44 or null', 'worldToScreen', 'context.WebGL');
+			}
+			
+			if(this.projection instanceof glacier.Matrix44) {
+				matrix.multiply(this.projection);
+			}
+			
+			vec4 = {
+				x: matrix.array[0] * point.x + matrix.array[4] * point.y + matrix.array[ 8] * point.z + matrix.array[12],
+				y: matrix.array[1] * point.x + matrix.array[5] * point.y + matrix.array[ 9] * point.z + matrix.array[13],
+				z: matrix.array[2] * point.x + matrix.array[6] * point.y + matrix.array[10] * point.z + matrix.array[14],
+				w: matrix.array[3] * point.x + matrix.array[7] * point.y + matrix.array[11] * point.z + matrix.array[15]
+			};
+			
+			if(vec4.w > 0.0) {
+				vec4.x = (vec4.x /= vec4.w) * 0.5 + 0.5;
+				vec4.y = (vec4.y /= vec4.w) * 0.5 + 0.5;
+				vec4.z = (vec4.z /= vec4.w) * 0.5 + 0.5;
+				
+				return new glacier.Vector2(Math.round(vec4.x * context.width), Math.round((1.0 - vec4.y) * context.height));
+			}
+		} else {
+			throw new glacier.exception.InvalidParameter('point', typeof point, 'Vector3', 'worldToScreen', 'context.WebGL');
+		}
+		
+		return null;
 	}
 });
