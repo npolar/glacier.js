@@ -99,6 +99,10 @@ glacier.context.WebGL.ContextData.prototype = {
 				gl.uniformMatrix4fv(uniform, false, mvp.array);
 			}
 			
+			if((uniform = this.shader.uniform('resolution'))) {
+				gl.uniform2f(uniform, context.width, constext.height);
+			}
+			
 			if(this.buffers.index) {
 				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.index);
 				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
