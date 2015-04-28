@@ -9,7 +9,7 @@
 \* * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.0.10'
+	VERSION: '0.0.11'
 };
 
 if(typeof module == 'object') {

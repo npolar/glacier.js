@@ -9,7 +9,7 @@
 \* * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.0.10'
+	VERSION: '0.0.11'
 };
 
 if(typeof module == 'object') {
@@ -1069,6 +1069,40 @@ glacier.extend(glacier.context.WebGL, glacier.Context, {
 		}
 		
 		throw new glacier.exception.InvalidParameter('image', typeof image, 'Image', 'createTexture', 'context.WebGL');
+	},
+	worldToScreen: function(point, modelView) {
+		if(point instanceof glacier.Vector3) {
+			var matrix, vec4;
+			
+			if(!modelView || (modelView instanceof glacier.Matrix44)) {
+				matrix = new glacier.Matrix44(modelView || null);
+			} else {
+				throw new glacier.exception.InvalidParameter('modelView', typeof modelView, 'Matrix44 or null', 'worldToScreen', 'context.WebGL');
+			}
+			
+			if(this.projection instanceof glacier.Matrix44) {
+				matrix.multiply(this.projection);
+			}
+			
+			vec4 = {
+				x: matrix.array[0] * point.x + matrix.array[4] * point.y + matrix.array[ 8] * point.z + matrix.array[12],
+				y: matrix.array[1] * point.x + matrix.array[5] * point.y + matrix.array[ 9] * point.z + matrix.array[13],
+				z: matrix.array[2] * point.x + matrix.array[6] * point.y + matrix.array[10] * point.z + matrix.array[14],
+				w: matrix.array[3] * point.x + matrix.array[7] * point.y + matrix.array[11] * point.z + matrix.array[15]
+			};
+			
+			if(vec4.w > 0.0) {
+				vec4.x = (vec4.x /= vec4.w) * 0.5 + 0.5;
+				vec4.y = (vec4.y /= vec4.w) * 0.5 + 0.5;
+				vec4.z = (vec4.z /= vec4.w) * 0.5 + 0.5;
+				
+				return new glacier.Vector2(Math.round(vec4.x * context.width), Math.round((1.0 - vec4.y) * context.height));
+			}
+		} else {
+			throw new glacier.exception.InvalidParameter('point', typeof point, 'Vector3', 'worldToScreen', 'context.WebGL');
+		}
+		
+		return null;
 	}
 });
 
@@ -2078,6 +2112,10 @@ glacier.context.WebGL.ContextData.prototype = {
 				gl.uniformMatrix4fv(uniform, false, mvp.array);
 			}
 			
+			if((uniform = this.shader.uniform('resolution'))) {
+				gl.uniform2f(uniform, context.width, constext.height);
+			}
+			
 			if(this.buffers.index) {
 				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.index);
 				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
@@ -2359,9 +2397,9 @@ glacier.context.WebGL.shaders = {
 			'attribute highp vec2 texture_uv;',
 			'attribute highp vec4 color_rgba;',
 			'uniform highp mat4 matrix_mvp;',
-			'varying mediump vec2 tex_coords;',
-			'varying mediump vec4 frag_color;',
-			'varying mediump vec3 mvp_normal;',
+			'varying highp vec2 tex_coords;',
+			'varying highp vec4 frag_color;',
+			'varying highp vec3 mvp_normal;',
 			'void main()',
 			'{',
 				'gl_PointSize = 2.0;',
@@ -2373,20 +2411,21 @@ glacier.context.WebGL.shaders = {
 	},
 	fragment: {
 		generic: [
-			'varying mediump vec4 frag_color;',
+			'varying highp vec4 frag_color;',
 			'void main()',
 			'{',
 				'gl_FragColor = frag_color;',
 			'}'
 		],
 		globe: [
-			'precision mediump float;',
+			'precision highp float;',
 			'uniform sampler2D tex_samp_0;',
 			'uniform sampler2D tex_samp_1;',
 			'uniform sampler2D tex_samp_2;',
-			'varying mediump vec2 tex_coords;',
-			'varying mediump vec4 frag_color;',
-			'varying mediump vec3 mvp_normal;',
+			'uniform highp vec2 resolution;',
+			'varying highp vec2 tex_coords;',
+			'varying highp vec4 frag_color;',
+			'varying highp vec3 mvp_normal;',
 			'void main()',
 			'{',
 				'vec3 lightPos = normalize(vec3(-28.0, 2.0, 12.0));',
@@ -2398,11 +2437,11 @@ glacier.context.WebGL.shaders = {
 			'}'
 		],
 		normalMapped: [
-			'precision mediump float;',
+			'precision highp float;',
 			'uniform sampler2D tex_samp_0;',
 			'uniform sampler2D tex_samp_1;',
-			'varying mediump vec2 tex_coords;',
-			'varying mediump vec4 frag_color;',
+			'varying highp vec2 tex_coords;',
+			'varying highp vec4 frag_color;',
 			'void main()',
 			'{',
 				'vec3 lightPos = normalize(vec3(1.0, 1.0, 1.0));',
@@ -2413,10 +2452,10 @@ glacier.context.WebGL.shaders = {
 			'}'
 		],
 		textured: [
-			'precision mediump float;',
+			'precision highp float;',
 			'uniform sampler2D tex_samp_0;',
-			'varying mediump vec2 tex_coords;',
-			'varying mediump vec4 frag_color;',
+			'varying highp vec2 tex_coords;',
+			'varying highp vec4 frag_color;',
 			'void main()',
 			'{',
 				'gl_FragColor = texture2D(tex_samp_0, tex_coords);',
