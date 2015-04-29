@@ -1,66 +1,258 @@
-glacier.context = {}; // Map of contexts
-
-// Context base-class and factory
-glacier.Context = function Context(type, options) {
-	var c, contextTypes = [], context, projection = null, ctor = null;
+glacier.Context = function Context(canvas, options) {
+	var background, context, element, projection = null;
 	
-	if(typeof type == 'string') {
-		for(c in glacier.context) {
-			if(glacier.context.hasOwnProperty(c)) {
-				if(c.toLowerCase() == type.toLowerCase()) {
-					// Pass second parameter as container if string
-					if(typeof options == 'string') {
-						options = { container: options };
-					}
-					
-					ctor = new glacier.context[(type = c)](options);
-					break;
-				}
-				
-				contextTypes.push(c);
+	// Ensure canvas is a valid HTMLCanvasElement
+	if(!(canvas instanceof HTMLCanvasElement)) {
+		if(typeof canvas == 'string') {
+			if((element = document.getElementById(canvas)) instanceof HTMLCanvasElement) {
+				canvas = element;
+			} else {
+				throw new glacier.exception.InvalidParameter('canvas', canvas, 'string as HTMLCanvasElement ID', '(constructor)', 'Context');
 			}
+		} else {
+			throw new glacier.exception.InvalidParameter('canvas', typeof canvas, 'HTMLCanvasElement or string', '(constructor)', 'Context');
 		}
 	}
 	
-	if(ctor) {
-		Object.defineProperties(ctor, {
-			type: { value: type },
-			projection: {
-				get: function() {
-					return projection;
-				},
-				set: function(value) {
-					if(value instanceof glacier.Matrix44) {
-						projection = value;
-					} else if(value === null) {
-						projection = null;
-					} else {
-						throw new glacier.exception.InvalidAssignment('projection', typeof value, 'Matrix44 or null', 'Context');
-					}
-				}
-			}
-		});
-	} else {
-		contextTypes = contextTypes.join(', ');
-		var last = contextTypes.lastIndexOf(', ');
-		contextTypes = (last >= 0 ? contextTypes.substr(0, last) + ' or' + contextTypes.substr(last + 1) : contextTypes);
-		throw new glacier.exception.InvalidParameter('type', type, contextTypes, '(constructor)', 'Context'); 
+	// Ensure options is a valid map (object)
+	if(options && typeof options != 'object') {
+		throw new glacier.exception.InvalidParameter('options', typeof canvas, 'object', '(constructor)', 'Context');
+	} else if(!options) {
+		options = {};
 	}
 	
-	return ctor;
+	if(!((context = canvas.getContext('webgl')) instanceof WebGLRenderingContext)) {
+		throw new glacier.exception.ContextError('WebGL is not supported', '(constructor)', 'Context');
+	}
+	
+	// Define canvas, gl, height, projection and width members
+	Object.defineProperties(this, {
+		background: {
+			get: function() {
+				return background;
+			},
+			set: function(color) {
+				if(color instanceof glacier.Color) {
+					background = color;
+					context.clearColor(color.r / 255, color.g / 255, color.b / 255, color.a);
+					context.clear(context.COLOR_BUFFER_BIT);
+				} else {
+					throw new glacier.exception.InvalidAssignment('background', typeof color, 'Color', 'Context');
+				}
+			}
+		},
+		canvas:	{
+			value: canvas
+		},
+		gl: {
+			value: context
+		},
+		height: {
+			get: function() {
+				return this.canvas.height;
+			},
+			set: function(value) {
+				if(typeof value == 'number' && value > 0) {
+					this.resize(width, value);
+				} else {
+					throw new glacier.exception.InvalidAssignment('height', value, 'positive number', 'Context');
+				}
+			}
+		},
+		projection: {
+			get: function() {
+				return projection;
+			},
+			set: function(value) {
+				if(value instanceof glacier.Matrix44) {
+					projection = value;
+				} else if(value === null) {
+					projection = null;
+				} else {
+					throw new glacier.exception.InvalidAssignment('projection', typeof value, 'Matrix44 or null', 'Context');
+				}
+			}
+		},
+		shaders: {
+			value: new glacier.ShaderBank(this)
+		},
+		width: {
+			get: function() {
+				return this.canvas.width;
+			},
+			set: function(value) {
+				if(typeof value == 'number' && value > 0) {
+					this.resize(value, height);
+				} else {
+					throw new glacier.exception.InvalidAssignment('width', value, 'positive number', 'Context');
+				}
+			}
+		}
+	});
+	
+	this.background = glacier.color.BLACK;
+	this.resize(canvas.offsetWidth, canvas.offsetHeight);
+	this.shaders.init();
+	
+	window.addEventListener('resize', function(event) {
+		if(canvas.width != canvas.offsetWidth || canvas.height != canvas.offsetHeight) {
+			this.resize(canvas.offsetWidth, canvas.offsetHeight);
+		}
+	}.bind(this));
 };
 
 glacier.Context.prototype = {
 	clear: function() {
-		console.warn('Missing implementation for Context.clear in derived class: ' + this.type);
+		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 	},
 	draw: function(drawable) {
-		console.warn('Missing implementation for Context.draw in derived class: ' + this.type);
+		if(drawable instanceof glacier.Drawable) {
+			if(drawable.contextData instanceof glacier.ContextData) {
+				drawable.contextData.draw();
+			}
+		}
 	},
 	init: function(drawable, options) {
-		console.warn('Missing implementation for Context.init in derived class: ' + this.type);
+		var data, self = this, shader = self.shaders.get('generic');
+		
+		if(typeof options == 'object') {
+			if(typeof options.shader == 'string') {
+				shader = self.shaders.get(options.shader);
+			}
+		}
+		
+		if(drawable instanceof glacier.Mesh) {
+			data = new glacier.ContextData(drawable, self, self.gl.TRIANGLES, shader);
+			
+			if(data.init(drawable.vertices, drawable.indices, drawable.normals, drawable.texCoords, drawable.colors)) {
+				drawable.texture0.onLoad(function(image) { data.textures[0] = self.createTexture(image); });
+				drawable.texture1.onLoad(function(image) { data.textures[1] = self.createTexture(image); });
+				drawable.texture2.onLoad(function(image) { data.textures[2] = self.createTexture(image); });
+				drawable.texture3.onLoad(function(image) { data.textures[3] = self.createTexture(image); });
+				drawable.contextData = data;
+				return true;
+			}
+			
+			return false;
+		} else if(drawable instanceof glacier.PointCollection) {
+			data = new glacier.ContextData(drawable, self, self.gl.POINTS, shader);
+			
+			if(data.init(drawable.vertices, null, null, null, drawable.colors)) {
+				drawable.contextData = data;
+				return true;
+			}
+		}
+		
+		// TODO: initialization of other drawables
+		
+		throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Mesh', 'init', 'Context');
 	},
-	resize: function(width, height) {
-		console.warn('Missing implementation for Context.resize in derived class: ' + this.type);
+	resize:	function(width, height) {
+		if(typeof width != 'number' || width <= 0.0) {
+			throw new glacier.exception.InvalidParameter('width', typeof width, 'positive number', 'resize', 'Context');
+		}
+		
+		if(typeof height != 'number' || height <= 0.0) {
+			throw new glacier.exception.InvalidParameter('height', typeof height, 'positive number', 'resize', 'Context');
+		}
+		
+		this.canvas.width	= width;
+		this.canvas.height	= height;
+		this.gl.viewport(0, 0, width, height);
+	},
+	createProgram: function(vertShader, fragShader) {
+		if(!(vertShader instanceof WebGLShader)) {
+			throw new glacier.exception.InvalidParameter('vertShader', typeof vertShader, 'WebGLShader', 'createProgram', 'Context');
+		}
+		
+		if(!(fragShader instanceof WebGLShader)) {
+			throw new glacier.exception.InvalidParameter('fragShader', typeof fragShader, 'WebGLShader', 'createProgram', 'Context');
+		}
+		
+		var gl = this.gl, program = gl.createProgram();
+		gl.attachShader(program, vertShader);
+		gl.attachShader(program, fragShader);
+		gl.linkProgram(program);
+		
+		if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+			console.warn(gl.getProgramInfoLog(program));
+			return null;
+		}
+		
+		return program;
+	},
+	createShader: function(type, source) {
+		var gl = this.gl, last, shader, valid = [ gl.FRAGMENT_SHADER, gl.VERTEX_SHADER ];
+		
+		if(typeof source != 'string') {
+			throw new glacier.exception.InvalidParameter('source', typeof source, 'string', 'createShader', 'Context');
+		}
+		
+		if(valid.indexOf(type) == -1) {
+			last = (valid = valid.join(', ')).lastIndexOf(', ');
+			valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
+			throw new glacier.exception.InvalidParameter('type', type, valid, 'createShader', 'Context');
+		}
+		
+		shader = gl.createShader(type);
+		gl.shaderSource(shader, source);
+		gl.compileShader(shader);
+		
+		if(!gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+			console.warn(gl.getShaderInfoLog(shader));
+			return null;
+		}
+		
+		return shader;
+	},
+	createTexture: function(image) {
+		if(image instanceof Image) {
+			var gl = this.gl, tex = gl.createTexture();
+			
+			gl.bindTexture(gl.TEXTURE_2D, tex);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+			gl.generateMipmap(gl.TEXTURE_2D);
+			gl.bindTexture(gl.TEXTURE_2D, null);
+			
+			return tex;
+		}
+		
+		throw new glacier.exception.InvalidParameter('image', typeof image, 'Image', 'createTexture', 'Context');
+	},
+	worldToScreen: function(point, modelView) {
+		if(point instanceof glacier.Vector3) {
+			var matrix, vec4;
+			
+			if(!modelView || (modelView instanceof glacier.Matrix44)) {
+				matrix = new glacier.Matrix44(modelView || null);
+			} else {
+				throw new glacier.exception.InvalidParameter('modelView', typeof modelView, 'Matrix44 or null', 'worldToScreen', 'Context');
+			}
+			
+			if(this.projection instanceof glacier.Matrix44) {
+				matrix.multiply(this.projection);
+			}
+			
+			vec4 = {
+				x: matrix.array[0] * point.x + matrix.array[4] * point.y + matrix.array[ 8] * point.z + matrix.array[12],
+				y: matrix.array[1] * point.x + matrix.array[5] * point.y + matrix.array[ 9] * point.z + matrix.array[13],
+				z: matrix.array[2] * point.x + matrix.array[6] * point.y + matrix.array[10] * point.z + matrix.array[14],
+				w: matrix.array[3] * point.x + matrix.array[7] * point.y + matrix.array[11] * point.z + matrix.array[15]
+			};
+			
+			if(vec4.w > 0.0) {
+				vec4.x = (vec4.x /= vec4.w) * 0.5 + 0.5;
+				vec4.y = (vec4.y /= vec4.w) * 0.5 + 0.5;
+				vec4.z = (vec4.z /= vec4.w) * 0.5 + 0.5;
+				
+				return new glacier.Vector2(Math.round(vec4.x * context.width), Math.round((1.0 - vec4.y) * context.height));
+			}
+		} else {
+			throw new glacier.exception.InvalidParameter('point', typeof point, 'Vector3', 'worldToScreen', 'Context');
+		}
+		
+		return null;
 	}
 };

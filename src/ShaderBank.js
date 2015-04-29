@@ -1,6 +1,6 @@
-glacier.context.WebGL.ShaderBank = function(context) {
-	if(!(context instanceof glacier.context.WebGL)) {
-		throw new glacier.exception.InvalidParameter('context', typeof context, 'context.WebGL', '(constructor)', 'context.WebGL.ShaderBank');
+glacier.ShaderBank = function ShaderBank(context) {
+	if(!(context instanceof glacier.Context)) {
+		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'ShaderBank');
 	}
 	
 	Object.defineProperties(this, {
@@ -9,12 +9,12 @@ glacier.context.WebGL.ShaderBank = function(context) {
 	});
 };
 
-glacier.context.WebGL.ShaderBank.prototype = {
+glacier.ShaderBank.prototype = {
 	init: function() {
-		if(this.context instanceof glacier.context.WebGL) {
+		if(this.context instanceof glacier.Context) {
 			var attribExpr	= /attribute\s+(?:(?:high|medium|low)p\s+)?(?:float|(?:(?:vec|mat)[234]))\s+([a-zA-Z_]+[a-zA-Z0-9_]*)\s*;/g,
 				uniformExpr	= /uniform\s+(?:(?:high|medium|low)p\s+)?(?:bool|int|float|(?:(?:vec|bvec|ivec|mat)[234])|(?:sampler(?:Cube|2D)))\s+([a-zA-Z_]+[a-zA-Z0-9_]*)(\[(?:(?:\d+)|(?:[a-zA-Z_]+[a-zA-Z0-9_]*))\])?\s*;/g,
-				vertShaders = {}, fragShaders = {}, gl = this.context.gl, shaderMap = glacier.context.WebGL.shaders, s, v, f, p, src, match, obj, vert, frag, prog;
+				vertShaders = {}, fragShaders = {}, gl = this.context.gl, shaderMap = glacier.shaders, s, v, f, p, src, match, obj, vert, frag, prog;
 				
 			for(v in shaderMap.vertex) {
 				if(shaderMap.vertex[v] instanceof Array) {
@@ -57,7 +57,7 @@ glacier.context.WebGL.ShaderBank.prototype = {
 					
 					if(v && f && (vert = v.shader) && (frag = f.shader)) {
 						if((prog = this.context.createProgram(vert, frag))) {
-							var shader = new glacier.context.WebGL.Shader(this.context, prog);
+							var shader = new glacier.Shader(this.context, prog);
 							
 							shader.addAttributes(v.attributes);
 							shader.addUniforms(v.uniforms);
@@ -74,12 +74,12 @@ glacier.context.WebGL.ShaderBank.prototype = {
 			
 		return false;
 	},
-	shader: function(shader) {
+	get: function(shader) {
 		if(typeof shader != 'string') {
-			throw new glacier.exception.InvalidParameter('shader', typeof shader, 'string', 'shader', 'context.WebGL.ShaderBank');
+			throw new glacier.exception.InvalidParameter('shader', typeof shader, 'string', 'shader', 'ShaderBank');
 		}
 		
-		if((shader = this.shaders[shader]) instanceof glacier.context.WebGL.Shader) {
+		if((shader = this.shaders[shader]) instanceof glacier.Shader) {
 			return shader;
 		}
 		

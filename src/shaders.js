@@ -1,4 +1,4 @@
-glacier.context.WebGL.shaders = {
+glacier.shaders = {
 	vertex: {
 		generic: [
 			'attribute highp vec3 vertex_xyz;',

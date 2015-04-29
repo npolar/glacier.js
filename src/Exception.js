@@ -11,9 +11,8 @@ glacier.Exception = function Exception(message, properties) {
 };
 
 glacier.exception = {
-	ContextError: function(context, error, method, className) {
+	ContextError: function(error, method, className) {
 		glacier.Exception.call(this, 'Context error', {
-			context:	context,
 			error:		error,
 			method:		method,
 			class:		className

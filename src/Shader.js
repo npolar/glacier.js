@@ -1,10 +1,10 @@
-glacier.context.WebGL.Shader = function(context, program) {
-	if(!(context instanceof glacier.context.WebGL)) {
-		throw new glacier.exception.InvalidParameter('context', typeof context, 'context.WebGL', '(constructor)', 'context.WebGL.Shader');
+glacier.Shader = function Shader(context, program) {
+	if(!(context instanceof glacier.Context)) {
+		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'Shader');
 	}
 	
 	if(!(program instanceof WebGLProgram)) {
-		throw new glacier.exception.InvalidParameter('program', typeof program, 'WebGLProgram', '(constructor)', 'context.WebGL.Shader');
+		throw new glacier.exception.InvalidParameter('program', typeof program, 'WebGLProgram', '(constructor)', 'Shader');
 	}
 	
 	Object.defineProperties(this, {
@@ -15,7 +15,7 @@ glacier.context.WebGL.Shader = function(context, program) {
 	});
 };
 
-glacier.context.WebGL.Shader.prototype = {
+glacier.Shader.prototype = {
 	addAttributes: function(attributeArray) {
 		if(glacier.isArray(attributeArray, 'string')) {
 			var a;
@@ -28,7 +28,7 @@ glacier.context.WebGL.Shader.prototype = {
 				}
 			}, this);
 		} else {
-			throw new glacier.exception.InvalidParameter('attributeArray', typeof attributeArray, 'string array', 'addAttributes', 'context.WebGL.Shader');
+			throw new glacier.exception.InvalidParameter('attributeArray', typeof attributeArray, 'string array', 'addAttributes', 'Shader');
 		}
 	},
 	addUniforms: function(uniformArray) {
@@ -43,12 +43,12 @@ glacier.context.WebGL.Shader.prototype = {
 				}
 			}, this);
 		} else {
-			throw new glacier.exception.InvalidParameter('uniformArray', typeof uniformArray, 'string array', 'addUniforms', 'context.WebGL.Shader');
+			throw new glacier.exception.InvalidParameter('uniformArray', typeof uniformArray, 'string array', 'addUniforms', 'Shader');
 		}
 	},
 	attribute: function(attribute) {
 		if(typeof attribute != 'string') {
-			throw new glacier.exception.InvalidParameter('attribute', typeof attribute, 'string', 'attribute', 'context.WebGL.Shader');
+			throw new glacier.exception.InvalidParameter('attribute', typeof attribute, 'string', 'attribute', 'Shader');
 		}
 		
 		if(typeof (attribute = this.attributes[attribute]) == 'number') {
@@ -59,7 +59,7 @@ glacier.context.WebGL.Shader.prototype = {
 	},
 	uniform: function(uniform) {
 		if(typeof uniform != 'string') {
-			throw new glacier.exception.InvalidParameter('uniform', typeof uniform, 'string', 'uniform', 'context.WebGL.Shader');
+			throw new glacier.exception.InvalidParameter('uniform', typeof uniform, 'string', 'uniform', 'Shader');
 		}
 		
 		if((uniform = this.uniforms[uniform]) instanceof WebGLUniformLocation) {
