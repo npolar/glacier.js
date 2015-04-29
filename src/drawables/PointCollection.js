@@ -29,5 +29,20 @@ glacier.extend(glacier.PointCollection, glacier.Drawable, {
 		
 		this.colors.length		= 0;
 		this.vertices.length	= 0;
+	},
+	init: function(context, options) {
+		var self = this;
+		
+		if(glacier.Drawable.prototype.init.call(this, context, options)) {
+			if(self.buffer.init(self.vertices, null, null, null, self.colors)) {
+				self.buffer.drawMode = context.gl.POINTS;
+				self.buffer.elements = self.vertices.length;
+				
+				return true;
+			}
+		}
+		
+		self.buffer = null;
+		return false;
 	}
 });

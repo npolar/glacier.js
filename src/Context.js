@@ -107,45 +107,17 @@ glacier.Context.prototype = {
 	},
 	draw: function(drawable) {
 		if(drawable instanceof glacier.Drawable) {
-			if(drawable.contextData instanceof glacier.ContextData) {
-				drawable.contextData.draw();
-			}
+			drawable.draw();
 		}
 	},
 	init: function(drawable, options) {
-		var data, self = this, shader = self.shaders.get('generic');
-		
-		if(typeof options == 'object') {
-			if(typeof options.shader == 'string') {
-				shader = self.shaders.get(options.shader);
-			}
+		if(drawable instanceof glacier.Drawable) {
+			return drawable.init(this, options);
+		} else {
+			throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Drawable', 'init', 'Context');
 		}
 		
-		if(drawable instanceof glacier.Mesh) {
-			data = new glacier.ContextData(drawable, self, self.gl.TRIANGLES, shader);
-			
-			if(data.init(drawable.vertices, drawable.indices, drawable.normals, drawable.texCoords, drawable.colors)) {
-				drawable.texture0.onLoad(function(image) { data.textures[0] = self.createTexture(image); });
-				drawable.texture1.onLoad(function(image) { data.textures[1] = self.createTexture(image); });
-				drawable.texture2.onLoad(function(image) { data.textures[2] = self.createTexture(image); });
-				drawable.texture3.onLoad(function(image) { data.textures[3] = self.createTexture(image); });
-				drawable.contextData = data;
-				return true;
-			}
-			
-			return false;
-		} else if(drawable instanceof glacier.PointCollection) {
-			data = new glacier.ContextData(drawable, self, self.gl.POINTS, shader);
-			
-			if(data.init(drawable.vertices, null, null, null, drawable.colors)) {
-				drawable.contextData = data;
-				return true;
-			}
-		}
-		
-		// TODO: initialization of other drawables
-		
-		throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Mesh', 'init', 'Context');
+		return false;
 	},
 	resize:	function(width, height) {
 		if(typeof width != 'number' || width <= 0.0) {

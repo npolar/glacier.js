@@ -1,30 +1,54 @@
-glacier.ContextData = function(drawable, context, drawMode, shader) {
+glacier.BufferObject = function BufferObject(drawable, context, shader) {
+	// Ensure that drawable is a valid Drawable object
 	if(!(drawable instanceof glacier.Drawable)) {
-		throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Drawable', '(constructor)', 'ContextData');
+		throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Drawable', '(constructor)', 'BufferObject');
 	}
 	
+	// Ensure that context is a valid Context object
 	if(!(context instanceof glacier.Context)) {
-		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'ContextData');
+		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'BufferObject');
 	}
 	
-	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl.LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ];
-	
-	if(modes.indexOf(drawMode) == -1) {
-		throw new glacier.exception.InvalidParameter('drawMode', drawMode, 'valid WebGL draw mode', '(constructor)', 'ContextData');
-	}
-	
+	// Ensure that shader is a valid Shader object
 	if(!(shader instanceof glacier.Shader)) {
-		throw new glacier.exception.InvalidParameter('shader', typeof shader, 'Shader', '(constructor)', 'ContextData');
+		throw new glacier.exception.InvalidParameter('shader', typeof shader, 'Shader', '(constructor)', 'BufferObject');
 	}
 	
+	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl.LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ], mode = 0, elements = 0;
+	
+	// Define buffers, context, parent, textures, elements, drawMode and shader memebers
 	Object.defineProperties(this, {
 		buffers:	{ value: {} },
 		context:	{ value: context },
-		drawMode:	{ value: drawMode },
-		elements:	{ value: 0, configurable: true },
 		parent:		{ value: drawable },
 		textures:	{ value: [] },
 		
+		elements: {
+			get: function() {
+				return elements;
+			},
+			set: function(value) {
+				if(typeof value == 'number' && value >= 0) {
+					elements = Math.round(value);
+				} else {
+					throw new glacier.exception.InvalidAssignment('elements', value, 'positive integer', 'BufferObject');
+				}
+			}
+		},
+		drawMode: {
+			get: function() {
+				return mode;
+			},
+			set: function(value) {
+				if(modes.indexOf(value) != -1) {
+					mode = value;
+				} else {
+					var valid = modes.join(', '), last = valid.lastIndexOf(', ');
+					valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
+					throw new glacier.exception.InvalidAssignment('drawMode', value, valid, 'BufferObject');
+				}
+			}
+		},
 		shader: {
 			get: function() {
 				return shader;
@@ -41,16 +65,16 @@ glacier.ContextData = function(drawable, context, drawMode, shader) {
 						console.warn('Undefined WebGL shader program: ' + value);
 					}
 				} else {
-					throw new glacier.exception.InvalidAssignment('shader', typeof shader, 'Shader', 'ContextData');
+					throw new glacier.exception.InvalidAssignment('shader', typeof shader, 'Shader', 'BufferObject');
 				}
 			}
 		}
 	});
 };
 
-glacier.ContextData.prototype = {
+glacier.BufferObject.prototype = {
 	draw: function() {
-		if(this.context && this.shader) {
+		if(this.context && this.shader && this.elements) {
 			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl, attrib, uniform, mvp;
 			
 			this.shader.use();
@@ -126,10 +150,9 @@ glacier.ContextData.prototype = {
 					vertices.forEach(function(vertex) { array.push(vertex.x, vertex.y, vertex.z); });
 					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.vertex = gl.createBuffer()));
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
-					Object.defineProperty(this, 'elements', { value: array.length / 3 });
 				}
 			} else if(vertices) {
-				throw new glacier.exception.InvalidParameter('vertices', typeof vertices, 'Vector3 array', 'init', 'ContextData');
+				throw new glacier.exception.InvalidParameter('vertices', typeof vertices, 'Vector3 array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(indices, 'number')) {
@@ -138,10 +161,9 @@ glacier.ContextData.prototype = {
 					indices.forEach(function(index) { array.push(index); });
 					gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, (this.buffers.index = gl.createBuffer()));
 					gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(array), gl.STATIC_DRAW);
-					Object.defineProperty(this, 'elements', { value: array.length });
 				}
 			} else if(indices) {
-				throw new glacier.exception.InvalidParameter('indices', typeof indices, 'number array', 'init', 'ContextData');
+				throw new glacier.exception.InvalidParameter('indices', typeof indices, 'number array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(normals, glacier.Vector3)) {
@@ -152,7 +174,7 @@ glacier.ContextData.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('normals', typeof normals, 'Vector3 array', 'init', 'ContextData');
+				throw new glacier.exception.InvalidParameter('normals', typeof normals, 'Vector3 array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(texCoords, glacier.Vector2)) {
@@ -163,7 +185,7 @@ glacier.ContextData.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('texCoords', typeof texCoords, 'Vector2 array', 'init', 'ContextData');
+				throw new glacier.exception.InvalidParameter('texCoords', typeof texCoords, 'Vector2 array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(colors, glacier.Color)) {
@@ -174,7 +196,7 @@ glacier.ContextData.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('colors', typeof colors, 'Color array', 'init', 'ContextData');
+				throw new glacier.exception.InvalidParameter('colors', typeof colors, 'Color array', 'init', 'BufferObject');
 			}
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, null);

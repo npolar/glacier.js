@@ -42,5 +42,25 @@ glacier.extend(glacier.Mesh, glacier.Drawable, {
 		this.normals.length		= 0;
 		this.texCoords.length	= 0;
 		this.vertices.length	= 0;
+	},
+	init: function(context, options) {
+		var self = this;
+		
+		if(glacier.Drawable.prototype.init.call(this, context, options)) {
+			if(self.buffer.init(self.vertices, self.indices, self.normals, self.texCoords, self.colors)) {
+				self.buffer.drawMode = context.gl.TRIANGLES;
+				self.buffer.elements = (self.indices.length ? self.indices.length : self.vertices.length / 3);
+				
+				self.texture0.onLoad(function(image) { self.buffer.textures[0] = context.createTexture(image); });
+				self.texture1.onLoad(function(image) { self.buffer.textures[1] = context.createTexture(image); });
+				self.texture2.onLoad(function(image) { self.buffer.textures[2] = context.createTexture(image); });
+				self.texture3.onLoad(function(image) { self.buffer.textures[3] = context.createTexture(image); });
+				
+				return true;
+			}
+		}
+		
+		self.buffer = null;
+		return false;
 	}
 });

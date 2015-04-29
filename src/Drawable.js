@@ -18,37 +18,61 @@ glacier.Drawable = function Drawable() {
 			}
 		});
 	}, this);
+	
+	var bufferObject = null;
+	
+	// Define buffer member
+	Object.defineProperty(this, 'buffer', {
+		get: function() {
+			return bufferObject;
+		},
+		set: function(value) {
+			if(value instanceof glacier.BufferObject) {
+				bufferObject = value;
+			} else if(value === null) {
+				if(bufferObject) {
+					bufferObject.free();
+				}
+				
+				bufferObject = null;
+			} else {
+				throw new glacier.exception.InvalidAssignment('buffer', typeof buffer, 'BufferObject', 'Drawable');
+			}
+		}
+	});
 };
 
 glacier.Drawable.prototype = {
-	context: null,
-	contextData: null,
-	
 	free: function() {
-		this.context		= null;
-		this.contextData	= null;
-		this.matrix			= new glacier.Matrix44();
-		this.visible		= true;
+		this.buffer		= null;
+		this.matrix		= new glacier.Matrix44();
+		this.visible	= true;
 	},
 	draw: function() {
-		if(this.context instanceof glacier.Context) {
-			this.context.draw(this);
+		if(this.visible && (this.buffer instanceof glacier.BufferObject)) {
+			this.buffer.draw();
 		}
 	},
 	init: function(context, options) {
-		if(context instanceof glacier.Context) {
-			if(options && typeof options != 'object') {
-				throw new glacier.exception.InvalidParameter('options', typeof options, 'object', 'init', 'Drawable');
-			}
-			
-			if(context.init(this, options)) {
-				this.context = context;
-				return true;
-			}
-		} else {
+		if(!(context instanceof glacier.Context)) {
 			throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', 'init', 'Drawable');
 		}
 		
-		return false;
+		var shader = context.shaders.get('generic');
+		
+		if(typeof options == 'object') {
+			if(typeof options.shader == 'string') {
+				shader = context.shaders.get(options.shader);
+			}
+		} else if(options) {
+			throw new glacier.exception.InvalidParameter('options', typeof options, 'object', 'init', 'Drawable');
+		}
+		
+		if(!(this.buffer = new glacier.BufferObject(this, context, shader)).init()) {
+			this.buffer = null;
+			return false;
+		}
+		
+		return true;
 	}
 };
