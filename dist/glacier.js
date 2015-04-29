@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.1.0'
+	VERSION: '0.1.1'
 };
 
 if(typeof module == 'object') {
@@ -130,6 +130,237 @@ glacier.union = function(members, value, ctor) {
 	
 	for(var m in members) {
 		addProperty.call(this, m);
+	}
+};
+
+glacier.BufferObject = function BufferObject(drawable, context, shader) {
+	// Ensure that drawable is a valid Drawable object
+	if(!(drawable instanceof glacier.Drawable)) {
+		throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Drawable', '(constructor)', 'BufferObject');
+	}
+	
+	// Ensure that context is a valid Context object
+	if(!(context instanceof glacier.Context)) {
+		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'BufferObject');
+	}
+	
+	// Ensure that shader is a valid Shader object
+	if(!(shader instanceof glacier.Shader)) {
+		throw new glacier.exception.InvalidParameter('shader', typeof shader, 'Shader', '(constructor)', 'BufferObject');
+	}
+	
+	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl.LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ], mode = 0, elements = 0;
+	
+	// Define buffers, context, parent, textures, elements, drawMode and shader memebers
+	Object.defineProperties(this, {
+		buffers:	{ value: {} },
+		context:	{ value: context },
+		parent:		{ value: drawable },
+		textures:	{ value: [] },
+		
+		elements: {
+			get: function() {
+				return elements;
+			},
+			set: function(value) {
+				if(typeof value == 'number' && value >= 0) {
+					elements = Math.round(value);
+				} else {
+					throw new glacier.exception.InvalidAssignment('elements', value, 'positive integer', 'BufferObject');
+				}
+			}
+		},
+		drawMode: {
+			get: function() {
+				return mode;
+			},
+			set: function(value) {
+				if(modes.indexOf(value) != -1) {
+					mode = value;
+				} else {
+					var valid = modes.join(', '), last = valid.lastIndexOf(', ');
+					valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
+					throw new glacier.exception.InvalidAssignment('drawMode', value, valid, 'BufferObject');
+				}
+			}
+		},
+		shader: {
+			get: function() {
+				return shader;
+			},
+			set: function(value) {
+				if(value instanceof glacier.Shader) {
+					shader = value;
+				} else if(typeof value == 'string') {
+					var bankShader = context.shaders.get(value);
+					
+					if(bankShader instanceof glacier.Shader) {
+						shader = bankShader;
+					} else {
+						console.warn('Undefined WebGL shader program: ' + value);
+					}
+				} else {
+					throw new glacier.exception.InvalidAssignment('shader', typeof shader, 'Shader', 'BufferObject');
+				}
+			}
+		}
+	});
+};
+
+glacier.BufferObject.prototype = {
+	draw: function() {
+		if(this.context && this.shader && this.elements) {
+			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl, attrib, uniform, mvp;
+			
+			this.shader.use();
+			
+			if(this.buffers.vertex && (attrib = this.shader.attribute('vertex_xyz')) !== null) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
+				gl.enableVertexAttribArray(attrib);
+				gl.vertexAttribPointer(attrib, 3, gl.FLOAT, false, 0, 0);
+			}
+			
+			if(this.buffers.normal && (attrib = this.shader.attribute('normal_xyz')) !== null) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.normal);
+				gl.enableVertexAttribArray(attrib);
+				gl.vertexAttribPointer(attrib, 3, gl.FLOAT, false, 0, 0);
+			}
+			
+			if(this.buffers.texCoord && (attrib = this.shader.attribute('texture_uv')) !== null) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.texCoord);
+				gl.enableVertexAttribArray(attrib);
+				gl.vertexAttribPointer(attrib, 2, gl.FLOAT, false, 0, 0);
+			}
+			
+			if(this.buffers.color && (attrib = this.shader.attribute('color_rgba')) !== null) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.color);
+				gl.enableVertexAttribArray(attrib);
+				gl.vertexAttribPointer(attrib, 4, gl.FLOAT, false, 0, 0);
+			}
+			
+			this.textures.forEach(function(texture, index) {
+				if(texture instanceof WebGLTexture) {
+					if((uniform = this.shader.uniform('tex_samp_' + index))) {
+						gl.activeTexture(gl.TEXTURE0 + index);
+						gl.bindTexture(gl.TEXTURE_2D, texture);
+						gl.uniform1i(uniform, index);
+					}
+				}
+			}, this);
+			
+			if((uniform = this.shader.uniform('matrix_mvp'))) {
+				mvp = new glacier.Matrix44(this.parent.matrix);
+				
+				if(this.context.projection instanceof glacier.Matrix44) {
+					mvp.multiply(this.context.projection);
+				}
+				
+				gl.uniformMatrix4fv(uniform, false, mvp.array);
+			}
+			
+			if((uniform = this.shader.uniform('resolution'))) {
+				gl.uniform2f(uniform, context.width, constext.height);
+			}
+			
+			if(this.buffers.index) {
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.index);
+				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
+			} else if(this.buffers.vertex) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
+				gl.drawArrays(this.drawMode, 0, this.elements);
+			}
+			
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+			gl.bindTexture(gl.TEXTURE_2D, null);
+		}
+	},
+	init: function(vertices, indices, normals, texCoords, colors) {
+		if(this.context && this.shader) {
+			var gl = this.context.gl, array;
+			
+			if(glacier.isArray(vertices, glacier.Vector3)) {
+				if(vertices.length) {
+					array = [];
+					vertices.forEach(function(vertex) { array.push(vertex.x, vertex.y, vertex.z); });
+					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.vertex = gl.createBuffer()));
+					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
+				}
+			} else if(vertices) {
+				throw new glacier.exception.InvalidParameter('vertices', typeof vertices, 'Vector3 array', 'init', 'BufferObject');
+			}
+			
+			if(glacier.isArray(indices, 'number')) {
+				if(indices.length) {
+					array = [];
+					indices.forEach(function(index) { array.push(index); });
+					gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, (this.buffers.index = gl.createBuffer()));
+					gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(array), gl.STATIC_DRAW);
+				}
+			} else if(indices) {
+				throw new glacier.exception.InvalidParameter('indices', typeof indices, 'number array', 'init', 'BufferObject');
+			}
+			
+			if(glacier.isArray(normals, glacier.Vector3)) {
+				if(normals.length) {
+					array = [];
+					normals.forEach(function(normal) { array.push(normal.x, normal.y, normal.z); });
+					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.normal = gl.createBuffer()));
+					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
+				}
+			} else if(normals) {
+				throw new glacier.exception.InvalidParameter('normals', typeof normals, 'Vector3 array', 'init', 'BufferObject');
+			}
+			
+			if(glacier.isArray(texCoords, glacier.Vector2)) {
+				if(texCoords.length) {
+					array = [];
+					texCoords.forEach(function(texCoord) { array.push(texCoord.u, texCoord.v); });
+					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.texCoord = gl.createBuffer()));
+					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
+				}
+			} else if(normals) {
+				throw new glacier.exception.InvalidParameter('texCoords', typeof texCoords, 'Vector2 array', 'init', 'BufferObject');
+			}
+			
+			if(glacier.isArray(colors, glacier.Color)) {
+				if(colors.length) {
+					array = [];
+					colors.forEach(function(color) { array.push(color.r / 255, color.g  / 255, color.b  / 255, color.a); });
+					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.color = gl.createBuffer()));
+					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
+				}
+			} else if(normals) {
+				throw new glacier.exception.InvalidParameter('colors', typeof colors, 'Color array', 'init', 'BufferObject');
+			}
+			
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+			
+			return true;
+		}
+		
+		return false;
+	},
+	free: function() {
+		if(this.context) {
+			var gl = this.context.gl, i;
+			
+			for(i in this.buffers) {
+				if(this.buffers.hasOwnProperty(i)) {
+					gl.deleteBuffer(this.buffers[i]);
+					delete this.buffers[i];
+				}
+			}
+			
+			this.textures.forEach(function(texture) {
+				if(texture instanceof WebGLTexture) {
+					gl.deleteTexture(texture);
+				}
+			});
+			
+			this.textures.length = 0;
+		}
 	}
 };
 
@@ -533,45 +764,17 @@ glacier.Context.prototype = {
 	},
 	draw: function(drawable) {
 		if(drawable instanceof glacier.Drawable) {
-			if(drawable.contextData instanceof glacier.ContextData) {
-				drawable.contextData.draw();
-			}
+			drawable.draw();
 		}
 	},
 	init: function(drawable, options) {
-		var data, self = this, shader = self.shaders.get('generic');
-		
-		if(typeof options == 'object') {
-			if(typeof options.shader == 'string') {
-				shader = self.shaders.get(options.shader);
-			}
+		if(drawable instanceof glacier.Drawable) {
+			return drawable.init(this, options);
+		} else {
+			throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Drawable', 'init', 'Context');
 		}
 		
-		if(drawable instanceof glacier.Mesh) {
-			data = new glacier.ContextData(drawable, self, self.gl.TRIANGLES, shader);
-			
-			if(data.init(drawable.vertices, drawable.indices, drawable.normals, drawable.texCoords, drawable.colors)) {
-				drawable.texture0.onLoad(function(image) { data.textures[0] = self.createTexture(image); });
-				drawable.texture1.onLoad(function(image) { data.textures[1] = self.createTexture(image); });
-				drawable.texture2.onLoad(function(image) { data.textures[2] = self.createTexture(image); });
-				drawable.texture3.onLoad(function(image) { data.textures[3] = self.createTexture(image); });
-				drawable.contextData = data;
-				return true;
-			}
-			
-			return false;
-		} else if(drawable instanceof glacier.PointCollection) {
-			data = new glacier.ContextData(drawable, self, self.gl.POINTS, shader);
-			
-			if(data.init(drawable.vertices, null, null, null, drawable.colors)) {
-				drawable.contextData = data;
-				return true;
-			}
-		}
-		
-		// TODO: initialization of other drawables
-		
-		throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Mesh', 'init', 'Context');
+		return false;
 	},
 	resize:	function(width, height) {
 		if(typeof width != 'number' || width <= 0.0) {
@@ -683,215 +886,6 @@ glacier.Context.prototype = {
 	}
 };
 
-glacier.ContextData = function(drawable, context, drawMode, shader) {
-	if(!(drawable instanceof glacier.Drawable)) {
-		throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Drawable', '(constructor)', 'ContextData');
-	}
-	
-	if(!(context instanceof glacier.Context)) {
-		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'ContextData');
-	}
-	
-	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl.LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ];
-	
-	if(modes.indexOf(drawMode) == -1) {
-		throw new glacier.exception.InvalidParameter('drawMode', drawMode, 'valid WebGL draw mode', '(constructor)', 'ContextData');
-	}
-	
-	if(!(shader instanceof glacier.Shader)) {
-		throw new glacier.exception.InvalidParameter('shader', typeof shader, 'Shader', '(constructor)', 'ContextData');
-	}
-	
-	Object.defineProperties(this, {
-		buffers:	{ value: {} },
-		context:	{ value: context },
-		drawMode:	{ value: drawMode },
-		elements:	{ value: 0, configurable: true },
-		parent:		{ value: drawable },
-		textures:	{ value: [] },
-		
-		shader: {
-			get: function() {
-				return shader;
-			},
-			set: function(value) {
-				if(value instanceof glacier.Shader) {
-					shader = value;
-				} else if(typeof value == 'string') {
-					var bankShader = context.shaders.get(value);
-					
-					if(bankShader instanceof glacier.Shader) {
-						shader = bankShader;
-					} else {
-						console.warn('Undefined WebGL shader program: ' + value);
-					}
-				} else {
-					throw new glacier.exception.InvalidAssignment('shader', typeof shader, 'Shader', 'ContextData');
-				}
-			}
-		}
-	});
-};
-
-glacier.ContextData.prototype = {
-	draw: function() {
-		if(this.context && this.shader) {
-			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl, attrib, uniform, mvp;
-			
-			this.shader.use();
-			
-			if(this.buffers.vertex && (attrib = this.shader.attribute('vertex_xyz')) !== null) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
-				gl.enableVertexAttribArray(attrib);
-				gl.vertexAttribPointer(attrib, 3, gl.FLOAT, false, 0, 0);
-			}
-			
-			if(this.buffers.normal && (attrib = this.shader.attribute('normal_xyz')) !== null) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.normal);
-				gl.enableVertexAttribArray(attrib);
-				gl.vertexAttribPointer(attrib, 3, gl.FLOAT, false, 0, 0);
-			}
-			
-			if(this.buffers.texCoord && (attrib = this.shader.attribute('texture_uv')) !== null) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.texCoord);
-				gl.enableVertexAttribArray(attrib);
-				gl.vertexAttribPointer(attrib, 2, gl.FLOAT, false, 0, 0);
-			}
-			
-			if(this.buffers.color && (attrib = this.shader.attribute('color_rgba')) !== null) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.color);
-				gl.enableVertexAttribArray(attrib);
-				gl.vertexAttribPointer(attrib, 4, gl.FLOAT, false, 0, 0);
-			}
-			
-			this.textures.forEach(function(texture, index) {
-				if(texture instanceof WebGLTexture) {
-					if((uniform = this.shader.uniform('tex_samp_' + index))) {
-						gl.activeTexture(gl.TEXTURE0 + index);
-						gl.bindTexture(gl.TEXTURE_2D, texture);
-						gl.uniform1i(uniform, index);
-					}
-				}
-			}, this);
-			
-			if((uniform = this.shader.uniform('matrix_mvp'))) {
-				mvp = new glacier.Matrix44(this.parent.matrix);
-				
-				if(this.context.projection instanceof glacier.Matrix44) {
-					mvp.multiply(this.context.projection);
-				}
-				
-				gl.uniformMatrix4fv(uniform, false, mvp.array);
-			}
-			
-			if((uniform = this.shader.uniform('resolution'))) {
-				gl.uniform2f(uniform, context.width, constext.height);
-			}
-			
-			if(this.buffers.index) {
-				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.index);
-				gl.drawElements(this.drawMode, this.elements, gl.UNSIGNED_SHORT, 0);
-			} else if(this.buffers.vertex) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
-				gl.drawArrays(this.drawMode, 0, this.elements);
-			}
-			
-			gl.bindBuffer(gl.ARRAY_BUFFER, null);
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-			gl.bindTexture(gl.TEXTURE_2D, null);
-		}
-	},
-	init: function(vertices, indices, normals, texCoords, colors) {
-		if(this.context && this.shader) {
-			var gl = this.context.gl, array;
-			
-			if(glacier.isArray(vertices, glacier.Vector3)) {
-				if(vertices.length) {
-					array = [];
-					vertices.forEach(function(vertex) { array.push(vertex.x, vertex.y, vertex.z); });
-					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.vertex = gl.createBuffer()));
-					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
-					Object.defineProperty(this, 'elements', { value: array.length / 3 });
-				}
-			} else if(vertices) {
-				throw new glacier.exception.InvalidParameter('vertices', typeof vertices, 'Vector3 array', 'init', 'ContextData');
-			}
-			
-			if(glacier.isArray(indices, 'number')) {
-				if(indices.length) {
-					array = [];
-					indices.forEach(function(index) { array.push(index); });
-					gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, (this.buffers.index = gl.createBuffer()));
-					gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(array), gl.STATIC_DRAW);
-					Object.defineProperty(this, 'elements', { value: array.length });
-				}
-			} else if(indices) {
-				throw new glacier.exception.InvalidParameter('indices', typeof indices, 'number array', 'init', 'ContextData');
-			}
-			
-			if(glacier.isArray(normals, glacier.Vector3)) {
-				if(normals.length) {
-					array = [];
-					normals.forEach(function(normal) { array.push(normal.x, normal.y, normal.z); });
-					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.normal = gl.createBuffer()));
-					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
-				}
-			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('normals', typeof normals, 'Vector3 array', 'init', 'ContextData');
-			}
-			
-			if(glacier.isArray(texCoords, glacier.Vector2)) {
-				if(texCoords.length) {
-					array = [];
-					texCoords.forEach(function(texCoord) { array.push(texCoord.u, texCoord.v); });
-					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.texCoord = gl.createBuffer()));
-					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
-				}
-			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('texCoords', typeof texCoords, 'Vector2 array', 'init', 'ContextData');
-			}
-			
-			if(glacier.isArray(colors, glacier.Color)) {
-				if(colors.length) {
-					array = [];
-					colors.forEach(function(color) { array.push(color.r / 255, color.g  / 255, color.b  / 255, color.a); });
-					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.color = gl.createBuffer()));
-					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
-				}
-			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('colors', typeof colors, 'Color array', 'init', 'ContextData');
-			}
-			
-			gl.bindBuffer(gl.ARRAY_BUFFER, null);
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-			
-			return true;
-		}
-		
-		return false;
-	},
-	free: function() {
-		if(this.context) {
-			var gl = this.context.gl, i;
-			
-			for(i in this.buffers) {
-				if(this.buffers.hasOwnProperty(i)) {
-					gl.deleteBuffer(this.buffers[i]);
-					delete this.buffers[i];
-				}
-			}
-			
-			this.textures.forEach(function(texture) {
-				if(texture instanceof WebGLTexture) {
-					gl.deleteTexture(texture);
-				}
-			});
-			
-			this.textures.length = 0;
-		}
-	}
-};
-
 glacier.Drawable = function Drawable() {
 	// Define matrix and visible members
 	glacier.union.call(this, 'matrix', new glacier.Matrix44(), glacier.Matrix44);
@@ -912,38 +906,62 @@ glacier.Drawable = function Drawable() {
 			}
 		});
 	}, this);
+	
+	var bufferObject = null;
+	
+	// Define buffer member
+	Object.defineProperty(this, 'buffer', {
+		get: function() {
+			return bufferObject;
+		},
+		set: function(value) {
+			if(value instanceof glacier.BufferObject) {
+				bufferObject = value;
+			} else if(value === null) {
+				if(bufferObject) {
+					bufferObject.free();
+				}
+				
+				bufferObject = null;
+			} else {
+				throw new glacier.exception.InvalidAssignment('buffer', typeof buffer, 'BufferObject', 'Drawable');
+			}
+		}
+	});
 };
 
 glacier.Drawable.prototype = {
-	context: null,
-	contextData: null,
-	
 	free: function() {
-		this.context		= null;
-		this.contextData	= null;
-		this.matrix			= new glacier.Matrix44();
-		this.visible		= true;
+		this.buffer		= null;
+		this.matrix		= new glacier.Matrix44();
+		this.visible	= true;
 	},
 	draw: function() {
-		if(this.context instanceof glacier.Context) {
-			this.context.draw(this);
+		if(this.visible && (this.buffer instanceof glacier.BufferObject)) {
+			this.buffer.draw();
 		}
 	},
 	init: function(context, options) {
-		if(context instanceof glacier.Context) {
-			if(options && typeof options != 'object') {
-				throw new glacier.exception.InvalidParameter('options', typeof options, 'object', 'init', 'Drawable');
-			}
-			
-			if(context.init(this, options)) {
-				this.context = context;
-				return true;
-			}
-		} else {
+		if(!(context instanceof glacier.Context)) {
 			throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', 'init', 'Drawable');
 		}
 		
-		return false;
+		var shader = context.shaders.get('generic');
+		
+		if(typeof options == 'object') {
+			if(typeof options.shader == 'string') {
+				shader = context.shaders.get(options.shader);
+			}
+		} else if(options) {
+			throw new glacier.exception.InvalidParameter('options', typeof options, 'object', 'init', 'Drawable');
+		}
+		
+		if(!(this.buffer = new glacier.BufferObject(this, context, shader)).init()) {
+			this.buffer = null;
+			return false;
+		}
+		
+		return true;
 	}
 };
 
@@ -1523,6 +1541,26 @@ glacier.extend(glacier.Mesh, glacier.Drawable, {
 		this.normals.length		= 0;
 		this.texCoords.length	= 0;
 		this.vertices.length	= 0;
+	},
+	init: function(context, options) {
+		var self = this;
+		
+		if(glacier.Drawable.prototype.init.call(this, context, options)) {
+			if(self.buffer.init(self.vertices, self.indices, self.normals, self.texCoords, self.colors)) {
+				self.buffer.drawMode = context.gl.TRIANGLES;
+				self.buffer.elements = (self.indices.length ? self.indices.length : self.vertices.length / 3);
+				
+				self.texture0.onLoad(function(image) { self.buffer.textures[0] = context.createTexture(image); });
+				self.texture1.onLoad(function(image) { self.buffer.textures[1] = context.createTexture(image); });
+				self.texture2.onLoad(function(image) { self.buffer.textures[2] = context.createTexture(image); });
+				self.texture3.onLoad(function(image) { self.buffer.textures[3] = context.createTexture(image); });
+				
+				return true;
+			}
+		}
+		
+		self.buffer = null;
+		return false;
 	}
 });
 
@@ -1557,6 +1595,21 @@ glacier.extend(glacier.PointCollection, glacier.Drawable, {
 		
 		this.colors.length		= 0;
 		this.vertices.length	= 0;
+	},
+	init: function(context, options) {
+		var self = this;
+		
+		if(glacier.Drawable.prototype.init.call(this, context, options)) {
+			if(self.buffer.init(self.vertices, null, null, null, self.colors)) {
+				self.buffer.drawMode = context.gl.POINTS;
+				self.buffer.elements = self.vertices.length;
+				
+				return true;
+			}
+		}
+		
+		self.buffer = null;
+		return false;
 	}
 });
 
