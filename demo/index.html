@@ -237,13 +237,28 @@
 				earth.mesh.texture2 = 'gfx/normal_bathymetry.jpg';
 				earth.mesh.init(context, { shader: 'globe' });
 				
-				points.init(context, { shader: 'generic' });
+				//points.init(context, { shader: 'generic' });
 				
 				context.background = glacier.color.GRAY;
 				context.projection = cam.matrix;
 				
 				render();
 			})();
+			
+			glacier.load('demo.geojson', function(data) {
+				var geojson = glacier.geoJSON.parse(data);
+				
+				geojson.forEach(function(feature) {
+					points.addPoint(latLngToVec3(
+						feature.geometry.lat,
+						feature.geometry.lng,
+						1.0),
+						glacier.color.BLUE
+					);
+				});
+				
+				points.init(context, { shader: 'generic' });
+			});
 		</script>
 	</body>
 </html>
