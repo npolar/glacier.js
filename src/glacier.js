@@ -9,7 +9,8 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.1.1'
+	VERSION: '0.1.1',
+	AUTHORS: [ 'remi@npolar.no' ]
 };
 
 if(typeof module == 'object') {
