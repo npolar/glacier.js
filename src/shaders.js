@@ -42,7 +42,9 @@ glacier.shaders = {
 				'float diffuse = max(dot(mvp_normal, lightPos), 0.0);',
 				'vec3 dayColor = texture2D(tex_samp_0, tex_coords).rgb * diffuse;',
 				'vec3 nightColor = texture2D(tex_samp_1, tex_coords).rgb * (1.0 - diffuse);',
-				'gl_FragColor = vec4(nightColor + dayColor * max(dot(normal, lightPos), 0.3), 1.0);',
+				'vec3 normalColor = dayColor * max(dot(normal, lightPos), 0.3);',
+				'dayColor = ((1.0 - nightColor) * dayColor) + normalColor;',
+				'gl_FragColor = vec4(dayColor + ((1.0 - dayColor) * nightColor * 0.5), 1.0);',
 			'}'
 		],
 		normalMapped: [
