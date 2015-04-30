@@ -73,10 +73,12 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 	});
 };
 
+glacier.BufferObject.MAX_TEXTURE_COUNT = 4;
+
 glacier.BufferObject.prototype = {
 	draw: function() {
 		if(this.context && this.shader && this.elements) {
-			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl, attrib, uniform, mvp;
+			var f32bpe = Float32Array.BYTES_PER_ELEMENT, gl = this.context.gl, attrib, uniform, mvp, t;
 			
 			this.shader.use();
 			
@@ -104,15 +106,13 @@ glacier.BufferObject.prototype = {
 				gl.vertexAttribPointer(attrib, 4, gl.FLOAT, false, 0, 0);
 			}
 			
-			this.textures.forEach(function(texture, index) {
-				if(texture instanceof WebGLTexture) {
-					if((uniform = this.shader.uniform('tex_samp_' + index))) {
-						gl.activeTexture(gl.TEXTURE0 + index);
-						gl.bindTexture(gl.TEXTURE_2D, texture);
-						gl.uniform1i(uniform, index);
-					}
+			for(t = 0; t < glacier.BufferObject.MAX_TEXTURE_COUNT; ++t) {
+				if((uniform = this.shader.uniform('tex_samp_' + t))) {
+					gl.activeTexture(gl.TEXTURE0 + t);
+					gl.bindTexture(gl.TEXTURE_2D, (this.textures[t] instanceof WebGLTexture ? this.textures[t] : null));
+					gl.uniform1i(uniform, t);
 				}
-			}, this);
+			}
 			
 			if((uniform = this.shader.uniform('matrix_mvp'))) {
 				mvp = new glacier.Matrix44(this.parent.matrix);
@@ -219,11 +219,9 @@ glacier.BufferObject.prototype = {
 				}
 			}
 			
-			for(i in this.textures) {
+			for(i = 0; i < glacier.BufferObject.MAX_TEXTURE_COUNT; ++i) {
 				this.freeTexture(i);
 			}
-			
-			this.textures.length = 0;
 		}
 	},
 	freeTexture: function(index) {
