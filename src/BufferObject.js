@@ -43,6 +43,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 				if(modes.indexOf(value) != -1) {
 					mode = value;
 				} else {
+					modes.sort(function(a, b) { return a-b; });
 					var valid = modes.join(', '), last = valid.lastIndexOf(', ');
 					valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
 					throw new glacier.exception.InvalidAssignment('drawMode', value, valid, 'BufferObject');
@@ -218,13 +219,20 @@ glacier.BufferObject.prototype = {
 				}
 			}
 			
-			this.textures.forEach(function(texture) {
-				if(texture instanceof WebGLTexture) {
-					gl.deleteTexture(texture);
-				}
-			});
+			for(i in this.textures) {
+				this.freeTexture(i);
+			}
 			
 			this.textures.length = 0;
+		}
+	},
+	freeTexture: function(index) {
+		if(this.context && this.textures[index]) {
+			if(this.textures[index] instanceof WebGLTexture) {
+				gl.deleteTexture(this.textures[index]);
+			}
+			
+			this.textures[index] = null;
 		}
 	}
 };

@@ -2,14 +2,39 @@ glacier.Texture = function Texture(source) {
 	var image = null;
 	
 	Object.defineProperties(this, {
-		callbacks: { value: [] },
+		onFreeCallbacks: { value: [] },
+		onLoadCallbacks: { value: [] },
 		image: {
 			get: function() {
 				return image;
 			},
 			set: function(value) {
-				if(value instanceof Image || value === null) {
-					image = value;
+				if(value instanceof Image) {
+					var self = this;
+					self.image = null;
+					
+					(image = value).onload = function() {
+						if(!image.width || !image.height) {
+							image = null;
+							return;
+						}
+						
+						self.onLoadCallbacks.forEach(function(callback) {
+							if(typeof callback == 'function') {
+								callback(image);
+							}
+						});
+					};
+				} else if(value === null) {
+					if(image) {
+						this.onFreeCallbacks.forEach(function(callback) {
+							if(typeof callback == 'function') {
+								callback();
+							}
+						});
+					}
+					
+					image = null;
 				} else {
 					throw new glacier.exception.InvalidAssignment('image', typeof value, 'Image or null', 'Texture');
 				}
@@ -33,32 +58,17 @@ glacier.Texture.prototype = {
 			throw new glacier.exception.InvalidParameter('source', typeof source, 'string', 'load', 'Texture');
 		}
 		
-		var self = this, image = new Image(), c;
-		
-		image.onload = function() {
-			if(!image.width || !image.height) {
-				self.image = null;
-				return;
-			}
-			
-			self.image = image;
-			
-			self.callbacks.forEach(function(callback) {
-				if(typeof callback == 'function') {
-					callback(image);
-				}
-			});
-		};
-		
-		image.src = source;
+		this.image = new Image();
+		this.image.src = source;
+	},
+	onFree: function(callback) {
+		if(typeof callback == 'function') {
+			this.onFreeCallbacks.push(callback);
+		}
 	},
 	onLoad: function(callback) {
 		if(typeof callback == 'function') {
-			this.callbacks.push(callback);
-		}
-		
-		if(this.image) {
-			callback(this.image);
+			this.onLoadCallbacks.push(callback);
 		}
 	},
 	get height() {

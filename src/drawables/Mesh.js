@@ -51,10 +51,10 @@ glacier.extend(glacier.Mesh, glacier.Drawable, {
 				self.buffer.drawMode = context.gl.TRIANGLES;
 				self.buffer.elements = (self.indices.length ? self.indices.length : self.vertices.length / 3);
 				
-				self.texture0.onLoad(function(image) { self.buffer.textures[0] = context.createTexture(image); });
-				self.texture1.onLoad(function(image) { self.buffer.textures[1] = context.createTexture(image); });
-				self.texture2.onLoad(function(image) { self.buffer.textures[2] = context.createTexture(image); });
-				self.texture3.onLoad(function(image) { self.buffer.textures[3] = context.createTexture(image); });
+				[ 0, 1, 2, 3 ].forEach(function(tex) {
+					self['texture' + tex].onLoad(function(image) { self.buffer.textures[tex] = context.createTexture(image); });
+					self['texture' + tex].onFree(function() { self.buffer.freeTexture(tex); });
+				});
 				
 				return true;
 			}
