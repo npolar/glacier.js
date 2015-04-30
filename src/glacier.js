@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.1.2',
+	VERSION: '0.1.3',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -132,4 +132,97 @@ glacier.union = function(members, value, ctor) {
 	for(var m in members) {
 		addProperty.call(this, m);
 	}
+};
+
+glacier.parseOptions = function(options, defaults, className) {
+	var d, o, result = {}, reserved = 'gt,lt,class,not'.split(','), type;
+	
+	function getDefault(object) {
+		if(object instanceof Array) {
+			if(object[0] !== undefined && object[0] !== null) {
+				if(typeof object[0] == 'object') {
+					return getDefault(object);
+				}
+			}
+		} else if(typeof object == 'object') {
+			for(o in object) {
+				if(object.hasOwnProperty(o) && reserved.indexOf(o) == -1) {
+					return object[o];
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	function getOverride(value, rules, option) {
+		if(rules instanceof Array) {
+			var r, valid = [], last;
+			
+			for(r in rules) {
+				valid.push(rules[r] || 'null');
+				
+				if((rules[r] === null && value === null) || (typeof value === rules[r])) {
+					return value;
+				}
+			}
+			
+			valid = valid.join(', '); last = valid.lastIndexOf(', ');
+			valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
+			throw new glacier.exception.InvalidOption(option, value, valid, className);
+		} else if(typeof rules == 'object') {
+			for(type in rules) {
+				if(rules.hasOwnProperty(type) && reserved.indexOf(type) == -1) {
+					if(typeof rules.class == 'function') {
+						if(value instanceof rules.class) {
+							return value;
+						} else {
+							throw new glacier.exception.InvalidOption(option, value, type, className);
+						}
+					} else if(typeof value == type) {
+						if(rules.not !== undefined && value === rules.not) {
+							throw new glacier.exception.InvalidOption(option, value, type + ' (except ' + rules.not + ')', className);
+						}
+						
+						if(rules.gt !== undefined && value <= rules.gt) {
+							throw new glacier.exception.InvalidOption(option, value, type + ' (greater than ' + rules.gt + ')', className);
+						}
+						
+						if(rules.lt !== undefined && value >= rules.lt) {
+							throw new glacier.exception.InvalidOption(option, value, type + ' (less than ' + rules.gt + ')', className);
+						}
+						
+						return value;
+					} else {
+						throw new glacier.exception.InvalidOption(option, value, type, className);
+					}
+				}
+			}
+			
+		}
+		
+		return null;
+	}
+	
+	if(options && typeof options != 'object') {
+		throw new glacier.exception.InvalidParameter('options', typeof defaults, 'object', 'parseOptions');
+	} else if(!options) {
+		options = {};
+	}
+	
+	if(typeof defaults == 'object') {
+		for(d in defaults) {
+			if(defaults.hasOwnProperty(d)) {
+				result[d] = getDefault(defaults[d]);
+				
+				if(options.hasOwnProperty(d)) {
+					result[d] = getOverride(options[d], defaults[d], d);
+				}
+			}
+		}
+	} else {
+		throw new glacier.exception.InvalidParameter('defaults', typeof defaults, 'object', 'parseOptions');
+	}
+	
+	return result;
 };
