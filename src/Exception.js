@@ -43,6 +43,15 @@ glacier.exception = {
 			class:		className
 		});
 	},
+	InvalidOption: function(option, value, expected, className) {
+		glacier.Exception.call(this, 'Invalid option', {
+			option:		option,
+			value:		value,
+			type:		typeof value,
+			expected:	expected,
+			class:		className
+		});
+	},
 	MissingParameter: function(parameter, method, className) {
 		glacier.Exception.call(this, 'Missing parameter', {
 			parameter:	parameter,
