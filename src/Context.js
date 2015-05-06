@@ -37,7 +37,7 @@ glacier.Context = function Context(canvas, options) {
 					context.clearColor(color.r / 255, color.g / 255, color.b / 255, color.a);
 					context.clear(context.COLOR_BUFFER_BIT);
 				} else {
-					throw new glacier.exception.InvalidAssignment('background', typeof color, 'Color', 'Context');
+					throw new glacier.exception.InvalidAssignment('background', color, 'Color', 'Context');
 				}
 			}
 		},
@@ -69,7 +69,7 @@ glacier.Context = function Context(canvas, options) {
 				} else if(value === null) {
 					projection = null;
 				} else {
-					throw new glacier.exception.InvalidAssignment('projection', typeof value, 'Matrix44 or null', 'Context');
+					throw new glacier.exception.InvalidAssignment('projection', value, 'Matrix44 or null', 'Context');
 				}
 			}
 		},

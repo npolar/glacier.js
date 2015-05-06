@@ -36,7 +36,7 @@ glacier.Texture = function Texture(source) {
 					
 					image = null;
 				} else {
-					throw new glacier.exception.InvalidAssignment('image', typeof value, 'Image or null', 'Texture');
+					throw new glacier.exception.InvalidAssignment('image', value, 'Image or null', 'Texture');
 				}
 			}
 		}

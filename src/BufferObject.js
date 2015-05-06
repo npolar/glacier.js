@@ -66,7 +66,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 						console.warn('Undefined WebGL shader program: ' + value);
 					}
 				} else {
-					throw new glacier.exception.InvalidAssignment('shader', typeof shader, 'Shader', 'BufferObject');
+					throw new glacier.exception.InvalidAssignment('shader', shader, 'Shader', 'BufferObject');
 				}
 			}
 		}

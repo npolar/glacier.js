@@ -30,6 +30,7 @@ glacier.exception = {
 		glacier.Exception.call(this, 'Invalid assigment', {
 			variable:	variable,
 			value: 		value,
+			type:		typeof value,
 			expected:	expected,
 			class:		className
 		});
