@@ -10,13 +10,13 @@ glacier.Context = function Context(canvas, options) {
 				throw new glacier.exception.InvalidParameter('canvas', canvas, 'string as HTMLCanvasElement ID', '(constructor)', 'Context');
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('canvas', typeof canvas, 'HTMLCanvasElement or string', '(constructor)', 'Context');
+			throw new glacier.exception.InvalidParameter('canvas', canvas, 'HTMLCanvasElement or string', '(constructor)', 'Context');
 		}
 	}
 	
 	// Ensure options is a valid map (object)
 	if(options && typeof options != 'object') {
-		throw new glacier.exception.InvalidParameter('options', typeof canvas, 'object', '(constructor)', 'Context');
+		throw new glacier.exception.InvalidParameter('options', canvas, 'object', '(constructor)', 'Context');
 	} else if(!options) {
 		options = {};
 	}
@@ -114,18 +114,18 @@ glacier.Context.prototype = {
 		if(drawable instanceof glacier.Drawable) {
 			return drawable.init(this, options);
 		} else {
-			throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Drawable', 'init', 'Context');
+			throw new glacier.exception.InvalidParameter('drawable', drawable, 'Drawable', 'init', 'Context');
 		}
 		
 		return false;
 	},
 	resize:	function(width, height) {
 		if(typeof width != 'number' || width <= 0.0) {
-			throw new glacier.exception.InvalidParameter('width', typeof width, 'positive number', 'resize', 'Context');
+			throw new glacier.exception.InvalidParameter('width', width, 'positive number', 'resize', 'Context');
 		}
 		
 		if(typeof height != 'number' || height <= 0.0) {
-			throw new glacier.exception.InvalidParameter('height', typeof height, 'positive number', 'resize', 'Context');
+			throw new glacier.exception.InvalidParameter('height', height, 'positive number', 'resize', 'Context');
 		}
 		
 		this.canvas.width	= width;
@@ -134,11 +134,11 @@ glacier.Context.prototype = {
 	},
 	createProgram: function(vertShader, fragShader) {
 		if(!(vertShader instanceof WebGLShader)) {
-			throw new glacier.exception.InvalidParameter('vertShader', typeof vertShader, 'WebGLShader', 'createProgram', 'Context');
+			throw new glacier.exception.InvalidParameter('vertShader', vertShader, 'WebGLShader', 'createProgram', 'Context');
 		}
 		
 		if(!(fragShader instanceof WebGLShader)) {
-			throw new glacier.exception.InvalidParameter('fragShader', typeof fragShader, 'WebGLShader', 'createProgram', 'Context');
+			throw new glacier.exception.InvalidParameter('fragShader', fragShader, 'WebGLShader', 'createProgram', 'Context');
 		}
 		
 		var gl = this.gl, program = gl.createProgram();
@@ -157,7 +157,7 @@ glacier.Context.prototype = {
 		var gl = this.gl, last, shader, valid = [ gl.FRAGMENT_SHADER, gl.VERTEX_SHADER ];
 		
 		if(typeof source != 'string') {
-			throw new glacier.exception.InvalidParameter('source', typeof source, 'string', 'createShader', 'Context');
+			throw new glacier.exception.InvalidParameter('source', source, 'string', 'createShader', 'Context');
 		}
 		
 		if(valid.indexOf(type) == -1) {
@@ -191,7 +191,7 @@ glacier.Context.prototype = {
 			return tex;
 		}
 		
-		throw new glacier.exception.InvalidParameter('image', typeof image, 'Image', 'createTexture', 'Context');
+		throw new glacier.exception.InvalidParameter('image', image, 'Image', 'createTexture', 'Context');
 	},
 	worldToScreen: function(point, modelView) {
 		if(point instanceof glacier.Vector3) {
@@ -200,7 +200,7 @@ glacier.Context.prototype = {
 			if(!modelView || (modelView instanceof glacier.Matrix44)) {
 				matrix = new glacier.Matrix44(modelView || null);
 			} else {
-				throw new glacier.exception.InvalidParameter('modelView', typeof modelView, 'Matrix44 or null', 'worldToScreen', 'Context');
+				throw new glacier.exception.InvalidParameter('modelView', modelView, 'Matrix44 or null', 'worldToScreen', 'Context');
 			}
 			
 			if(this.projection instanceof glacier.Matrix44) {
@@ -219,10 +219,10 @@ glacier.Context.prototype = {
 				vec4.y = (vec4.y /= vec4.w) * 0.5 + 0.5;
 				vec4.z = (vec4.z /= vec4.w) * 0.5 + 0.5;
 				
-				return new glacier.Vector2(Math.round(vec4.x * context.width), Math.round((1.0 - vec4.y) * context.height));
+				return new glacier.Vector2(Math.round(vec4.x * this.width), Math.round((1.0 - vec4.y) * this.height));
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('point', typeof point, 'Vector3', 'worldToScreen', 'Context');
+			throw new glacier.exception.InvalidParameter('point', point, 'Vector3', 'worldToScreen', 'Context');
 		}
 		
 		return null;
