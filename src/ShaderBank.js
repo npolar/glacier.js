@@ -1,6 +1,6 @@
 glacier.ShaderBank = function ShaderBank(context) {
 	if(!(context instanceof glacier.Context)) {
-		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'ShaderBank');
+		throw new glacier.exception.InvalidParameter('context', context, 'Context', '(constructor)', 'ShaderBank');
 	}
 	
 	Object.defineProperties(this, {
@@ -76,7 +76,7 @@ glacier.ShaderBank.prototype = {
 	},
 	get: function(shader) {
 		if(typeof shader != 'string') {
-			throw new glacier.exception.InvalidParameter('shader', typeof shader, 'string', 'shader', 'ShaderBank');
+			throw new glacier.exception.InvalidParameter('shader', shader, 'string', 'shader', 'ShaderBank');
 		}
 		
 		if((shader = this.shaders[shader]) instanceof glacier.Shader) {

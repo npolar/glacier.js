@@ -1,17 +1,17 @@
 glacier.BufferObject = function BufferObject(drawable, context, shader) {
 	// Ensure that drawable is a valid Drawable object
 	if(!(drawable instanceof glacier.Drawable)) {
-		throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Drawable', '(constructor)', 'BufferObject');
+		throw new glacier.exception.InvalidParameter('drawable', drawable, 'Drawable', '(constructor)', 'BufferObject');
 	}
 	
 	// Ensure that context is a valid Context object
 	if(!(context instanceof glacier.Context)) {
-		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'BufferObject');
+		throw new glacier.exception.InvalidParameter('context', context, 'Context', '(constructor)', 'BufferObject');
 	}
 	
 	// Ensure that shader is a valid Shader object
 	if(!(shader instanceof glacier.Shader)) {
-		throw new glacier.exception.InvalidParameter('shader', typeof shader, 'Shader', '(constructor)', 'BufferObject');
+		throw new glacier.exception.InvalidParameter('shader', shader, 'Shader', '(constructor)', 'BufferObject');
 	}
 	
 	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl.LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ], mode = 0, elements = 0;
@@ -153,7 +153,7 @@ glacier.BufferObject.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(vertices) {
-				throw new glacier.exception.InvalidParameter('vertices', typeof vertices, 'Vector3 array', 'init', 'BufferObject');
+				throw new glacier.exception.InvalidParameter('vertices', vertices, 'Vector3 array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(indices, 'number')) {
@@ -164,7 +164,7 @@ glacier.BufferObject.prototype = {
 					gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(array), gl.STATIC_DRAW);
 				}
 			} else if(indices) {
-				throw new glacier.exception.InvalidParameter('indices', typeof indices, 'number array', 'init', 'BufferObject');
+				throw new glacier.exception.InvalidParameter('indices', indices, 'number array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(normals, glacier.Vector3)) {
@@ -175,7 +175,7 @@ glacier.BufferObject.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('normals', typeof normals, 'Vector3 array', 'init', 'BufferObject');
+				throw new glacier.exception.InvalidParameter('normals', normals, 'Vector3 array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(texCoords, glacier.Vector2)) {
@@ -186,7 +186,7 @@ glacier.BufferObject.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('texCoords', typeof texCoords, 'Vector2 array', 'init', 'BufferObject');
+				throw new glacier.exception.InvalidParameter('texCoords', texCoords, 'Vector2 array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(colors, glacier.Color)) {
@@ -197,7 +197,7 @@ glacier.BufferObject.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('colors', typeof colors, 'Color array', 'init', 'BufferObject');
+				throw new glacier.exception.InvalidParameter('colors', colors, 'Color array', 'init', 'BufferObject');
 			}
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, null);

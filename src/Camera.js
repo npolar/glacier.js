@@ -8,7 +8,7 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 	// Check parameters and declare members fieldOfView, aspectRatio, clipNear and clipFar
 	[ fieldOfView, aspectRatio, clipNear, clipFar ].forEach(function(arg, index) {
 		if(typeof arg != 'number' || arg <= 0.0) {
-			throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'positive number', '(constructor)', 'Camera');
+			throw new glacier.exception.InvalidParameter(args[index], arg, 'positive number', '(constructor)', 'Camera');
 		} else {
 			Object.defineProperty(this, args[index], {
 				get: function() {
@@ -132,11 +132,11 @@ glacier.Camera.prototype = {
 	},
 	follow: function(target, angle, distance) {
 		if(!(target instanceof glacier.Vector3)) {
-			throw new glacier.exception.InvalidParameter('target', typeof target, 'Vector3', 'follow', 'Camera');
+			throw new glacier.exception.InvalidParameter('target', target, 'Vector3', 'follow', 'Camera');
 		}
 		
 		if(!(angle instanceof glacier.Vector2)) {
-			throw new glacier.exception.InvalidParameter('angle', typeof target, 'Vector2', 'follow', 'Camera');
+			throw new glacier.exception.InvalidParameter('angle', target, 'Vector2', 'follow', 'Camera');
 		}
 		
 		if(typeof distance != 'number' || distance <= 0.0) {

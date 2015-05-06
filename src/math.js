@@ -42,7 +42,7 @@ glacier.compare = function(value1, value2) {
 
 glacier.degToRad = function(degrees) {
 	if(typeof degrees != 'number') {
-		throw new glacier.exception.InvalidParameter('degrees', typeof degrees, 'number', 'degToRad');
+		throw new glacier.exception.InvalidParameter('degrees', degrees, 'number', 'degToRad');
 	}
 	
 	return (degrees * Math.PI / 180.0);
@@ -50,7 +50,7 @@ glacier.degToRad = function(degrees) {
 
 glacier.radToDeg = function(radians) {
 	if(typeof radians != 'number') {
-		throw new glacier.exception.InvalidParameter('radians', typeof radians, 'number', 'radToDeg');
+		throw new glacier.exception.InvalidParameter('radians', radians, 'number', 'radToDeg');
 	}
 	
 	return (radians * 180.0 / Math.PI);
@@ -58,15 +58,15 @@ glacier.radToDeg = function(radians) {
 
 glacier.limitAngle = function(angle, max, min) {
 	if(typeof angle != 'number') {
-		throw new glacier.exception.InvalidParameter('angle', typeof angle, 'number', 'limitAngle');
+		throw new glacier.exception.InvalidParameter('angle', angle, 'number', 'limitAngle');
 	}
 	
 	if(typeof (max = (max === undefined ? 360.0 : max)) != 'number') {
-		throw new glacier.exception.InvalidParameter('max', typeof max, 'number', 'limitAngle');
+		throw new glacier.exception.InvalidParameter('max', max, 'number', 'limitAngle');
 	}
 	
 	if(typeof (min = (min === undefined ? 0.0 : min)) != 'number') {
-		throw new glacier.exception.InvalidParameter('min', typeof min, 'number', 'limitAngle');
+		throw new glacier.exception.InvalidParameter('min', min, 'number', 'limitAngle');
 	}
 	
 	if(max < min) {
@@ -83,7 +83,7 @@ glacier.clamp = function(value, min, max) {
 	var args = [ 'value', 'min', 'max' ];
 	[ value, min, max ].forEach(function(arg, index) {
 		if(typeof arg != 'number') {
-			throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'clamp');
+			throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'clamp');
 		}
 	});
 	

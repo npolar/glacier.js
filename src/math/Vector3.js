@@ -19,7 +19,7 @@ glacier.Vector3.prototype = {
 			this.y += value;
 			this.z += value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector3', 'add', 'Vector3');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector3', 'add', 'Vector3');
 		}
 		
 		return this;
@@ -38,7 +38,7 @@ glacier.Vector3.prototype = {
 			
 			[ x, y, z ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'assign', 'Vector3');
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector3');
 				}
 			});
 			
@@ -81,7 +81,7 @@ glacier.Vector3.prototype = {
 			this.y = (this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2)) + value.element(1, 3);
 			this.z = (this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2)) + value.element(2, 3);
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Vector3, Matrix33 or Matrix44', 'divide', 'Vector3');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Vector3, Matrix33 or Matrix44', 'divide', 'Vector3');
 		}
 		
 		return this;
@@ -113,7 +113,7 @@ glacier.Vector3.prototype = {
 			this.y = (this.x * value.element(1, 0)) + (this.y * value.element(1, 1)) + (this.z * value.element(1, 2)) + value.element(1, 3);
 			this.z = (this.x * value.element(2, 0)) + (this.y * value.element(2, 1)) + (this.z * value.element(2, 2)) + value.element(2, 3);
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Vector3, Matrix33 or Matrix44', 'multiply', 'Vector3');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Vector3, Matrix33 or Matrix44', 'multiply', 'Vector3');
 		}
 		
 		return this;
@@ -178,7 +178,7 @@ glacier.Vector3.prototype = {
 			this.y -= value;
 			this.z -= value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector3', 'subtract', 'Vector3');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector3', 'subtract', 'Vector3');
 		}
 		
 		return this;

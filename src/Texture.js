@@ -45,7 +45,7 @@ glacier.Texture = function Texture(source) {
 	if(typeof source == 'string') {
 		this.load(source);
 	} else if(source) {
-		throw new glacier.exception.InvalidParameter('source', typeof source, 'Image', '(constructor)', 'Texture');
+		throw new glacier.exception.InvalidParameter('source', source, 'Image', '(constructor)', 'Texture');
 	}
 };
 
@@ -55,7 +55,7 @@ glacier.Texture.prototype = {
 	},
 	load: function(source) {
 		if(typeof source != 'string') {
-			throw new glacier.exception.InvalidParameter('source', typeof source, 'string', 'load', 'Texture');
+			throw new glacier.exception.InvalidParameter('source', source, 'string', 'load', 'Texture');
 		}
 		
 		this.image = new Image();

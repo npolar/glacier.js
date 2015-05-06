@@ -122,7 +122,7 @@ glacier.Color = function Color(params) {
 				if(typeof args[a] == 'number') {
 					vals.push(args[a] / (a < 3 ? 255 : 1));
 				} else {
-					throw new glacier.exception.InvalidParameter(args[a], typeof args[a], 'number', '(constructor)', 'Color');
+					throw new glacier.exception.InvalidParameter(args[a], args[a], 'number', '(constructor)', 'Color');
 				}
 			}
 			

@@ -55,7 +55,7 @@ glacier.Drawable.prototype = {
 	},
 	init: function(context, options) {
 		if(!(context instanceof glacier.Context)) {
-			throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', 'init', 'Drawable');
+			throw new glacier.exception.InvalidParameter('context', context, 'Context', 'init', 'Drawable');
 		}
 		
 		var shader = context.shaders.get('generic');
@@ -65,7 +65,7 @@ glacier.Drawable.prototype = {
 				shader = context.shaders.get(options.shader);
 			}
 		} else if(options) {
-			throw new glacier.exception.InvalidParameter('options', typeof options, 'object', 'init', 'Drawable');
+			throw new glacier.exception.InvalidParameter('options', options, 'object', 'init', 'Drawable');
 		}
 		
 		if(!(this.buffer = new glacier.BufferObject(this, context, shader)).init()) {

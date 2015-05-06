@@ -13,13 +13,13 @@ glacier.PointCollection = function PointCollection() {
 glacier.extend(glacier.PointCollection, glacier.Drawable, {
 	addPoint: function(vec3, color) {
 		if(!(vec3 instanceof glacier.Vector3)) {
-			throw new glacier.exception.InvalidParameter('vec3', typeof vec3, 'Vector3', 'addPoint', 'PointCollection');
+			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'addPoint', 'PointCollection');
 		}
 		
 		if(!color || (color instanceof glacier.Color)) {
 			this.colors.push(color || glacier.color.WHITE);
 		} else {
-			throw new glacier.exception.InvalidParameter('color', typeof color, 'Color', 'addPoint', 'PointCollection');
+			throw new glacier.exception.InvalidParameter('color', color, 'Color', 'addPoint', 'PointCollection');
 		}
 		
 		this.vertices.push(vec3);

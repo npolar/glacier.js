@@ -16,7 +16,7 @@ glacier.Vector2.prototype = {
 			this.x += value;
 			this.y += value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'add', 'Vector2');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector2', 'add', 'Vector2');
 		}
 		
 		return this;
@@ -30,7 +30,7 @@ glacier.Vector2.prototype = {
 			
 			[ x, y ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'assign', 'Vector2');
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector2');
 				}
 			});
 			
@@ -54,7 +54,7 @@ glacier.Vector2.prototype = {
 			this.x /= value;
 			this.y /= value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'divide', 'Vector2');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector2', 'divide', 'Vector2');
 		}
 		
 		return this;
@@ -76,7 +76,7 @@ glacier.Vector2.prototype = {
 			this.x *= value;
 			this.y *= value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'multiply', 'Vector2');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector2', 'multiply', 'Vector2');
 		}
 		
 		return this;
@@ -112,7 +112,7 @@ glacier.Vector2.prototype = {
 			this.x -= value;
 			this.y -= value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'subtract', 'Vector2');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector2', 'subtract', 'Vector2');
 		}
 		
 		return this;

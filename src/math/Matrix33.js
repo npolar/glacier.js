@@ -31,7 +31,7 @@ glacier.Matrix33.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Matrix33, Matrix44 or array[9]', 'assign', 'Matrix33');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Matrix33, Matrix44 or array[9]', 'assign', 'Matrix33');
 		}
 		
 		return this;
@@ -75,7 +75,7 @@ glacier.Matrix33.prototype = {
 				this.array[e] *= value;
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix33');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix33');
 		}
 		
 		return this;

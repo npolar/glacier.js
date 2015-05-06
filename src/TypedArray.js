@@ -1,14 +1,14 @@
 glacier.TypedArray = function TypedArray(type, ctor) {
 	if(typeof type == 'string') {
 		if(ctor && typeof ctor != 'function') {
-			throw new glacier.exception.InvalidParameter('ctor', typeof ctor, 'function', '(constructor)', 'TypedArray');
+			throw new glacier.exception.InvalidParameter('ctor', ctor, 'function', '(constructor)', 'TypedArray');
 		}
 		
 		Object.defineProperty(this, 'type', {
 			value: { name: type, ctor: ctor }
 		});
 	} else {
-		throw new glacier.exception.InvalidParameter('type', typeof type, 'string', '(constructor)', 'TypedArray');
+		throw new glacier.exception.InvalidParameter('type', type, 'string', '(constructor)', 'TypedArray');
 	}
 };
 
@@ -20,7 +20,7 @@ glacier.extend(glacier.TypedArray, Array, {
 			if((this.type.ctor && args[a] instanceof this.type.ctor) || (typeof args[a] == this.type.name)) {
 				Array.prototype.push.call(this, args[a]);
 			} else {
-				throw new glacier.exception.InvalidParameter('item', typeof args[a], this.type.name, 'push', 'TypedArray');
+				throw new glacier.exception.InvalidParameter('item', args[a], this.type.name, 'push', 'TypedArray');
 			}
 		}
 		
@@ -31,7 +31,7 @@ glacier.extend(glacier.TypedArray, Array, {
 		
 		for(a = 2; a < args.length; ++a) {
 			if(!(this.type.ctor && args[a] instanceof this.type.ctor) || (typeof args[a] != this.type.name)) {
-				throw new glacier.exception.InvalidParameter('item', typeof args[a], this.type.name, 'splice', 'TypedArray');
+				throw new glacier.exception.InvalidParameter('item', args[a], this.type.name, 'splice', 'TypedArray');
 			}
 		}
 		
@@ -44,7 +44,7 @@ glacier.extend(glacier.TypedArray, Array, {
 			if((this.type.ctor && args[a] instanceof this.type.ctor) || (typeof args[a] == this.type.name)) {
 				Array.prototype.unshift.call(this, args[a]);
 			} else {
-				throw new glacier.exception.InvalidParameter('item', typeof args[a], this.type.name, 'unshift', 'TypedArray');
+				throw new glacier.exception.InvalidParameter('item', args[a], this.type.name, 'unshift', 'TypedArray');
 			}
 		}
 		

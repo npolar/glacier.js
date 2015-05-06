@@ -1,10 +1,10 @@
 glacier.Shader = function Shader(context, program) {
 	if(!(context instanceof glacier.Context)) {
-		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'Shader');
+		throw new glacier.exception.InvalidParameter('context', context, 'Context', '(constructor)', 'Shader');
 	}
 	
 	if(!(program instanceof WebGLProgram)) {
-		throw new glacier.exception.InvalidParameter('program', typeof program, 'WebGLProgram', '(constructor)', 'Shader');
+		throw new glacier.exception.InvalidParameter('program', program, 'WebGLProgram', '(constructor)', 'Shader');
 	}
 	
 	Object.defineProperties(this, {
@@ -28,7 +28,7 @@ glacier.Shader.prototype = {
 				}
 			}, this);
 		} else {
-			throw new glacier.exception.InvalidParameter('attributeArray', typeof attributeArray, 'string array', 'addAttributes', 'Shader');
+			throw new glacier.exception.InvalidParameter('attributeArray', attributeArray, 'string array', 'addAttributes', 'Shader');
 		}
 	},
 	addUniforms: function(uniformArray) {
@@ -43,12 +43,12 @@ glacier.Shader.prototype = {
 				}
 			}, this);
 		} else {
-			throw new glacier.exception.InvalidParameter('uniformArray', typeof uniformArray, 'string array', 'addUniforms', 'Shader');
+			throw new glacier.exception.InvalidParameter('uniformArray', uniformArray, 'string array', 'addUniforms', 'Shader');
 		}
 	},
 	attribute: function(attribute) {
 		if(typeof attribute != 'string') {
-			throw new glacier.exception.InvalidParameter('attribute', typeof attribute, 'string', 'attribute', 'Shader');
+			throw new glacier.exception.InvalidParameter('attribute', attribute, 'string', 'attribute', 'Shader');
 		}
 		
 		if(typeof (attribute = this.attributes[attribute]) == 'number') {
@@ -59,7 +59,7 @@ glacier.Shader.prototype = {
 	},
 	uniform: function(uniform) {
 		if(typeof uniform != 'string') {
-			throw new glacier.exception.InvalidParameter('uniform', typeof uniform, 'string', 'uniform', 'Shader');
+			throw new glacier.exception.InvalidParameter('uniform', uniform, 'string', 'uniform', 'Shader');
 		}
 		
 		if((uniform = this.uniforms[uniform]) instanceof WebGLUniformLocation) {

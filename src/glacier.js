@@ -225,7 +225,7 @@ glacier.parseOptions = function(options, defaults, className) {
 	}
 	
 	if(options && typeof options != 'object') {
-		throw new glacier.exception.InvalidParameter('options', typeof defaults, 'object', 'parseOptions');
+		throw new glacier.exception.InvalidParameter('options', defaults, 'object', 'parseOptions');
 	} else if(!options) {
 		options = {};
 	}
@@ -241,7 +241,7 @@ glacier.parseOptions = function(options, defaults, className) {
 			}
 		}
 	} else {
-		throw new glacier.exception.InvalidParameter('defaults', typeof defaults, 'object', 'parseOptions');
+		throw new glacier.exception.InvalidParameter('defaults', defaults, 'object', 'parseOptions');
 	}
 	
 	return result;

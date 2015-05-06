@@ -36,7 +36,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Matrix33, Matrix44 or array[16]', 'assign', 'Matrix44');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Matrix33, Matrix44 or array[16]', 'assign', 'Matrix44');
 		}
 		
 		return this;
@@ -76,7 +76,7 @@ glacier.Matrix44.prototype = {
 		
 		[ left, right, bottom, top, near, far ].forEach(function(arg, index) {
 			if(typeof arg != 'number') {
-				throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'frustum', 'Matrix44');
+				throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'frustum', 'Matrix44');
 			}
 		});
 		
@@ -174,7 +174,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] *= value;
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix44');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix44');
 		}
 		
 		return this;
@@ -185,7 +185,7 @@ glacier.Matrix44.prototype = {
 		
 		[ left, right, bottom, top, near, far ].forEach(function(arg, index) {
 			if(typeof arg != 'number') {
-				throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'ortho', 'Matrix44');
+				throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'ortho', 'Matrix44');
 			}
 		});
 		
@@ -209,7 +209,7 @@ glacier.Matrix44.prototype = {
 		
 		[ verticalViewAngle, aspectRatio, near, far ].forEach(function(arg, index) {
 			if(typeof arg != 'number') {
-				throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'perspective', 'Matrix44');
+				throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'perspective', 'Matrix44');
 			}
 		});
 		
@@ -230,7 +230,7 @@ glacier.Matrix44.prototype = {
 	
 	rotate: function(radians, xOrVec3, y, z) {
 		if(typeof radians != 'number') {
-			throw new glacier.exception.InvalidParameter('radians', typeof radians, 'number', 'rotate', 'Matrix44');
+			throw new glacier.exception.InvalidParameter('radians', radians, 'number', 'rotate', 'Matrix44');
 		} else if(xOrVec3 instanceof glacier.Vector3) {
 			return this.rotate(radians, xOrVec3.x, xOrVec3.y, xOrVec3.z);
 		} else {
@@ -238,7 +238,7 @@ glacier.Matrix44.prototype = {
 			
 			[ x, y, z ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'rotate', 'Matrix44');
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'rotate', 'Matrix44');
 				}
 			});
 			
@@ -270,7 +270,7 @@ glacier.Matrix44.prototype = {
 			
 			[ x, y, z ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'scale', 'Matrix44');
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'scale', 'Matrix44');
 				}
 			});
 			
@@ -298,7 +298,7 @@ glacier.Matrix44.prototype = {
 			
 			[ x, y, z ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'translate', 'Matrix44');
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'translate', 'Matrix44');
 				}
 			});
 			

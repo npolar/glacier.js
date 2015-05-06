@@ -39,6 +39,7 @@ glacier.exception = {
 		glacier.Exception.call(this, 'Invalid parameter', {
 			parameter:	parameter,
 			value:		value,
+			type:		typeof value,
 			expected:	expected,
 			method:		method,
 			class:		className
