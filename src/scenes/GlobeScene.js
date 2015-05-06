@@ -19,6 +19,7 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	
 	Object.defineProperties(this, {
 		base: { get: function() { return this.layers[0]; } },
+		data: { value: {} },
 		layers: { value: new glacier.TypedArray('Sphere', glacier.Sphere) },
 		
 		obliquity: {
@@ -59,7 +60,7 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	
 	// Add draw callback
 	this.runCallbacks.push(function() {
-		var gl = this.context.gl;
+		var gl = this.context.gl, d;
 		
 		gl.enable(gl.DEPTH_TEST);
 		gl.depthFunc(gl.LEQUAL);
@@ -67,20 +68,84 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		
+		this.context.clear();
+		
 		this.base.matrix = new glacier.Matrix44();
 		this.base.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
 		this.base.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
 		this.base.draw();
+		
+		for(d in this.data) {
+			if(this.data[d] instanceof glacier.Drawable) {
+				this.data[d].matrix.assign(this.base.matrix);
+				this.data[d].draw();
+			}
+		}
 	});
 };
 
 // glacier.GlobeScene extends glacier.Scene
 glacier.extend(glacier.GlobeScene, glacier.Scene, {
-	addData: function(geoJsonUrl) {
+	addData: function(geoJsonURL, color) {
+		var self = this, modified = [];
+		
+		if(typeof geoJsonURL == 'string') {
+			glacier.load(geoJsonURL, function(data) {
+				function addGeometry(object) {
+					if(object instanceof glacier.geoJSON.Point) {
+						if(!(self.data.points instanceof glacier.PointCollection)) {
+							self.data.points = new glacier.PointCollection();
+						}
+						
+						self.data.points.addPoint(
+							self.latLngToWorld(object.lat, object.lng, object.alt),
+							(color instanceof glacier.Color ? color : glacier.color.WHITE)
+						);
+						
+						if(modified.indexOf('points') == -1) {
+							modified.push('points');
+						}
+					} else if(object instanceof glacier.geoJSON.MultiPoint) {
+						object.points.forEach(function(point) {
+							addGeometry(point);
+						});
+					} else if(object instanceof glacier.geoJSON.Feature) {
+						addGeometry(object.geometry);
+					} else if(object instanceof Array) {
+						object.forEach(function(element) {
+							addGeometry(element);
+						});
+					}
+				}
+				
+				if((data = glacier.geoJSON.parse(data))) {
+					addGeometry(data);
+					
+					modified.forEach(function(collection) {
+						if(self.data[collection] instanceof glacier.Drawable) {
+							self.data[collection].init(self.context);
+						}
+					});
+				}
+			});
+		} else {
+			throw new glacier.exception.InvalidParameter('geoJsonURL', geoJsonURL, 'string', 'addData', 'GlobeScene');
+		}
+	},
+	latLngToWorld: function(lat, lng, alt) {
+		var theta = glacier.degToRad(lng),
+			phi = glacier.degToRad(lat);
+		
+		// TODO: Implement alt (altitude)
+		return new glacier.Vector3(
+			-this.base.radius * Math.cos(phi) * Math.cos(theta),
+			 this.base.radius * Math.sin(phi),
+			 this.base.radius * Math.cos(phi) * Math.sin(theta)
+		);
 	}
 });
 
-/*
+/* Index Limits
 6 * 10922 = 65532
 104^2 * 6 = 64896
 (90*0.8)*(180*0.8)*6=62208
