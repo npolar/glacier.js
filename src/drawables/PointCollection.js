@@ -44,5 +44,46 @@ glacier.extend(glacier.PointCollection, glacier.Drawable, {
 		
 		self.buffer = null;
 		return false;
+	},
+	addGeoJSON: function(geoJsonURL, onSuccess, color) {
+		var self = this;
+		
+		glacier.load(geoJsonURL, function(geojson) {
+			function latLngToVec3(lat, lng, radius) {
+				var theta = glacier.degToRad(lng), phi = glacier.degToRad(lat);
+				
+				return new glacier.Vector3(
+					-radius * Math.cos(phi) * Math.cos(theta),
+					 radius * Math.sin(phi),
+					 radius * Math.cos(phi) * Math.sin(theta)
+				);
+			}
+			
+			function addObject(object) {
+				if(object instanceof glacier.geoJSON.Point) {
+					self.addPoint(latLngToVec3(object.lat, object.lng, 1.0), color || glacier.color.WHITE);
+				} else if(object instanceof glacier.geoJSON.MultiPoint) {
+					object.points.forEach(function(point) {
+						self.addPoint(latLngToVec3(point.lat, point.lng, 1.0), color || glacier.color.WHITE);
+					});
+				} else if(object instanceof glacier.geoJSON.Feature) {
+					addObject(object.geometry);
+				} else if(object instanceof Array) {
+					geojson.forEach(function(element) {
+						addObject(element);
+					});
+				}
+			}
+			
+			if((geojson = glacier.geoJSON.parse(geojson))) {
+				addObject(geojson);
+				
+				if(typeof onSuccess == 'function') {
+					onSuccess();
+				}
+			}
+			
+			// Point, MultiPoint, GeometryCollection, Feature, FeatureCollection
+		});
 	}
 });
