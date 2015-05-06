@@ -1,7 +1,7 @@
 glacier.Vector3 = function Vector3(x, y, z) {
-	glacier.union.call(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
-	glacier.union.call(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
-	glacier.union.call(this, ['z', 'w'], (typeof z == 'number' ? z : 0.0));
+	glacier.addTypedProperty(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
+	glacier.addTypedProperty(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
+	glacier.addTypedProperty(this, ['z', 'w'], (typeof z == 'number' ? z : 0.0));
 	
 	if(x instanceof glacier.Vector3) {
 		this.assign(x);

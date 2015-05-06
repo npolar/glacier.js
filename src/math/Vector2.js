@@ -1,6 +1,6 @@
 glacier.Vector2 = function Vector2(x, y) {
-	glacier.union.call(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
-	glacier.union.call(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
+	glacier.addTypedProperty(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
+	glacier.addTypedProperty(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
 	
 	if(x instanceof glacier.Vector2) {
 		this.assign(x);

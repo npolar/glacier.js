@@ -107,30 +107,32 @@ glacier.extend = function(target, source, sourceN) {
 	return target;
 };
 
-glacier.union = function(members, value, ctor) {
+glacier.addTypedProperty = function(context, members, value, ctor) {
 	members = (members instanceof Array ? members : [ members ]);
 	
-	function addProperty(index) {
-		Object.defineProperty(this, members[index], {
-			get: function() { return value; },
-			set: function(val) {
+	function typedProperty(index) {
+		Object.defineProperty(context, members[index], {
+			get: function() {
+				return value;
+			},
+			set: function(newValue) {
 				if(typeof ctor == 'function') {
-					if(val instanceof ctor) {
-						value = val;
+					if(newValue instanceof ctor) {
+						value = newValue;
 					} else {
-						throw new glacier.exception.InvalidAssignment(members[index], typeof val, ctor.name);
+						throw new glacier.exception.InvalidAssignment(members[index], newValue, ctor.name);
 					}
-				} else if(typeof val == typeof value) {
-					value = val;
+				} else if(typeof newValue == typeof value) {
+					value = newValue;
 				} else {
-					throw new glacier.exception.InvalidAssignment(members[index], typeof val, typeof value);
+					throw new glacier.exception.InvalidAssignment(members[index], newValue, typeof value);
 				}
 			}
 		});
 	}
 	
 	for(var m in members) {
-		addProperty.call(this, m);
+		typedProperty(m);
 	}
 };
 
@@ -141,7 +143,7 @@ glacier.parseOptions = function(options, defaults, className) {
 		if(object instanceof Array) {
 			if(object[0] !== undefined && object[0] !== null) {
 				if(typeof object[0] == 'object') {
-					return getDefault(object);
+					return getDefault(object[0]);
 				}
 			}
 		} else if(typeof object == 'object') {
@@ -157,13 +159,31 @@ glacier.parseOptions = function(options, defaults, className) {
 	
 	function getOverride(value, rules, option) {
 		if(rules instanceof Array) {
-			var r, valid = [], last;
+			var r, valid = [], last, o, v;
 			
 			for(r in rules) {
-				valid.push(rules[r] || 'null');
-				
-				if((rules[r] === null && value === null) || (typeof value === rules[r])) {
-					return value;
+				if(rules[r] === null) {
+					valid.push('null');
+					
+					if(value === null || value === undefined) {
+						return value;
+					}
+				} else if(typeof rules[r] == 'object') {
+					for(o in rules[r]) {
+						if(rules[r].hasOwnProperty(o) && reserved.indexOf(o) == -1) {
+							valid.push(o);
+							
+							if((v = getOverride(rules[r])) !== null) {
+								return v;
+							}
+						}
+					}
+				} else if(typeof rules[r] == 'string') {
+					valid.push(rules[r]);
+					
+					if(typeof value == rules[r]) {
+						return value;
+					}
 				}
 			}
 			
