@@ -3,7 +3,7 @@ glacier.Matrix44 = function Matrix44(value) {
 		value: new Float32Array([ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]),
 	});
 	
-	if(value) {
+	if(value !== undefined && value !== null) {
 		this.assign(value);
 	}
 };

@@ -3,7 +3,7 @@ glacier.Vector3 = function Vector3(xScalarOrVec3, y, z) {
 	glacier.addTypedProperty(this, 'y', 0.0);
 	glacier.addTypedProperty(this, 'z', 0.0);
 	
-	if(xScalarOrVec3 !== undefined) {
+	if(xScalarOrVec3 !== undefined && xScalarOrVec3 !== null) {
 		this.assign(xScalarOrVec3, y, z);
 	}
 };

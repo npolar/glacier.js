@@ -4,7 +4,7 @@ glacier.Vector4 = function Vector4(xScalarOrVec4, y, z, w) {
 	glacier.addTypedProperty(this, 'z', 0.0);
 	glacier.addTypedProperty(this, 'w', 0.0);
 	
-	if(xScalarOrVec4 !== undefined) {
+	if(xScalarOrVec4 !== undefined && xScalarOrVec4 !== null) {
 		this.assign(xScalarOrVec4, y, z, w);
 	}
 };
