@@ -42,7 +42,7 @@ glacier.Matrix44.prototype = {
 		return this;
 	},
 	
-	determinant: function() {
+	get determinant() {
 		var a0 = this.array[ 0] * this.array[ 5] - this.array[ 1] * this.array[ 4];
 		var a1 = this.array[ 0] * this.array[ 6] - this.array[ 2] * this.array[ 4];
 		var a2 = this.array[ 0] * this.array[ 7] - this.array[ 3] * this.array[ 4];
@@ -95,7 +95,7 @@ glacier.Matrix44.prototype = {
 		return true;
 	},
 	
-	inverse: function() {
+	get inverse() {
 		var temp = new glacier.Matrix44(this);
 		
 		if(!temp.invert()) {
@@ -341,7 +341,7 @@ glacier.Matrix44.prototype = {
 		return this;
 	},
 	
-	transposed: function() {
+	get transposed() {
 		var temp = new glacier.Matrix44(this);
 		return temp.transpose();
 	}

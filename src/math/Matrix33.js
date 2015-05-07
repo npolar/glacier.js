@@ -37,7 +37,7 @@ glacier.Matrix33.prototype = {
 		return this;
 	},
 	
-	determinant: function() {
+	get determinant() {
 		return (this.array[0] * (this.array[4] * this.array[8] - this.array[5] * this.array[7]) -
 				this.array[1] * (this.array[3] * this.array[8] - this.array[5] * this.array[6]) +
 				this.array[2] * (this.array[3] * this.array[7] - this.array[4] * this.array[6]));
@@ -99,12 +99,7 @@ glacier.Matrix33.prototype = {
 		return this;
 	},
 	
-	transposed: function() {
-		var temp = new glacier.Matrix33(this);
-		return temp.transpose();
-	},
-	
-	inverse: function() {
+	get inverse() {
 		var temp = new glacier.Matrix33(this);
 		
 		if(!temp.invert()) {
@@ -146,5 +141,10 @@ glacier.Matrix33.prototype = {
 		return ('[[' + this.array[0].toPrecision(5) + ', ' + this.array[1].toPrecision(5) + ', ' + this.array[2].toPrecision(5) + '], ' +
 				 '[' + this.array[3].toPrecision(5) + ', ' + this.array[4].toPrecision(5) + ', ' + this.array[5].toPrecision(5) + '], ' +
 				 '[' + this.array[6].toPrecision(5) + ', ' + this.array[7].toPrecision(5) + ', ' + this.array[8].toPrecision(5) + ']]');
+	},
+	
+	get transposed() {
+		var temp = new glacier.Matrix33(this);
+		return temp.transpose();
 	}
 };
