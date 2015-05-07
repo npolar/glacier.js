@@ -210,11 +210,11 @@ glacier.BufferObject.prototype = {
 	},
 	free: function() {
 		if(this.context) {
-			var gl = this.context.gl, i;
+			var i;
 			
 			for(i in this.buffers) {
 				if(this.buffers.hasOwnProperty(i)) {
-					gl.deleteBuffer(this.buffers[i]);
+					this.context.gl.deleteBuffer(this.buffers[i]);
 					delete this.buffers[i];
 				}
 			}
@@ -227,7 +227,7 @@ glacier.BufferObject.prototype = {
 	freeTexture: function(index) {
 		if(this.context && this.textures[index]) {
 			if(this.textures[index] instanceof WebGLTexture) {
-				gl.deleteTexture(this.textures[index]);
+				this.context.gl.deleteTexture(this.textures[index]);
 			}
 			
 			this.textures[index] = null;
