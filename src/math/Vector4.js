@@ -69,10 +69,12 @@ glacier.Vector4.prototype = {
 			this.z /= value;
 			this.w /= value;
 		} else if(value instanceof glacier.Matrix44) {
-			this.x = (this.x / value.element(0, 0)) + (this.y / value.element(0, 1)) + (this.z / value.element(0, 2)) + (this.w / value.element(0, 3));
-			this.y = (this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2)) + (this.w / value.element(1, 3));
-			this.z = (this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2)) + (this.w / value.element(2, 3));
-			this.w = (this.x / value.element(3, 0)) + (this.y / value.element(3, 1)) + (this.z / value.element(3, 2)) + (this.w / value.element(3, 3));
+			this.assign(
+				(this.x / value.array[0]) + (this.y / value.array[4]) + (this.z / value.array[ 8]) + (this.w / value.array[12]),
+				(this.x / value.array[1]) + (this.y / value.array[5]) + (this.z / value.array[ 9]) + (this.w / value.array[13]),
+				(this.x / value.array[2]) + (this.y / value.array[6]) + (this.z / value.array[10]) + (this.w / value.array[14]),
+				(this.x / value.array[3]) + (this.y / value.array[7]) + (this.z / value.array[11]) + (this.w / value.array[15])
+			);
 		} else {
 			throw new glacier.exception.InvalidParameter('value', value, 'number, Vector4 or Matrix44', 'divide', 'Vector4');
 		}
@@ -104,10 +106,12 @@ glacier.Vector4.prototype = {
 			this.z *= value;
 			this.w *= value;
 		} else if(value instanceof glacier.Matrix44) {
-			this.x = (this.x * value.element(0, 0)) + (this.y * value.element(0, 1)) + (this.z * value.element(0, 2)) + (this.w * value.element(0, 3));
-			this.y = (this.x * value.element(1, 0)) + (this.y * value.element(1, 1)) + (this.z * value.element(1, 2)) + (this.w * value.element(1, 3));
-			this.z = (this.x * value.element(2, 0)) + (this.y * value.element(2, 1)) + (this.z * value.element(2, 2)) + (this.w * value.element(2, 3));
-			this.w = (this.x * value.element(3, 0)) + (this.y * value.element(3, 1)) + (this.z * value.element(3, 2)) + (this.w * value.element(3, 3));
+			this.assign(
+				(this.x * value.array[0]) + (this.y * value.array[4]) + (this.z * value.array[ 8]) + (this.w * value.array[12]),
+				(this.x * value.array[1]) + (this.y * value.array[5]) + (this.z * value.array[ 9]) + (this.w * value.array[13]),
+				(this.x * value.array[2]) + (this.y * value.array[6]) + (this.z * value.array[10]) + (this.w * value.array[14]),
+				(this.x * value.array[3]) + (this.y * value.array[7]) + (this.z * value.array[11]) + (this.w * value.array[15])
+			);
 		} else {
 			throw new glacier.exception.InvalidParameter('value', value, 'number, Vector4 or Matrix44', 'multiply', 'Vector4');
 		}

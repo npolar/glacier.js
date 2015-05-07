@@ -91,13 +91,17 @@ glacier.Vector3.prototype = {
 			this.y /= value;
 			this.z /= value;
 		} else if(value instanceof glacier.Matrix33) {
-			this.x = (this.x / value.element(0, 0)) + (this.y / value.element(0, 1)) + (this.z / value.element(0, 2));
-			this.y = (this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2));
-			this.z = (this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2));
+			this.assign(
+				(this.x / value.element(0, 0)) + (this.y / value.element(0, 1)) + (this.z / value.element(0, 2)),
+				(this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2)),
+				(this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2))
+			);
 		} else if(value instanceof glacier.Matrix44) {
-			this.x = (this.x / value.element(0, 0)) + (this.y / value.element(0, 1)) + (this.z / value.element(0, 2)) + value.element(0, 3);
-			this.y = (this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2)) + value.element(1, 3);
-			this.z = (this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2)) + value.element(2, 3);
+			this.assign(
+				(this.x / value.element(0, 0)) + (this.y / value.element(0, 1)) + (this.z / value.element(0, 2)) + value.element(0, 3),
+				(this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2)) + value.element(1, 3),
+				(this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2)) + value.element(2, 3)
+			);
 		} else {
 			throw new glacier.exception.InvalidParameter('value', value, 'number, Vector3, Matrix33 or Matrix44', 'divide', 'Vector3');
 		}
@@ -127,13 +131,17 @@ glacier.Vector3.prototype = {
 			this.y *= value;
 			this.z *= value;
 		} else if(value instanceof glacier.Matrix33) {
-			this.x = (this.x * value.element(0, 0)) + (this.y * value.element(0, 1)) + (this.z * value.element(0, 2));
-			this.y = (this.x * value.element(1, 0)) + (this.y * value.element(1, 1)) + (this.z * value.element(1, 2));
-			this.z = (this.x * value.element(2, 0)) + (this.y * value.element(2, 1)) + (this.z * value.element(2, 2));
+			this.assign(
+				(this.x * value.array[0]) + (this.y * value.array[3]) + (this.z * value.array[6]),
+				(this.x * value.array[1]) + (this.y * value.array[4]) + (this.z * value.array[7]),
+				(this.x * value.array[2]) + (this.y * value.array[5]) + (this.z * value.array[9])
+			);
 		} else if(value instanceof glacier.Matrix44) {
-			this.x = (this.x * value.element(0, 0)) + (this.y * value.element(0, 1)) + (this.z * value.element(0, 2)) + value.element(0, 3);
-			this.y = (this.x * value.element(1, 0)) + (this.y * value.element(1, 1)) + (this.z * value.element(1, 2)) + value.element(1, 3);
-			this.z = (this.x * value.element(2, 0)) + (this.y * value.element(2, 1)) + (this.z * value.element(2, 2)) + value.element(2, 3);
+			this.assign(
+				(this.x * value.array[0]) + (this.y * value.array[4]) + (this.z * value.array[ 8]) + value.array[12],
+				(this.x * value.array[1]) + (this.y * value.array[5]) + (this.z * value.array[ 9]) + value.array[13],
+				(this.x * value.array[2]) + (this.y * value.array[6]) + (this.z * value.array[10]) + value.array[14]
+			);
 		} else {
 			throw new glacier.exception.InvalidParameter('value', value, 'number, Vector3, Matrix33 or Matrix44', 'multiply', 'Vector3');
 		}
