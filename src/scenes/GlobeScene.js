@@ -13,6 +13,7 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		texture:		[ null, 'string' ],
 		nightTexture:	[ null, 'string' ],
 		normalMap:		[ null, 'string' ],
+		mouseControl:	{ boolean: true }
 	}, 'GlobeScene');
 	
 	var rotation = 0.0;
@@ -55,8 +56,12 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	// Initialize camera
 	this.camera.clipNear = 0.01;
 	this.camera.clipFar = 100.0;
-	this.camera.bindMouse(canvas);
 	this.context.projection = this.camera.matrix;
+	
+	// Enable mouse controlling as required
+	if(options.mouseControl) {
+		this.camera.bindMouse(canvas);
+	}
 	
 	// Add draw callback
 	this.runCallbacks.push(function() {
