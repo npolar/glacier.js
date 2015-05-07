@@ -55,50 +55,6 @@ glacier.Matrix33.prototype = {
 		throw new glacier.exception.IndexOutOfRange(colOrIndex + (row || 0), '0-9', 'element', 'Matrix33');
 	},
 	
-	multiply: function(value) {
-		var col, row, e, temp;
-		
-		if(value instanceof glacier.Matrix33) {
-			temp = new Float32Array(this.array);
-			
-			for(col = 0; col < 3; ++col) {
-				for(row = 0; row < 3; ++row) {
-					this.array[(col * 3) + row] = ((temp[(col * 3) + 0] * value.array[(0 * 3) + row]) +
-												   (temp[(col * 3) + 1] * value.array[(1 * 3) + row]) +
-												   (temp[(col * 3) + 2] * value.array[(2 * 3) + row]));
-				}
-			}
-		} else if(value instanceof glacier.Matrix44) {
-			this.multiply(new glacier.Matrix33(value));
-		} else if(typeof value == 'number') {
-			for(e in this.array) {
-				this.array[e] *= value;
-			}
-		} else {
-			throw new glacier.exception.InvalidParameter('value', value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix33');
-		}
-		
-		return this;
-	},
-	
-	transpose: function() {
-		var temp;
-		
-		temp = this.array[1];
-		this.array[1] = this.array[3];
-		this.array[3] = temp;
-		
-		temp = this.array[2];
-		this.array[2] = this.array[6];
-		this.array[6] = temp;
-		
-		temp = this.array[5];
-		this.array[5] = this.array[7];
-		this.array[7] = temp;
-		
-		return this;
-	},
-	
 	get inverse() {
 		var temp = new glacier.Matrix33(this);
 		
@@ -137,10 +93,54 @@ glacier.Matrix33.prototype = {
 		return true;
 	},
 	
+	multiply: function(value) {
+		var col, row, e, temp;
+		
+		if(value instanceof glacier.Matrix33) {
+			temp = new Float32Array(this.array);
+			
+			for(col = 0; col < 3; ++col) {
+				for(row = 0; row < 3; ++row) {
+					this.array[(col * 3) + row] = ((temp[(col * 3) + 0] * value.array[(0 * 3) + row]) +
+												   (temp[(col * 3) + 1] * value.array[(1 * 3) + row]) +
+												   (temp[(col * 3) + 2] * value.array[(2 * 3) + row]));
+				}
+			}
+		} else if(value instanceof glacier.Matrix44) {
+			this.multiply(new glacier.Matrix33(value));
+		} else if(typeof value == 'number') {
+			for(e in this.array) {
+				this.array[e] *= value;
+			}
+		} else {
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix33');
+		}
+		
+		return this;
+	},
+	
 	toString: function() {
 		return ('[[' + this.array[0].toPrecision(5) + ', ' + this.array[1].toPrecision(5) + ', ' + this.array[2].toPrecision(5) + '], ' +
 				 '[' + this.array[3].toPrecision(5) + ', ' + this.array[4].toPrecision(5) + ', ' + this.array[5].toPrecision(5) + '], ' +
 				 '[' + this.array[6].toPrecision(5) + ', ' + this.array[7].toPrecision(5) + ', ' + this.array[8].toPrecision(5) + ']]');
+	},
+	
+	transpose: function() {
+		var temp;
+		
+		temp = this.array[1];
+		this.array[1] = this.array[3];
+		this.array[3] = temp;
+		
+		temp = this.array[2];
+		this.array[2] = this.array[6];
+		this.array[6] = temp;
+		
+		temp = this.array[5];
+		this.array[5] = this.array[7];
+		this.array[7] = temp;
+		
+		return this;
 	},
 	
 	get transposed() {
