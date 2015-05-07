@@ -207,12 +207,7 @@ glacier.Context.prototype = {
 				matrix.multiply(this.projection);
 			}
 			
-			vec4 = {
-				x: matrix.array[0] * point.x + matrix.array[4] * point.y + matrix.array[ 8] * point.z + matrix.array[12],
-				y: matrix.array[1] * point.x + matrix.array[5] * point.y + matrix.array[ 9] * point.z + matrix.array[13],
-				z: matrix.array[2] * point.x + matrix.array[6] * point.y + matrix.array[10] * point.z + matrix.array[14],
-				w: matrix.array[3] * point.x + matrix.array[7] * point.y + matrix.array[11] * point.z + matrix.array[15]
-			};
+			vec4 = new glacier.Vector4(point).multiply(matrix);
 			
 			if(vec4.w > 0.0) {
 				vec4.x = (vec4.x /= vec4.w) * 0.5 + 0.5;
