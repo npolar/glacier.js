@@ -1,10 +1,10 @@
-glacier.Vector3 = function Vector3(x, y, z) {
-	glacier.addTypedProperty(this, ['x', 'u'], (typeof x == 'number' ? x : 0.0));
-	glacier.addTypedProperty(this, ['y', 'v'], (typeof y == 'number' ? y : 0.0));
-	glacier.addTypedProperty(this, ['z', 'w'], (typeof z == 'number' ? z : 0.0));
+glacier.Vector3 = function Vector3(xScalarOrVec3, y, z) {
+	glacier.addTypedProperty(this, 'x', 0.0);
+	glacier.addTypedProperty(this, 'y', 0.0);
+	glacier.addTypedProperty(this, 'z', 0.0);
 	
-	if(x instanceof glacier.Vector3) {
-		this.assign(x);
+	if(xScalarOrVec3 !== undefined) {
+		this.assign(xScalarOrVec3, y, z);
 	}
 };
 
@@ -26,22 +26,28 @@ glacier.Vector3.prototype = {
 	},
 	
 	angle: function(vec3) {
-		var angle = Math.acos(this.dot(vec3) / (this.length * vec3.length));
-		return (isNaN(angle) ? 0.0 : angle);
+		if(vec3 instanceof glacier.Vector3) {
+			var angle = Math.acos(this.dot(vec3) / (this.length * vec3.length));
+			return (isNaN(angle) ? 0.0 : angle);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'angle', 'Vector3');
+		}
 	},
 	
 	get array() {
 		return new Float32Array([ this.x, this.y, this.z ]);
 	},
 	
-	assign: function(xOrVec3, y, z) {
-		if(xOrVec3 instanceof glacier.Vector3) {
-			return this.assign(xOrVec3.x, xOrVec3.y, xOrVec3.z);
+	assign: function(xScalarOrVec3, y, z) {
+		if(xScalarOrVec3 instanceof glacier.Vector3) {
+			return this.assign(xScalarOrVec3.x, xScalarOrVec3.y, xScalarOrVec3.z);
+		} else if(typeof xScalarOrVec3 == 'number' && y === undefined) {
+			return this.assign(xScalarOrVec3, xScalarOrVec3, xScalarOrVec3);
 		} else {
-			var args = [ 'x', 'y', 'z' ], x = xOrVec3;
+			var args = [ 'x', 'y', 'z' ], x = xScalarOrVec3;
 			
 			[ x, y, z ].forEach(function(arg, index) {
-				if(typeof arg != 'number') {
+				if(isNaN(arg)) {
 					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector3');
 				}
 			});
@@ -55,16 +61,24 @@ glacier.Vector3.prototype = {
 	},
 	
 	cross: function(vec3) {
-		return new glacier.Vector3(
-			(this.y * vec3.z) - (this.z * vec3.y),
-			(this.z * vec3.x) - (this.x * vec3.z),
-			(this.x * vec3.y) - (this.y * vec3.x)
-		);
+		if(vec3 instanceof glacier.Vector3) {
+			return new glacier.Vector3(
+				(this.y * vec3.z) - (this.z * vec3.y),
+				(this.z * vec3.x) - (this.x * vec3.z),
+				(this.x * vec3.y) - (this.y * vec3.x)
+			);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'cross', 'Vector3');
+		}
 	},
 	
 	distance: function(vec3) {
-		var dx = this.x - vec3.x, dy = this.y - vec3.y, dz = this.z - vec3.z;
-		return Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if(vec3 instanceof glacier.Vector3) {
+			var dx = this.x - vec3.x, dy = this.y - vec3.y, dz = this.z - vec3.z;
+			return Math.sqrt(dx * dx + dy * dy + dz * dz);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'distance', 'Vector3');
+		}
 	},
 	
 	divide: function(value) {
@@ -92,7 +106,11 @@ glacier.Vector3.prototype = {
 	},
 	
 	dot: function(vec3) {
-		return ((this.x * vec3.x) + (this.y * vec3.y) + (this.z * vec3.z));
+		if(vec3 instanceof glacier.Vector3) {
+			return ((this.x * vec3.x) + (this.y * vec3.y) + (this.z * vec3.z));
+		} else {
+			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'dot', 'Vector3');
+		}
 	},
 	
 	get length() {
@@ -138,40 +156,52 @@ glacier.Vector3.prototype = {
 	},
 	
 	rotateX: function(radians) {
-		var cosRad = Math.cos(radians);
-		var sinRad = Math.sin(radians);
-		
-		var rotY = ((this.y * cosRad) - (this.z * sinRad));
-		var rotZ = ((this.y * sinRad) + (this.z * cosRad));
-		
-		this.y = rotY;
-		this.z = rotZ;
+		if(typeof radians == 'number') {
+			var cosRad = Math.cos(radians);
+			var sinRad = Math.sin(radians);
+			
+			var rotY = ((this.y * cosRad) - (this.z * sinRad));
+			var rotZ = ((this.y * sinRad) + (this.z * cosRad));
+			
+			this.y = rotY;
+			this.z = rotZ;
+		} else {
+			throw new glacier.exception.InvalidParameter('radians', radians, 'number', 'rotateX', 'Vector3');
+		}
 		
 		return this;
 	},
 	
 	rotateY: function(radians) {
-		var cosRad = Math.cos(radians);
-		var sinRad = Math.sin(radians);
-		
-		var rotX = ((this.x * cosRad) - (this.z * sinRad));
-		var rotZ = ((this.x * sinRad) + (this.z * cosRad));
-		
-		this.x = rotX;
-		this.z = rotZ;
+		if(typeof radians == 'number') {
+			var cosRad = Math.cos(radians);
+			var sinRad = Math.sin(radians);
+			
+			var rotX = ((this.x * cosRad) - (this.z * sinRad));
+			var rotZ = ((this.x * sinRad) + (this.z * cosRad));
+			
+			this.x = rotX;
+			this.z = rotZ;
+		} else {
+			throw new glacier.exception.InvalidParameter('radians', radians, 'number', 'rotateY', 'Vector3');
+		}
 		
 		return this;
 	},
 	
 	rotateZ: function(radians) {
-		var cosRad = Math.cos(radians);
-		var sinRad = Math.sin(radians);
-		
-		var rotX = ((this.x * cosRad) - (this.y * sinRad));
-		var rotY = ((this.x * sinRad) + (this.y * cosRad));
-		
-		this.x = rotX;
-		this.y = rotY;
+		if(typeof radians == 'number') {
+			var cosRad = Math.cos(radians);
+			var sinRad = Math.sin(radians);
+			
+			var rotX = ((this.x * cosRad) - (this.y * sinRad));
+			var rotY = ((this.x * sinRad) + (this.y * cosRad));
+			
+			this.x = rotX;
+			this.y = rotY;
+		} else {
+			throw new glacier.exception.InvalidParameter('radians', radians, 'number', 'rotateZ', 'Vector3');
+		}
 		
 		return this;
 	},
