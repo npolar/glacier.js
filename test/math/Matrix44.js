@@ -5,7 +5,7 @@ describe('Matrix44', function() {
 		assert.equal(true, new glacier.Matrix44 instanceof glacier.Matrix44);
 	});
 	
-	describe('constructor', function() {
+	describe('(constructor)', function() {
 		it('default', function() {
 			var arr = [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ];
 			var mat44 = new glacier.Matrix44();
@@ -107,6 +107,16 @@ describe('Matrix44', function() {
 		});
 	});
 	
+	describe('invert', function() {
+		it('', function() {
+			var arr = [ 2.0, 1.5, 1.0, 4.4, 2.5, -2.6, 5.0, 2.2, 8.4, 7.5, -4.0, 3.0, 1.0, 3.2, -2.0, 5.5 ];
+			var mat1 = new glacier.Matrix44(arr);
+			var mat2 = new glacier.Matrix44();
+			
+			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse).array, mat2.array));
+		});
+	});
+	
 	describe('multiply', function() {
 		it('Matrix33', function() {
 			var arr33 = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
@@ -199,16 +209,6 @@ describe('Matrix44', function() {
 			assert.equal(true, glacier.compare(mat44.element(13), arr[ 7]));
 			assert.equal(true, glacier.compare(mat44.element(14), arr[11]));
 			assert.equal(true, glacier.compare(mat44.element(15), arr[15]));
-		});
-	});
-	
-	describe('invert', function() {
-		it('', function() {
-			var arr = [ 2.0, 1.5, 1.0, 4.4, 2.5, -2.6, 5.0, 2.2, 8.4, 7.5, -4.0, 3.0, 1.0, 3.2, -2.0, 5.5 ];
-			var mat1 = new glacier.Matrix44(arr);
-			var mat2 = new glacier.Matrix44();
-			
-			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse).array, mat2.array));
 		});
 	});
 });

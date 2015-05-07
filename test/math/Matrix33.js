@@ -5,7 +5,7 @@ describe('Matrix33', function() {
 		assert.equal(true, new glacier.Matrix33 instanceof glacier.Matrix33);
 	});
 	
-	describe('constructor', function() {
+	describe('(constructor)', function() {
 		it('default', function() {
 			var arr = [ 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 ];
 			var mat33 = new glacier.Matrix33();
@@ -104,6 +104,16 @@ describe('Matrix33', function() {
 		});
 	});
 	
+	describe('invert', function() {
+		it('', function() {
+			var arr = [ 2.0, 1.5, 1.0, 4.4, -2.6, 5.0, 2.2, 8.4, 7.5 ];
+			var mat1 = new glacier.Matrix33(arr);
+			var mat2 = new glacier.Matrix33();
+			
+			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse).array, mat2.array));
+		});
+	});
+	
 	describe('multiply', function() {
 		it('Matrix33', function() {
 			var arr1 = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
@@ -175,16 +185,6 @@ describe('Matrix33', function() {
 			assert.equal(true, glacier.compare(mat33.element(6), arr[2]));
 			assert.equal(true, glacier.compare(mat33.element(7), arr[5]));
 			assert.equal(true, glacier.compare(mat33.element(8), arr[8]));
-		});
-	});
-	
-	describe('invert', function() {
-		it('', function() {
-			var arr = [ 2.0, 1.5, 1.0, 4.4, -2.6, 5.0, 2.2, 8.4, 7.5 ];
-			var mat1 = new glacier.Matrix33(arr);
-			var mat2 = new glacier.Matrix33();
-			
-			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse).array, mat2.array));
 		});
 	});
 });

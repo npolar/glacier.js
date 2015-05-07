@@ -5,12 +5,20 @@ describe('Vector2', function() {
 		assert.equal(true, new glacier.Vector2 instanceof glacier.Vector2);
 	});
 	
-	describe('constructor', function() {
+	describe('(constructor)', function() {
 		it('default', function() {
 			var vec2 = new glacier.Vector2();
 			
 			assert.equal(true, glacier.compare(0.0, vec2.x));
 			assert.equal(true, glacier.compare(0.0, vec2.y));
+		});
+		
+		it('Vector2', function() {
+			var x = 1.0, y = 2.0;
+			var vec2 = new glacier.Vector2(new glacier.Vector2(x, y));
+			
+			assert.equal(true, glacier.compare(x, vec2.x));
+			assert.equal(true, glacier.compare(y, vec2.y));
 		});
 		
 		it('number (x), number (y)', function() {
@@ -44,7 +52,28 @@ describe('Vector2', function() {
 		});
 	});
 	
+	describe('array', function() {
+		it('', function() {
+			var vec2 = new glacier.Vector2(1.1, 2.2);
+			var arr = vec2.array;
+			
+			assert.equal(true, (arr instanceof Float32Array));
+			assert.equal(true, glacier.compare(arr[0], vec2.x));
+			assert.equal(true, glacier.compare(arr[1], vec2.y));
+		});
+	});
+	
 	describe('assign', function() {
+		it('Vector2', function() {
+			var x1 = 1.1, y1 = 1.2, x2 = 2.1, y2 = 2.2;
+			var vec2 = new glacier.Vector2(x1, y1);
+			
+			vec2.assign(new glacier.Vector2(x2, y2));
+			
+			assert.equal(true, glacier.compare(x2, vec2.x));
+			assert.equal(true, glacier.compare(y2, vec2.y));
+		});
+		
 		it('number (x), number (y)', function() {
 			var x1 = 1.5, y1 = 2.4, x2 = 3.7, y2 = 4.4;
 			var vec2 = new glacier.Vector2(x1, x2);
@@ -131,9 +160,21 @@ describe('Vector2', function() {
 	
 	describe('normalize', function() {
 		it('', function() {
-			var x = 5.5, y = -3.8;
-			var len = new glacier.Vector2(x, y).normalized.length;
+			var vec2 = new glacier.Vector2(5.5, -3.8).normalize();
+			var len = vec2.length;
 			
+			assert.equal(true, glacier.compare(len, 1.0));
+		});
+	});
+	
+	describe('normalized', function() {
+		it('', function() {
+			var x = 5.5, y = -3.8;
+			var vec2 = new glacier.Vector2(x, y);
+			var len = vec2.normalized.length;
+			
+			assert.equal(true, glacier.compare(x, vec2.x));
+			assert.equal(true, glacier.compare(y, vec2.y));
 			assert.equal(true, glacier.compare(len, 1.0));
 		});
 	});
