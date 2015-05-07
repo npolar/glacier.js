@@ -165,7 +165,7 @@ describe('Matrix33', function() {
 			
 			var det = (arr[0] * (arr[4] * arr[8] - arr[5] * arr[7])) - (arr[1] * (arr[3] * arr[8] - arr[5] * arr[6])) + (arr[2] * (arr[3] * arr[7] - arr[4] * arr[6]));
 			
-			assert.equal(true, glacier.compare(mat33.determinant(), det));
+			assert.equal(true, glacier.compare(mat33.determinant, det));
 		});
 	});
 	
@@ -264,7 +264,7 @@ describe('Matrix33', function() {
 			var mat1 = new glacier.Matrix33(arr);
 			var mat2 = new glacier.Matrix33();
 			
-			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse()).array, mat2.array));
+			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse).array, mat2.array));
 		});
 	});
 });
@@ -360,7 +360,7 @@ describe('Matrix44', function() {
 			var detC = (arr[ 4] * (arr[ 9] * arr[15] - arr[11] * arr[13])) - (arr[ 5] * (arr[ 8] * arr[15] - arr[11] * arr[12])) + (arr[ 7] * (arr[ 8] * arr[13] - arr[ 9] * arr[12]));
 			var detD = (arr[ 4] * (arr[ 9] * arr[14] - arr[10] * arr[13])) - (arr[ 5] * (arr[ 8] * arr[14] - arr[10] * arr[12])) + (arr[ 6] * (arr[ 8] * arr[13] - arr[ 9] * arr[12]));
 			
-			assert.equal(true, glacier.compare(mat44.determinant(), arr[0] * detA - arr[1] * detB + arr[2] * detC - arr[3] * detD));
+			assert.equal(true, glacier.compare(mat44.determinant, arr[0] * detA - arr[1] * detB + arr[2] * detC - arr[3] * detD));
 		});
 	});
 	
@@ -479,7 +479,7 @@ describe('Matrix44', function() {
 			var mat1 = new glacier.Matrix44(arr);
 			var mat2 = new glacier.Matrix44();
 			
-			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse()).array, mat2.array));
+			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse).array, mat2.array));
 		});
 	});
 });
@@ -574,11 +574,11 @@ describe('Vector2', function() {
 		});
 	});
 	
-	describe('dotProduct', function() {
+	describe('dot', function() {
 		it('Vector2', function() {
 			var x1 = 2.7, y1 = 4.2, x2 = 6.1, y2 = -3.5;
 			var vec2 = new glacier.Vector2(x1, y1);
-			var dot = vec2.dotProduct(new glacier.Vector2(x2, y2));
+			var dot = vec2.dot(new glacier.Vector2(x2, y2));
 			
 			assert.equal(true, glacier.compare((x1 * x2) + (y1 * y2), dot));
 		});
@@ -589,7 +589,7 @@ describe('Vector2', function() {
 			var x = 4.7, y = -3.1;
 			var vec2 = new glacier.Vector2(x, y);
 			
-			assert.equal(true, glacier.compare(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)), vec2.length()));
+			assert.equal(true, glacier.compare(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)), vec2.length));
 		});
 	});
 	
@@ -618,8 +618,7 @@ describe('Vector2', function() {
 	describe('normalize', function() {
 		it('', function() {
 			var x = 5.5, y = -3.8;
-			var vec2 = new glacier.Vector2(x, y);
-			var len = vec2.normalize().length();
+			var len = new glacier.Vector2(x, y).normalized.length;
 			
 			assert.equal(true, glacier.compare(len, 1.0));
 		});
@@ -757,11 +756,11 @@ describe('Vector3', function() {
 		});
 	});
 	
-	describe('dotProduct', function() {
+	describe('dot', function() {
 		it('Vector3', function() {
 			var x1 = 2.5, y1 = 4.3, z1 = -3.1, x2 = 6.0, y2 = -5.6, z2 = 8.9;
 			var vec3 = new glacier.Vector3(x1, y1, z1);
-			var dot = vec3.dotProduct(new glacier.Vector3(x2, y2, z2));
+			var dot = vec3.dot(new glacier.Vector3(x2, y2, z2));
 			
 			assert.equal(true, glacier.compare((x1 * x2) + (y1 * y2) + (z1 * z2), dot));
 		});
@@ -772,7 +771,7 @@ describe('Vector3', function() {
 			var x = 4.5, y = -3.4, z = 2.8;
 			var vec3 = new glacier.Vector3(x, y, z);
 			
-			assert.equal(true, glacier.compare(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2)), vec3.length()));
+			assert.equal(true, glacier.compare(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2)), vec3.length));
 		});
 	});
 	
@@ -803,8 +802,7 @@ describe('Vector3', function() {
 	describe('normalize', function() {
 		it('', function() {
 			var x = 5.0, y = -3.0, z = 2.0;
-			var vec3 = new glacier.Vector3(x, y, z);
-			var len = vec3.normalize().length();
+			var len = new glacier.Vector3(x, y, z).normalized.length;
 			
 			assert.equal(true, glacier.compare(len, 1.0));
 		});

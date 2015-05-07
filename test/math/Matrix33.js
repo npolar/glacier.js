@@ -85,7 +85,7 @@ describe('Matrix33', function() {
 			
 			var det = (arr[0] * (arr[4] * arr[8] - arr[5] * arr[7])) - (arr[1] * (arr[3] * arr[8] - arr[5] * arr[6])) + (arr[2] * (arr[3] * arr[7] - arr[4] * arr[6]));
 			
-			assert.equal(true, glacier.compare(mat33.determinant(), det));
+			assert.equal(true, glacier.compare(mat33.determinant, det));
 		});
 	});
 	
@@ -184,7 +184,7 @@ describe('Matrix33', function() {
 			var mat1 = new glacier.Matrix33(arr);
 			var mat2 = new glacier.Matrix33();
 			
-			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse()).array, mat2.array));
+			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse).array, mat2.array));
 		});
 	});
 });

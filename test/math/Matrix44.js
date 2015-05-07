@@ -89,7 +89,7 @@ describe('Matrix44', function() {
 			var detC = (arr[ 4] * (arr[ 9] * arr[15] - arr[11] * arr[13])) - (arr[ 5] * (arr[ 8] * arr[15] - arr[11] * arr[12])) + (arr[ 7] * (arr[ 8] * arr[13] - arr[ 9] * arr[12]));
 			var detD = (arr[ 4] * (arr[ 9] * arr[14] - arr[10] * arr[13])) - (arr[ 5] * (arr[ 8] * arr[14] - arr[10] * arr[12])) + (arr[ 6] * (arr[ 8] * arr[13] - arr[ 9] * arr[12]));
 			
-			assert.equal(true, glacier.compare(mat44.determinant(), arr[0] * detA - arr[1] * detB + arr[2] * detC - arr[3] * detD));
+			assert.equal(true, glacier.compare(mat44.determinant, arr[0] * detA - arr[1] * detB + arr[2] * detC - arr[3] * detD));
 		});
 	});
 	
@@ -208,7 +208,7 @@ describe('Matrix44', function() {
 			var mat1 = new glacier.Matrix44(arr);
 			var mat2 = new glacier.Matrix44();
 			
-			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse()).array, mat2.array));
+			assert.equal(true, glacier.compare(mat1.multiply(mat1.inverse).array, mat2.array));
 		});
 	});
 });

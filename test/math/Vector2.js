@@ -88,11 +88,11 @@ describe('Vector2', function() {
 		});
 	});
 	
-	describe('dotProduct', function() {
+	describe('dot', function() {
 		it('Vector2', function() {
 			var x1 = 2.7, y1 = 4.2, x2 = 6.1, y2 = -3.5;
 			var vec2 = new glacier.Vector2(x1, y1);
-			var dot = vec2.dotProduct(new glacier.Vector2(x2, y2));
+			var dot = vec2.dot(new glacier.Vector2(x2, y2));
 			
 			assert.equal(true, glacier.compare((x1 * x2) + (y1 * y2), dot));
 		});
@@ -103,7 +103,7 @@ describe('Vector2', function() {
 			var x = 4.7, y = -3.1;
 			var vec2 = new glacier.Vector2(x, y);
 			
-			assert.equal(true, glacier.compare(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)), vec2.length()));
+			assert.equal(true, glacier.compare(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)), vec2.length));
 		});
 	});
 	
@@ -132,8 +132,7 @@ describe('Vector2', function() {
 	describe('normalize', function() {
 		it('', function() {
 			var x = 5.5, y = -3.8;
-			var vec2 = new glacier.Vector2(x, y);
-			var len = vec2.normalize().length();
+			var len = new glacier.Vector2(x, y).normalized.length;
 			
 			assert.equal(true, glacier.compare(len, 1.0));
 		});
