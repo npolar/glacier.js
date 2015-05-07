@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.1.4',
+	VERSION: '0.1.5',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -225,7 +225,7 @@ glacier.parseOptions = function(options, defaults, className) {
 	}
 	
 	if(options && typeof options != 'object') {
-		throw new glacier.exception.InvalidParameter('options', typeof defaults, 'object', 'parseOptions');
+		throw new glacier.exception.InvalidParameter('options', defaults, 'object', 'parseOptions');
 	} else if(!options) {
 		options = {};
 	}
@@ -241,7 +241,7 @@ glacier.parseOptions = function(options, defaults, className) {
 			}
 		}
 	} else {
-		throw new glacier.exception.InvalidParameter('defaults', typeof defaults, 'object', 'parseOptions');
+		throw new glacier.exception.InvalidParameter('defaults', defaults, 'object', 'parseOptions');
 	}
 	
 	return result;
@@ -250,17 +250,17 @@ glacier.parseOptions = function(options, defaults, className) {
 glacier.BufferObject = function BufferObject(drawable, context, shader) {
 	// Ensure that drawable is a valid Drawable object
 	if(!(drawable instanceof glacier.Drawable)) {
-		throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Drawable', '(constructor)', 'BufferObject');
+		throw new glacier.exception.InvalidParameter('drawable', drawable, 'Drawable', '(constructor)', 'BufferObject');
 	}
 	
 	// Ensure that context is a valid Context object
 	if(!(context instanceof glacier.Context)) {
-		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'BufferObject');
+		throw new glacier.exception.InvalidParameter('context', context, 'Context', '(constructor)', 'BufferObject');
 	}
 	
 	// Ensure that shader is a valid Shader object
 	if(!(shader instanceof glacier.Shader)) {
-		throw new glacier.exception.InvalidParameter('shader', typeof shader, 'Shader', '(constructor)', 'BufferObject');
+		throw new glacier.exception.InvalidParameter('shader', shader, 'Shader', '(constructor)', 'BufferObject');
 	}
 	
 	var gl = context.gl, modes = [ gl.POINTS, gl.LINE_STRIP, gl.LINE_LOOP, gl.LINES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLES ], mode = 0, elements = 0;
@@ -402,7 +402,7 @@ glacier.BufferObject.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(vertices) {
-				throw new glacier.exception.InvalidParameter('vertices', typeof vertices, 'Vector3 array', 'init', 'BufferObject');
+				throw new glacier.exception.InvalidParameter('vertices', vertices, 'Vector3 array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(indices, 'number')) {
@@ -413,7 +413,7 @@ glacier.BufferObject.prototype = {
 					gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(array), gl.STATIC_DRAW);
 				}
 			} else if(indices) {
-				throw new glacier.exception.InvalidParameter('indices', typeof indices, 'number array', 'init', 'BufferObject');
+				throw new glacier.exception.InvalidParameter('indices', indices, 'number array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(normals, glacier.Vector3)) {
@@ -424,7 +424,7 @@ glacier.BufferObject.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('normals', typeof normals, 'Vector3 array', 'init', 'BufferObject');
+				throw new glacier.exception.InvalidParameter('normals', normals, 'Vector3 array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(texCoords, glacier.Vector2)) {
@@ -435,7 +435,7 @@ glacier.BufferObject.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('texCoords', typeof texCoords, 'Vector2 array', 'init', 'BufferObject');
+				throw new glacier.exception.InvalidParameter('texCoords', texCoords, 'Vector2 array', 'init', 'BufferObject');
 			}
 			
 			if(glacier.isArray(colors, glacier.Color)) {
@@ -446,7 +446,7 @@ glacier.BufferObject.prototype = {
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
 			} else if(normals) {
-				throw new glacier.exception.InvalidParameter('colors', typeof colors, 'Color array', 'init', 'BufferObject');
+				throw new glacier.exception.InvalidParameter('colors', colors, 'Color array', 'init', 'BufferObject');
 			}
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -459,11 +459,11 @@ glacier.BufferObject.prototype = {
 	},
 	free: function() {
 		if(this.context) {
-			var gl = this.context.gl, i;
+			var i;
 			
 			for(i in this.buffers) {
 				if(this.buffers.hasOwnProperty(i)) {
-					gl.deleteBuffer(this.buffers[i]);
+					this.context.gl.deleteBuffer(this.buffers[i]);
 					delete this.buffers[i];
 				}
 			}
@@ -476,7 +476,7 @@ glacier.BufferObject.prototype = {
 	freeTexture: function(index) {
 		if(this.context && this.textures[index]) {
 			if(this.textures[index] instanceof WebGLTexture) {
-				gl.deleteTexture(this.textures[index]);
+				this.context.gl.deleteTexture(this.textures[index]);
 			}
 			
 			this.textures[index] = null;
@@ -494,7 +494,7 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 	// Check parameters and declare members fieldOfView, aspectRatio, clipNear and clipFar
 	[ fieldOfView, aspectRatio, clipNear, clipFar ].forEach(function(arg, index) {
 		if(typeof arg != 'number' || arg <= 0.0) {
-			throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'positive number', '(constructor)', 'Camera');
+			throw new glacier.exception.InvalidParameter(args[index], arg, 'positive number', '(constructor)', 'Camera');
 		} else {
 			Object.defineProperty(this, args[index], {
 				get: function() {
@@ -618,11 +618,11 @@ glacier.Camera.prototype = {
 	},
 	follow: function(target, angle, distance) {
 		if(!(target instanceof glacier.Vector3)) {
-			throw new glacier.exception.InvalidParameter('target', typeof target, 'Vector3', 'follow', 'Camera');
+			throw new glacier.exception.InvalidParameter('target', target, 'Vector3', 'follow', 'Camera');
 		}
 		
 		if(!(angle instanceof glacier.Vector2)) {
-			throw new glacier.exception.InvalidParameter('angle', typeof target, 'Vector2', 'follow', 'Camera');
+			throw new glacier.exception.InvalidParameter('angle', target, 'Vector2', 'follow', 'Camera');
 		}
 		
 		if(typeof distance != 'number' || distance <= 0.0) {
@@ -650,22 +650,20 @@ glacier.Camera.prototype = {
 	update: function() {
 		var z, x, y = new glacier.Vector3(0, 1, 0);
 		
-		if((z = new glacier.Vector3(this.position).subtract(this.target)).length()) {
+		if((z = new glacier.Vector3(this.position).subtract(this.target)).length) {
 			z.normalize();
 		}
 		
-		if((x = y.crossProduct(z)).length()) {
+		if((x = y.cross(z)).length) {
 			x.normalize();
 		}
 		
-		if((y = z.crossProduct(x)).length()) {
+		if((y = z.cross(x)).length) {
 			y.normalize();
 		}
 		
 		this.matrix.assign(new glacier.Matrix44());
 		this.matrix.perspective(this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
-		//this.matrix.ortho(-1.0, 1.0, -1.0, 1.0, 0.1, 100.0);
-		
 		this.matrix.assign(new glacier.Matrix44([
 			x.x, y.x, z.x, 0.0,
 			x.y, y.y, z.y, 0.0,
@@ -799,7 +797,7 @@ glacier.Color = function Color(params) {
 				if(typeof args[a] == 'number') {
 					vals.push(args[a] / (a < 3 ? 255 : 1));
 				} else {
-					throw new glacier.exception.InvalidParameter(args[a], typeof args[a], 'number', '(constructor)', 'Color');
+					throw new glacier.exception.InvalidParameter(args[a], args[a], 'number', '(constructor)', 'Color');
 				}
 			}
 			
@@ -882,13 +880,13 @@ glacier.Context = function Context(canvas, options) {
 				throw new glacier.exception.InvalidParameter('canvas', canvas, 'string as HTMLCanvasElement ID', '(constructor)', 'Context');
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('canvas', typeof canvas, 'HTMLCanvasElement or string', '(constructor)', 'Context');
+			throw new glacier.exception.InvalidParameter('canvas', canvas, 'HTMLCanvasElement or string', '(constructor)', 'Context');
 		}
 	}
 	
 	// Ensure options is a valid map (object)
 	if(options && typeof options != 'object') {
-		throw new glacier.exception.InvalidParameter('options', typeof canvas, 'object', '(constructor)', 'Context');
+		throw new glacier.exception.InvalidParameter('options', canvas, 'object', '(constructor)', 'Context');
 	} else if(!options) {
 		options = {};
 	}
@@ -986,18 +984,18 @@ glacier.Context.prototype = {
 		if(drawable instanceof glacier.Drawable) {
 			return drawable.init(this, options);
 		} else {
-			throw new glacier.exception.InvalidParameter('drawable', typeof drawable, 'Drawable', 'init', 'Context');
+			throw new glacier.exception.InvalidParameter('drawable', drawable, 'Drawable', 'init', 'Context');
 		}
 		
 		return false;
 	},
 	resize:	function(width, height) {
 		if(typeof width != 'number' || width <= 0.0) {
-			throw new glacier.exception.InvalidParameter('width', typeof width, 'positive number', 'resize', 'Context');
+			throw new glacier.exception.InvalidParameter('width', width, 'positive number', 'resize', 'Context');
 		}
 		
 		if(typeof height != 'number' || height <= 0.0) {
-			throw new glacier.exception.InvalidParameter('height', typeof height, 'positive number', 'resize', 'Context');
+			throw new glacier.exception.InvalidParameter('height', height, 'positive number', 'resize', 'Context');
 		}
 		
 		this.canvas.width	= width;
@@ -1006,11 +1004,11 @@ glacier.Context.prototype = {
 	},
 	createProgram: function(vertShader, fragShader) {
 		if(!(vertShader instanceof WebGLShader)) {
-			throw new glacier.exception.InvalidParameter('vertShader', typeof vertShader, 'WebGLShader', 'createProgram', 'Context');
+			throw new glacier.exception.InvalidParameter('vertShader', vertShader, 'WebGLShader', 'createProgram', 'Context');
 		}
 		
 		if(!(fragShader instanceof WebGLShader)) {
-			throw new glacier.exception.InvalidParameter('fragShader', typeof fragShader, 'WebGLShader', 'createProgram', 'Context');
+			throw new glacier.exception.InvalidParameter('fragShader', fragShader, 'WebGLShader', 'createProgram', 'Context');
 		}
 		
 		var gl = this.gl, program = gl.createProgram();
@@ -1029,7 +1027,7 @@ glacier.Context.prototype = {
 		var gl = this.gl, last, shader, valid = [ gl.FRAGMENT_SHADER, gl.VERTEX_SHADER ];
 		
 		if(typeof source != 'string') {
-			throw new glacier.exception.InvalidParameter('source', typeof source, 'string', 'createShader', 'Context');
+			throw new glacier.exception.InvalidParameter('source', source, 'string', 'createShader', 'Context');
 		}
 		
 		if(valid.indexOf(type) == -1) {
@@ -1063,7 +1061,7 @@ glacier.Context.prototype = {
 			return tex;
 		}
 		
-		throw new glacier.exception.InvalidParameter('image', typeof image, 'Image', 'createTexture', 'Context');
+		throw new glacier.exception.InvalidParameter('image', image, 'Image', 'createTexture', 'Context');
 	},
 	worldToScreen: function(point, modelView) {
 		if(point instanceof glacier.Vector3) {
@@ -1072,7 +1070,7 @@ glacier.Context.prototype = {
 			if(!modelView || (modelView instanceof glacier.Matrix44)) {
 				matrix = new glacier.Matrix44(modelView || null);
 			} else {
-				throw new glacier.exception.InvalidParameter('modelView', typeof modelView, 'Matrix44 or null', 'worldToScreen', 'Context');
+				throw new glacier.exception.InvalidParameter('modelView', modelView, 'Matrix44 or null', 'worldToScreen', 'Context');
 			}
 			
 			if(this.projection instanceof glacier.Matrix44) {
@@ -1091,10 +1089,10 @@ glacier.Context.prototype = {
 				vec4.y = (vec4.y /= vec4.w) * 0.5 + 0.5;
 				vec4.z = (vec4.z /= vec4.w) * 0.5 + 0.5;
 				
-				return new glacier.Vector2(Math.round(vec4.x * context.width), Math.round((1.0 - vec4.y) * context.height));
+				return new glacier.Vector2(Math.round(vec4.x * this.width), Math.round((1.0 - vec4.y) * this.height));
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('point', typeof point, 'Vector3', 'worldToScreen', 'Context');
+			throw new glacier.exception.InvalidParameter('point', point, 'Vector3', 'worldToScreen', 'Context');
 		}
 		
 		return null;
@@ -1158,7 +1156,7 @@ glacier.Drawable.prototype = {
 	},
 	init: function(context, options) {
 		if(!(context instanceof glacier.Context)) {
-			throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', 'init', 'Drawable');
+			throw new glacier.exception.InvalidParameter('context', context, 'Context', 'init', 'Drawable');
 		}
 		
 		var shader = context.shaders.get('generic');
@@ -1168,7 +1166,7 @@ glacier.Drawable.prototype = {
 				shader = context.shaders.get(options.shader);
 			}
 		} else if(options) {
-			throw new glacier.exception.InvalidParameter('options', typeof options, 'object', 'init', 'Drawable');
+			throw new glacier.exception.InvalidParameter('options', options, 'object', 'init', 'Drawable');
 		}
 		
 		if(!(this.buffer = new glacier.BufferObject(this, context, shader)).init()) {
@@ -1221,6 +1219,7 @@ glacier.exception = {
 		glacier.Exception.call(this, 'Invalid parameter', {
 			parameter:	parameter,
 			value:		value,
+			type:		typeof value,
 			expected:	expected,
 			method:		method,
 			class:		className
@@ -1320,11 +1319,11 @@ glacier.Scene.prototype = {
 
 glacier.Shader = function Shader(context, program) {
 	if(!(context instanceof glacier.Context)) {
-		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'Shader');
+		throw new glacier.exception.InvalidParameter('context', context, 'Context', '(constructor)', 'Shader');
 	}
 	
 	if(!(program instanceof WebGLProgram)) {
-		throw new glacier.exception.InvalidParameter('program', typeof program, 'WebGLProgram', '(constructor)', 'Shader');
+		throw new glacier.exception.InvalidParameter('program', program, 'WebGLProgram', '(constructor)', 'Shader');
 	}
 	
 	Object.defineProperties(this, {
@@ -1348,7 +1347,7 @@ glacier.Shader.prototype = {
 				}
 			}, this);
 		} else {
-			throw new glacier.exception.InvalidParameter('attributeArray', typeof attributeArray, 'string array', 'addAttributes', 'Shader');
+			throw new glacier.exception.InvalidParameter('attributeArray', attributeArray, 'string array', 'addAttributes', 'Shader');
 		}
 	},
 	addUniforms: function(uniformArray) {
@@ -1363,12 +1362,12 @@ glacier.Shader.prototype = {
 				}
 			}, this);
 		} else {
-			throw new glacier.exception.InvalidParameter('uniformArray', typeof uniformArray, 'string array', 'addUniforms', 'Shader');
+			throw new glacier.exception.InvalidParameter('uniformArray', uniformArray, 'string array', 'addUniforms', 'Shader');
 		}
 	},
 	attribute: function(attribute) {
 		if(typeof attribute != 'string') {
-			throw new glacier.exception.InvalidParameter('attribute', typeof attribute, 'string', 'attribute', 'Shader');
+			throw new glacier.exception.InvalidParameter('attribute', attribute, 'string', 'attribute', 'Shader');
 		}
 		
 		if(typeof (attribute = this.attributes[attribute]) == 'number') {
@@ -1379,7 +1378,7 @@ glacier.Shader.prototype = {
 	},
 	uniform: function(uniform) {
 		if(typeof uniform != 'string') {
-			throw new glacier.exception.InvalidParameter('uniform', typeof uniform, 'string', 'uniform', 'Shader');
+			throw new glacier.exception.InvalidParameter('uniform', uniform, 'string', 'uniform', 'Shader');
 		}
 		
 		if((uniform = this.uniforms[uniform]) instanceof WebGLUniformLocation) {
@@ -1400,7 +1399,7 @@ glacier.Shader.prototype = {
 
 glacier.ShaderBank = function ShaderBank(context) {
 	if(!(context instanceof glacier.Context)) {
-		throw new glacier.exception.InvalidParameter('context', typeof context, 'Context', '(constructor)', 'ShaderBank');
+		throw new glacier.exception.InvalidParameter('context', context, 'Context', '(constructor)', 'ShaderBank');
 	}
 	
 	Object.defineProperties(this, {
@@ -1476,7 +1475,7 @@ glacier.ShaderBank.prototype = {
 	},
 	get: function(shader) {
 		if(typeof shader != 'string') {
-			throw new glacier.exception.InvalidParameter('shader', typeof shader, 'string', 'shader', 'ShaderBank');
+			throw new glacier.exception.InvalidParameter('shader', shader, 'string', 'shader', 'ShaderBank');
 		}
 		
 		if((shader = this.shaders[shader]) instanceof glacier.Shader) {
@@ -1534,7 +1533,7 @@ glacier.Texture = function Texture(source) {
 	if(typeof source == 'string') {
 		this.load(source);
 	} else if(source) {
-		throw new glacier.exception.InvalidParameter('source', typeof source, 'Image', '(constructor)', 'Texture');
+		throw new glacier.exception.InvalidParameter('source', source, 'Image', '(constructor)', 'Texture');
 	}
 };
 
@@ -1544,7 +1543,7 @@ glacier.Texture.prototype = {
 	},
 	load: function(source) {
 		if(typeof source != 'string') {
-			throw new glacier.exception.InvalidParameter('source', typeof source, 'string', 'load', 'Texture');
+			throw new glacier.exception.InvalidParameter('source', source, 'string', 'load', 'Texture');
 		}
 		
 		this.image = new Image();
@@ -1571,14 +1570,14 @@ glacier.Texture.prototype = {
 glacier.TypedArray = function TypedArray(type, ctor) {
 	if(typeof type == 'string') {
 		if(ctor && typeof ctor != 'function') {
-			throw new glacier.exception.InvalidParameter('ctor', typeof ctor, 'function', '(constructor)', 'TypedArray');
+			throw new glacier.exception.InvalidParameter('ctor', ctor, 'function', '(constructor)', 'TypedArray');
 		}
 		
 		Object.defineProperty(this, 'type', {
 			value: { name: type, ctor: ctor }
 		});
 	} else {
-		throw new glacier.exception.InvalidParameter('type', typeof type, 'string', '(constructor)', 'TypedArray');
+		throw new glacier.exception.InvalidParameter('type', type, 'string', '(constructor)', 'TypedArray');
 	}
 };
 
@@ -1590,7 +1589,7 @@ glacier.extend(glacier.TypedArray, Array, {
 			if((this.type.ctor && args[a] instanceof this.type.ctor) || (typeof args[a] == this.type.name)) {
 				Array.prototype.push.call(this, args[a]);
 			} else {
-				throw new glacier.exception.InvalidParameter('item', typeof args[a], this.type.name, 'push', 'TypedArray');
+				throw new glacier.exception.InvalidParameter('item', args[a], this.type.name, 'push', 'TypedArray');
 			}
 		}
 		
@@ -1601,7 +1600,7 @@ glacier.extend(glacier.TypedArray, Array, {
 		
 		for(a = 2; a < args.length; ++a) {
 			if(!(this.type.ctor && args[a] instanceof this.type.ctor) || (typeof args[a] != this.type.name)) {
-				throw new glacier.exception.InvalidParameter('item', typeof args[a], this.type.name, 'splice', 'TypedArray');
+				throw new glacier.exception.InvalidParameter('item', args[a], this.type.name, 'splice', 'TypedArray');
 			}
 		}
 		
@@ -1614,7 +1613,7 @@ glacier.extend(glacier.TypedArray, Array, {
 			if((this.type.ctor && args[a] instanceof this.type.ctor) || (typeof args[a] == this.type.name)) {
 				Array.prototype.unshift.call(this, args[a]);
 			} else {
-				throw new glacier.exception.InvalidParameter('item', typeof args[a], this.type.name, 'unshift', 'TypedArray');
+				throw new glacier.exception.InvalidParameter('item', args[a], this.type.name, 'unshift', 'TypedArray');
 			}
 		}
 		
@@ -1953,7 +1952,7 @@ glacier.compare = function(value1, value2) {
 
 glacier.degToRad = function(degrees) {
 	if(typeof degrees != 'number') {
-		throw new glacier.exception.InvalidParameter('degrees', typeof degrees, 'number', 'degToRad');
+		throw new glacier.exception.InvalidParameter('degrees', degrees, 'number', 'degToRad');
 	}
 	
 	return (degrees * Math.PI / 180.0);
@@ -1961,7 +1960,7 @@ glacier.degToRad = function(degrees) {
 
 glacier.radToDeg = function(radians) {
 	if(typeof radians != 'number') {
-		throw new glacier.exception.InvalidParameter('radians', typeof radians, 'number', 'radToDeg');
+		throw new glacier.exception.InvalidParameter('radians', radians, 'number', 'radToDeg');
 	}
 	
 	return (radians * 180.0 / Math.PI);
@@ -1969,15 +1968,15 @@ glacier.radToDeg = function(radians) {
 
 glacier.limitAngle = function(angle, max, min) {
 	if(typeof angle != 'number') {
-		throw new glacier.exception.InvalidParameter('angle', typeof angle, 'number', 'limitAngle');
+		throw new glacier.exception.InvalidParameter('angle', angle, 'number', 'limitAngle');
 	}
 	
 	if(typeof (max = (max === undefined ? 360.0 : max)) != 'number') {
-		throw new glacier.exception.InvalidParameter('max', typeof max, 'number', 'limitAngle');
+		throw new glacier.exception.InvalidParameter('max', max, 'number', 'limitAngle');
 	}
 	
 	if(typeof (min = (min === undefined ? 0.0 : min)) != 'number') {
-		throw new glacier.exception.InvalidParameter('min', typeof min, 'number', 'limitAngle');
+		throw new glacier.exception.InvalidParameter('min', min, 'number', 'limitAngle');
 	}
 	
 	if(max < min) {
@@ -1994,7 +1993,7 @@ glacier.clamp = function(value, min, max) {
 	var args = [ 'value', 'min', 'max' ];
 	[ value, min, max ].forEach(function(arg, index) {
 		if(typeof arg != 'number') {
-			throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'clamp');
+			throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'clamp');
 		}
 	});
 	
@@ -2170,13 +2169,13 @@ glacier.PointCollection = function PointCollection() {
 glacier.extend(glacier.PointCollection, glacier.Drawable, {
 	addPoint: function(vec3, color) {
 		if(!(vec3 instanceof glacier.Vector3)) {
-			throw new glacier.exception.InvalidParameter('vec3', typeof vec3, 'Vector3', 'addPoint', 'PointCollection');
+			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'addPoint', 'PointCollection');
 		}
 		
 		if(!color || (color instanceof glacier.Color)) {
 			this.colors.push(color || glacier.color.WHITE);
 		} else {
-			throw new glacier.exception.InvalidParameter('color', typeof color, 'Color', 'addPoint', 'PointCollection');
+			throw new glacier.exception.InvalidParameter('color', color, 'Color', 'addPoint', 'PointCollection');
 		}
 		
 		this.vertices.push(vec3);
@@ -2278,13 +2277,13 @@ glacier.Matrix33.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Matrix33, Matrix44 or array[9]', 'assign', 'Matrix33');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Matrix33, Matrix44 or array[9]', 'assign', 'Matrix33');
 		}
 		
 		return this;
 	},
 	
-	determinant: function() {
+	get determinant() {
 		return (this.array[0] * (this.array[4] * this.array[8] - this.array[5] * this.array[7]) -
 				this.array[1] * (this.array[3] * this.array[8] - this.array[5] * this.array[6]) +
 				this.array[2] * (this.array[3] * this.array[7] - this.array[4] * this.array[6]));
@@ -2302,56 +2301,7 @@ glacier.Matrix33.prototype = {
 		throw new glacier.exception.IndexOutOfRange(colOrIndex + (row || 0), '0-9', 'element', 'Matrix33');
 	},
 	
-	multiply: function(value) {
-		var col, row, e, temp;
-		
-		if(value instanceof glacier.Matrix33) {
-			temp = new Float32Array(this.array);
-			
-			for(col = 0; col < 3; ++col) {
-				for(row = 0; row < 3; ++row) {
-					this.array[(col * 3) + row] = ((temp[(col * 3) + 0] * value.array[(0 * 3) + row]) +
-												   (temp[(col * 3) + 1] * value.array[(1 * 3) + row]) +
-												   (temp[(col * 3) + 2] * value.array[(2 * 3) + row]));
-				}
-			}
-		} else if(value instanceof glacier.Matrix44) {
-			this.multiply(new glacier.Matrix33(value));
-		} else if(typeof value == 'number') {
-			for(e in this.array) {
-				this.array[e] *= value;
-			}
-		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix33');
-		}
-		
-		return this;
-	},
-	
-	transpose: function() {
-		var temp;
-		
-		temp = this.array[1];
-		this.array[1] = this.array[3];
-		this.array[3] = temp;
-		
-		temp = this.array[2];
-		this.array[2] = this.array[6];
-		this.array[6] = temp;
-		
-		temp = this.array[5];
-		this.array[5] = this.array[7];
-		this.array[7] = temp;
-		
-		return this;
-	},
-	
-	transposed: function() {
-		var temp = new glacier.Matrix33(this);
-		return temp.transpose();
-	},
-	
-	inverse: function() {
+	get inverse() {
 		var temp = new glacier.Matrix33(this);
 		
 		if(!temp.invert()) {
@@ -2389,10 +2339,59 @@ glacier.Matrix33.prototype = {
 		return true;
 	},
 	
+	multiply: function(value) {
+		var col, row, e, temp;
+		
+		if(value instanceof glacier.Matrix33) {
+			temp = new Float32Array(this.array);
+			
+			for(col = 0; col < 3; ++col) {
+				for(row = 0; row < 3; ++row) {
+					this.array[(col * 3) + row] = ((temp[(col * 3) + 0] * value.array[(0 * 3) + row]) +
+												   (temp[(col * 3) + 1] * value.array[(1 * 3) + row]) +
+												   (temp[(col * 3) + 2] * value.array[(2 * 3) + row]));
+				}
+			}
+		} else if(value instanceof glacier.Matrix44) {
+			this.multiply(new glacier.Matrix33(value));
+		} else if(typeof value == 'number') {
+			for(e in this.array) {
+				this.array[e] *= value;
+			}
+		} else {
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix33');
+		}
+		
+		return this;
+	},
+	
 	toString: function() {
 		return ('[[' + this.array[0].toPrecision(5) + ', ' + this.array[1].toPrecision(5) + ', ' + this.array[2].toPrecision(5) + '], ' +
 				 '[' + this.array[3].toPrecision(5) + ', ' + this.array[4].toPrecision(5) + ', ' + this.array[5].toPrecision(5) + '], ' +
 				 '[' + this.array[6].toPrecision(5) + ', ' + this.array[7].toPrecision(5) + ', ' + this.array[8].toPrecision(5) + ']]');
+	},
+	
+	transpose: function() {
+		var temp;
+		
+		temp = this.array[1];
+		this.array[1] = this.array[3];
+		this.array[3] = temp;
+		
+		temp = this.array[2];
+		this.array[2] = this.array[6];
+		this.array[6] = temp;
+		
+		temp = this.array[5];
+		this.array[5] = this.array[7];
+		this.array[7] = temp;
+		
+		return this;
+	},
+	
+	get transposed() {
+		var temp = new glacier.Matrix33(this);
+		return temp.transpose();
 	}
 };
 
@@ -2434,13 +2433,13 @@ glacier.Matrix44.prototype = {
 				this.array[e] = value;
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Matrix33, Matrix44 or array[16]', 'assign', 'Matrix44');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Matrix33, Matrix44 or array[16]', 'assign', 'Matrix44');
 		}
 		
 		return this;
 	},
 	
-	determinant: function() {
+	get determinant() {
 		var a0 = this.array[ 0] * this.array[ 5] - this.array[ 1] * this.array[ 4];
 		var a1 = this.array[ 0] * this.array[ 6] - this.array[ 2] * this.array[ 4];
 		var a2 = this.array[ 0] * this.array[ 7] - this.array[ 3] * this.array[ 4];
@@ -2474,7 +2473,7 @@ glacier.Matrix44.prototype = {
 		
 		[ left, right, bottom, top, near, far ].forEach(function(arg, index) {
 			if(typeof arg != 'number') {
-				throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'frustum', 'Matrix44');
+				throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'frustum', 'Matrix44');
 			}
 		});
 		
@@ -2493,7 +2492,7 @@ glacier.Matrix44.prototype = {
 		return true;
 	},
 	
-	inverse: function() {
+	get inverse() {
 		var temp = new glacier.Matrix44(this);
 		
 		if(!temp.invert()) {
@@ -2572,7 +2571,7 @@ glacier.Matrix44.prototype = {
 				this.array[e] *= value;
 			}
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix44');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Matrix33 or Matrix44', 'multiply', 'Matrix44');
 		}
 		
 		return this;
@@ -2583,7 +2582,7 @@ glacier.Matrix44.prototype = {
 		
 		[ left, right, bottom, top, near, far ].forEach(function(arg, index) {
 			if(typeof arg != 'number') {
-				throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'ortho', 'Matrix44');
+				throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'ortho', 'Matrix44');
 			}
 		});
 		
@@ -2607,7 +2606,7 @@ glacier.Matrix44.prototype = {
 		
 		[ verticalViewAngle, aspectRatio, near, far ].forEach(function(arg, index) {
 			if(typeof arg != 'number') {
-				throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'perspective', 'Matrix44');
+				throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'perspective', 'Matrix44');
 			}
 		});
 		
@@ -2628,7 +2627,7 @@ glacier.Matrix44.prototype = {
 	
 	rotate: function(radians, xOrVec3, y, z) {
 		if(typeof radians != 'number') {
-			throw new glacier.exception.InvalidParameter('radians', typeof radians, 'number', 'rotate', 'Matrix44');
+			throw new glacier.exception.InvalidParameter('radians', radians, 'number', 'rotate', 'Matrix44');
 		} else if(xOrVec3 instanceof glacier.Vector3) {
 			return this.rotate(radians, xOrVec3.x, xOrVec3.y, xOrVec3.z);
 		} else {
@@ -2636,7 +2635,7 @@ glacier.Matrix44.prototype = {
 			
 			[ x, y, z ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'rotate', 'Matrix44');
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'rotate', 'Matrix44');
 				}
 			});
 			
@@ -2668,7 +2667,7 @@ glacier.Matrix44.prototype = {
 			
 			[ x, y, z ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'scale', 'Matrix44');
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'scale', 'Matrix44');
 				}
 			});
 			
@@ -2696,7 +2695,7 @@ glacier.Matrix44.prototype = {
 			
 			[ x, y, z ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'translate', 'Matrix44');
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'translate', 'Matrix44');
 				}
 			});
 			
@@ -2739,9 +2738,55 @@ glacier.Matrix44.prototype = {
 		return this;
 	},
 	
-	transposed: function() {
+	get transposed() {
 		var temp = new glacier.Matrix44(this);
 		return temp.transpose();
+	}
+};
+
+glacier.Ray = function Ray(start, direction) {
+	glacier.addTypedProperty(this, ['a', 'start'], (start instanceof glacier.Vector3 ? start : new glacier.Vector3(0.0)), glacier.Vector3);
+	glacier.addTypedProperty(this, ['b', 'direction'], (direction instanceof glacier.Vector3 ? direction : new glacier.Vector3(0.0)), glacier.Vector3);
+	
+	if(start instanceof glacier.Ray) {
+		this.assign(start);
+	}
+};
+
+glacier.Ray.prototype = {
+	get array() {
+		return new Float32Array([ this.a, this.b ]);
+	},
+	
+	assign: function(startOrRay, direction) {
+		if(startOrRay instanceof glacier.Ray) {
+			return this.assign(startOrRay.a, startOrRay.b);
+		} else {
+			var args = [ 'start', 'direction' ];
+			
+			[ startOrRay, direction ].forEach(function(arg, index) {
+				if(!(arg instanceof glacier.Vector3)) {
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'Vector3', 'assign', 'Ray');
+				}
+			});
+			
+			this.a = startOrRay;
+			this.b = direction;
+		}
+		
+		return this;
+	},
+	
+	deviation: function(ray) {
+		if(ray instanceof glacier.Ray) {
+			return this.b.dot(ray.b);
+		} else {
+			throw new glacier.exception.InvalidParameter('ray', ray, 'Ray', 'deviation', 'Ray');
+		}
+	},
+	
+	toString: function() {
+		return ('Ray(' + this.a.toString() + ' + ' + this.b.normalized.toString() + ')');
 	}
 };
 
@@ -2763,10 +2808,14 @@ glacier.Vector2.prototype = {
 			this.x += value;
 			this.y += value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'add', 'Vector2');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector2', 'add', 'Vector2');
 		}
 		
 		return this;
+	},
+	
+	get array() {
+		return new Float32Array([ this.x, this.y ]);
 	},
 	
 	assign: function(xOrVec2, y) {
@@ -2777,7 +2826,7 @@ glacier.Vector2.prototype = {
 			
 			[ x, y ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'assign', 'Vector2');
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector2');
 				}
 			});
 			
@@ -2801,17 +2850,17 @@ glacier.Vector2.prototype = {
 			this.x /= value;
 			this.y /= value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'divide', 'Vector2');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector2', 'divide', 'Vector2');
 		}
 		
 		return this;
 	},
 	
-	dotProduct: function(vec2) {
+	dot: function(vec2) {
 		return ((this.x * vec2.x) + (this.y * vec2.y));
 	},
 	
-	length: function() {
+	get length() {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y));
 	},
 	
@@ -2823,19 +2872,23 @@ glacier.Vector2.prototype = {
 			this.x *= value;
 			this.y *= value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'multiply', 'Vector2');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector2', 'multiply', 'Vector2');
 		}
 		
 		return this;
 	},
 	
 	normalize: function() {
-		var inverted = 1.0 / this.length();
+		var inverted = 1.0 / this.length;
 		
 		this.x *= inverted;
 		this.y *= inverted;
 		
 		return this;
+	},
+	
+	get normalized() {
+		return new glacier.Vector2(this).normalize();
 	},
 	
 	rotate: function(radians) {
@@ -2859,7 +2912,7 @@ glacier.Vector2.prototype = {
 			this.x -= value;
 			this.y -= value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector2', 'subtract', 'Vector2');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector2', 'subtract', 'Vector2');
 		}
 		
 		return this;
@@ -2867,10 +2920,6 @@ glacier.Vector2.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ')');
-	},
-	
-	get array() {
-		return new Float32Array([ this.x, this.y ]);
 	}
 };
 
@@ -2895,15 +2944,19 @@ glacier.Vector3.prototype = {
 			this.y += value;
 			this.z += value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector3', 'add', 'Vector3');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector3', 'add', 'Vector3');
 		}
 		
 		return this;
 	},
 	
 	angle: function(vec3) {
-		var angle = Math.acos(this.dotProduct(vec3) / (this.length() * vec3.length()));
+		var angle = Math.acos(this.dot(vec3) / (this.length * vec3.length));
 		return (isNaN(angle) ? 0.0 : angle);
+	},
+	
+	get array() {
+		return new Float32Array([ this.x, this.y, this.z ]);
 	},
 	
 	assign: function(xOrVec3, y, z) {
@@ -2914,7 +2967,7 @@ glacier.Vector3.prototype = {
 			
 			[ x, y, z ].forEach(function(arg, index) {
 				if(typeof arg != 'number') {
-					throw new glacier.exception.InvalidParameter(args[index], typeof arg, 'number', 'assign', 'Vector3');
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector3');
 				}
 			});
 			
@@ -2926,7 +2979,7 @@ glacier.Vector3.prototype = {
 		return this;
 	},
 	
-	crossProduct: function(vec3) {
+	cross: function(vec3) {
 		return new glacier.Vector3(
 			(this.y * vec3.z) - (this.z * vec3.y),
 			(this.z * vec3.x) - (this.x * vec3.z),
@@ -2957,17 +3010,17 @@ glacier.Vector3.prototype = {
 			this.y = (this.x / value.element(1, 0)) + (this.y / value.element(1, 1)) + (this.z / value.element(1, 2)) + value.element(1, 3);
 			this.z = (this.x / value.element(2, 0)) + (this.y / value.element(2, 1)) + (this.z / value.element(2, 2)) + value.element(2, 3);
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Vector3, Matrix33 or Matrix44', 'divide', 'Vector3');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Vector3, Matrix33 or Matrix44', 'divide', 'Vector3');
 		}
 		
 		return this;
 	},
 	
-	dotProduct: function(vec3) {
+	dot: function(vec3) {
 		return ((this.x * vec3.x) + (this.y * vec3.y) + (this.z * vec3.z));
 	},
 	
-	length: function() {
+	get length() {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z));
 	},
 	
@@ -2989,20 +3042,24 @@ glacier.Vector3.prototype = {
 			this.y = (this.x * value.element(1, 0)) + (this.y * value.element(1, 1)) + (this.z * value.element(1, 2)) + value.element(1, 3);
 			this.z = (this.x * value.element(2, 0)) + (this.y * value.element(2, 1)) + (this.z * value.element(2, 2)) + value.element(2, 3);
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number, Vector3, Matrix33 or Matrix44', 'multiply', 'Vector3');
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Vector3, Matrix33 or Matrix44', 'multiply', 'Vector3');
 		}
 		
 		return this;
 	},
 	
 	normalize: function() {
-		var inverted = 1.0 / this.length();
+		var inverted = 1.0 / this.length;
 		
 		this.x *= inverted;
 		this.y *= inverted;
 		this.z *= inverted;
 		
 		return this;
+	},
+	
+	get normalized() {
+		return new glacier.Vector3(this).normalize();
 	},
 	
 	rotateX: function(radians) {
@@ -3054,7 +3111,7 @@ glacier.Vector3.prototype = {
 			this.y -= value;
 			this.z -= value;
 		} else {
-			throw new glacier.exception.InvalidParameter('value', typeof value, 'number or Vector3', 'subtract', 'Vector3');
+			throw new glacier.exception.InvalidParameter('value', value, 'number or Vector3', 'subtract', 'Vector3');
 		}
 		
 		return this;
@@ -3062,10 +3119,6 @@ glacier.Vector3.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
-	},
-	
-	get array() {
-		return new Float32Array([ this.x, this.y, this.z ]);
 	}
 };
 
@@ -3084,12 +3137,14 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		texture:		[ null, 'string' ],
 		nightTexture:	[ null, 'string' ],
 		normalMap:		[ null, 'string' ],
+		mouseControl:	{ boolean: true }
 	}, 'GlobeScene');
 	
 	var rotation = 0.0;
 	
 	Object.defineProperties(this, {
 		base: { get: function() { return this.layers[0]; } },
+		data: { value: {} },
 		layers: { value: new glacier.TypedArray('Sphere', glacier.Sphere) },
 		
 		obliquity: {
@@ -3125,12 +3180,16 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	// Initialize camera
 	this.camera.clipNear = 0.01;
 	this.camera.clipFar = 100.0;
-	this.camera.bindMouse(canvas);
 	this.context.projection = this.camera.matrix;
+	
+	// Enable mouse controlling as required
+	if(options.mouseControl) {
+		this.camera.bindMouse(canvas);
+	}
 	
 	// Add draw callback
 	this.runCallbacks.push(function() {
-		var gl = this.context.gl;
+		var gl = this.context.gl, d;
 		
 		gl.enable(gl.DEPTH_TEST);
 		gl.depthFunc(gl.LEQUAL);
@@ -3138,20 +3197,84 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		
+		this.context.clear();
+		
 		this.base.matrix = new glacier.Matrix44();
 		this.base.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
 		this.base.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
 		this.base.draw();
+		
+		for(d in this.data) {
+			if(this.data[d] instanceof glacier.Drawable) {
+				this.data[d].matrix.assign(this.base.matrix);
+				this.data[d].draw();
+			}
+		}
 	});
 };
 
 // glacier.GlobeScene extends glacier.Scene
 glacier.extend(glacier.GlobeScene, glacier.Scene, {
-	addData: function(geoJsonUrl) {
+	addData: function(geoJsonURL, color) {
+		var self = this, modified = [];
+		
+		if(typeof geoJsonURL == 'string') {
+			glacier.load(geoJsonURL, function(data) {
+				function addGeometry(object) {
+					if(object instanceof glacier.geoJSON.Point) {
+						if(!(self.data.points instanceof glacier.PointCollection)) {
+							self.data.points = new glacier.PointCollection();
+						}
+						
+						self.data.points.addPoint(
+							self.latLngToWorld(object.lat, object.lng, object.alt),
+							(color instanceof glacier.Color ? color : glacier.color.WHITE)
+						);
+						
+						if(modified.indexOf('points') == -1) {
+							modified.push('points');
+						}
+					} else if(object instanceof glacier.geoJSON.MultiPoint) {
+						object.points.forEach(function(point) {
+							addGeometry(point);
+						});
+					} else if(object instanceof glacier.geoJSON.Feature) {
+						addGeometry(object.geometry);
+					} else if(object instanceof Array) {
+						object.forEach(function(element) {
+							addGeometry(element);
+						});
+					}
+				}
+				
+				if((data = glacier.geoJSON.parse(data))) {
+					addGeometry(data);
+					
+					modified.forEach(function(collection) {
+						if(self.data[collection] instanceof glacier.Drawable) {
+							self.data[collection].init(self.context);
+						}
+					});
+				}
+			});
+		} else {
+			throw new glacier.exception.InvalidParameter('geoJsonURL', geoJsonURL, 'string', 'addData', 'GlobeScene');
+		}
+	},
+	latLngToWorld: function(lat, lng, alt) {
+		var theta = glacier.degToRad(lng),
+			phi = glacier.degToRad(lat);
+		
+		// TODO: Implement alt (altitude)
+		return new glacier.Vector3(
+			-this.base.radius * Math.cos(phi) * Math.cos(theta),
+			 this.base.radius * Math.sin(phi),
+			 this.base.radius * Math.cos(phi) * Math.sin(theta)
+		);
 	}
 });
 
-/*
+/* Index Limits
 6 * 10922 = 65532
 104^2 * 6 = 64896
 (90*0.8)*(180*0.8)*6=62208
