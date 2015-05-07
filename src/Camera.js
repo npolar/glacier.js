@@ -164,22 +164,20 @@ glacier.Camera.prototype = {
 	update: function() {
 		var z, x, y = new glacier.Vector3(0, 1, 0);
 		
-		if((z = new glacier.Vector3(this.position).subtract(this.target)).length()) {
+		if((z = new glacier.Vector3(this.position).subtract(this.target)).length) {
 			z.normalize();
 		}
 		
-		if((x = y.crossProduct(z)).length()) {
+		if((x = y.cross(z)).length) {
 			x.normalize();
 		}
 		
-		if((y = z.crossProduct(x)).length()) {
+		if((y = z.cross(x)).length) {
 			y.normalize();
 		}
 		
 		this.matrix.assign(new glacier.Matrix44());
 		this.matrix.perspective(this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
-		//this.matrix.ortho(-1.0, 1.0, -1.0, 1.0, 0.1, 100.0);
-		
 		this.matrix.assign(new glacier.Matrix44([
 			x.x, y.x, z.x, 0.0,
 			x.y, y.y, z.y, 0.0,
