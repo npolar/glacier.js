@@ -22,6 +22,10 @@ glacier.Vector2.prototype = {
 		return this;
 	},
 	
+	get array() {
+		return new Float32Array([ this.x, this.y ]);
+	},
+	
 	assign: function(xOrVec2, y) {
 		if(xOrVec2 instanceof glacier.Vector2) {
 			return this.assign(xOrVec2.x, xOrVec2.y);
@@ -60,11 +64,11 @@ glacier.Vector2.prototype = {
 		return this;
 	},
 	
-	dotProduct: function(vec2) {
+	dot: function(vec2) {
 		return ((this.x * vec2.x) + (this.y * vec2.y));
 	},
 	
-	length: function() {
+	get length() {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y));
 	},
 	
@@ -83,12 +87,16 @@ glacier.Vector2.prototype = {
 	},
 	
 	normalize: function() {
-		var inverted = 1.0 / this.length();
+		var inverted = 1.0 / this.length;
 		
 		this.x *= inverted;
 		this.y *= inverted;
 		
 		return this;
+	},
+	
+	get normalized() {
+		return new glacier.Vector2(this).normalize();
 	},
 	
 	rotate: function(radians) {
@@ -120,9 +128,5 @@ glacier.Vector2.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ')');
-	},
-	
-	get array() {
-		return new Float32Array([ this.x, this.y ]);
 	}
 };

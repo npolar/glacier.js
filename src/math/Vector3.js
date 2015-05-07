@@ -26,8 +26,12 @@ glacier.Vector3.prototype = {
 	},
 	
 	angle: function(vec3) {
-		var angle = Math.acos(this.dotProduct(vec3) / (this.length() * vec3.length()));
+		var angle = Math.acos(this.dot(vec3) / (this.length * vec3.length));
 		return (isNaN(angle) ? 0.0 : angle);
+	},
+	
+	get array() {
+		return new Float32Array([ this.x, this.y, this.z ]);
 	},
 	
 	assign: function(xOrVec3, y, z) {
@@ -50,7 +54,7 @@ glacier.Vector3.prototype = {
 		return this;
 	},
 	
-	crossProduct: function(vec3) {
+	cross: function(vec3) {
 		return new glacier.Vector3(
 			(this.y * vec3.z) - (this.z * vec3.y),
 			(this.z * vec3.x) - (this.x * vec3.z),
@@ -87,11 +91,11 @@ glacier.Vector3.prototype = {
 		return this;
 	},
 	
-	dotProduct: function(vec3) {
+	dot: function(vec3) {
 		return ((this.x * vec3.x) + (this.y * vec3.y) + (this.z * vec3.z));
 	},
 	
-	length: function() {
+	get length() {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z));
 	},
 	
@@ -120,13 +124,17 @@ glacier.Vector3.prototype = {
 	},
 	
 	normalize: function() {
-		var inverted = 1.0 / this.length();
+		var inverted = 1.0 / this.length;
 		
 		this.x *= inverted;
 		this.y *= inverted;
 		this.z *= inverted;
 		
 		return this;
+	},
+	
+	get normalized() {
+		return new glacier.Vector3(this).normalize();
 	},
 	
 	rotateX: function(radians) {
@@ -186,9 +194,5 @@ glacier.Vector3.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
-	},
-	
-	get array() {
-		return new Float32Array([ this.x, this.y, this.z ]);
 	}
 };
