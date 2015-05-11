@@ -17,7 +17,9 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 				set: function(value) {
 					if(typeof value == 'number' && value > 0.0) {
 						arg = value;
-						this.update();
+						
+						this.projection.assignIdentity();
+						this.projection.perspective(this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
 					} else {
 						throw new glacier.exception.InvalidAssignment(args[index], value, 'positive number', 'Camera');
 					}
@@ -26,9 +28,10 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 		}
 	}, this);
 	
-	// Declare typed members matrix, position and target
+	// Declare typed members matrix, position, projection and target
 	glacier.addTypedProperty(this, 'matrix', new glacier.Matrix44(), glacier.Matrix44);
 	glacier.addTypedProperty(this, 'position', new glacier.Vector3(0, 1, 1), glacier.Vector3);
+	glacier.addTypedProperty(this, 'projection', new glacier.Matrix44(), glacier.Matrix44);
 	glacier.addTypedProperty(this, 'target', new glacier.Vector3(0, 0, 0), glacier.Vector3);
 	
 	this.update();
@@ -176,13 +179,11 @@ glacier.Camera.prototype = {
 			y.normalize();
 		}
 		
-		this.matrix.assign(new glacier.Matrix44());
-		this.matrix.perspective(this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
-		this.matrix.assign(new glacier.Matrix44([
+		this.matrix.assign([
 			x.x, y.x, z.x, 0.0,
 			x.y, y.y, z.y, 0.0,
 			x.z, y.z, z.z, 0.0,
 			0.0, 0.0, 0.0, 1.0
-		]).multiply(this.matrix)).translate(-this.position.x, -this.position.y, -this.position.z);
+		]).translate(-this.position.x, -this.position.y, -this.position.z);
 	}
 };
