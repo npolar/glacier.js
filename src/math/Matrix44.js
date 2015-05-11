@@ -42,6 +42,16 @@ glacier.Matrix44.prototype = {
 		return this;
 	},
 	
+	assignIdentity: function() {
+		for(var i = 0; i < 16; ++i) {
+			this.array[i] = (i % 5 ? 0.0 : 1.0);
+		}
+	},
+	
+	get copy() {
+		return new glacier.Matrix44(this);
+	},
+	
 	get determinant() {
 		var a0 = this.array[ 0] * this.array[ 5] - this.array[ 1] * this.array[ 4];
 		var a1 = this.array[ 0] * this.array[ 6] - this.array[ 2] * this.array[ 4];
@@ -96,7 +106,7 @@ glacier.Matrix44.prototype = {
 	},
 	
 	get inverse() {
-		var temp = new glacier.Matrix44(this);
+		var temp = this.copy;
 		
 		if(!temp.invert()) {
 			console.warn('Inverse matrix does not exist: ' + temp.toString());
@@ -311,6 +321,10 @@ glacier.Matrix44.prototype = {
 		return this;
 	},
 	
+	get translation() {
+		return new glacier.Vector3(this.array[12], this.array[13], this.array[14]);
+	},
+	
 	transpose: function() {
 		var temp;
 		
@@ -342,7 +356,6 @@ glacier.Matrix44.prototype = {
 	},
 	
 	get transposed() {
-		var temp = new glacier.Matrix44(this);
-		return temp.transpose();
+		return this.copy.transpose();
 	}
 };

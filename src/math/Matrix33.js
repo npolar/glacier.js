@@ -37,6 +37,16 @@ glacier.Matrix33.prototype = {
 		return this;
 	},
 	
+	assignIdentity: function() {
+		for(var i = 0; i < 9; ++i) {
+			this.array[i] = (i % 4 ? 0.0 : 1.0);
+		}
+	},
+	
+	get copy() {
+		return new glacier.Matrix33(this);
+	},
+	
 	get determinant() {
 		return (this.array[0] * (this.array[4] * this.array[8] - this.array[5] * this.array[7]) -
 				this.array[1] * (this.array[3] * this.array[8] - this.array[5] * this.array[6]) +
@@ -56,7 +66,7 @@ glacier.Matrix33.prototype = {
 	},
 	
 	get inverse() {
-		var temp = new glacier.Matrix33(this);
+		var temp = this.copy;
 		
 		if(!temp.invert()) {
 			console.warn('Inverse matrix does not exist: ' + temp.toString());
@@ -144,7 +154,6 @@ glacier.Matrix33.prototype = {
 	},
 	
 	get transposed() {
-		var temp = new glacier.Matrix33(this);
-		return temp.transpose();
+		return this.copy.transpose();
 	}
 };
