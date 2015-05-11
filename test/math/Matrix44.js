@@ -43,6 +43,17 @@ describe('Matrix44', function() {
 		});
 	});
 	
+	describe('array', function() {
+		it('', function() {
+			var arr44 = [ 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4 ];
+			var mat44 = new glacier.Matrix44(arr44);
+			var arr = mat44.array;
+			
+			assert.equal(true, (arr instanceof Float32Array));
+			assert.equal(true, glacier.compare(arr44, arr));
+		});
+	});
+	
 	describe('assign', function() {
 		it('array', function() {
 			var arr = [ 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4 ];
