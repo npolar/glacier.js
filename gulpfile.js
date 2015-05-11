@@ -32,7 +32,7 @@ gulp.task('test-js', ['minify-js'], function() {
 	return gulp.src(['!./test/test.js', './test/glacier.js', './test/*.js', './test/**/*.js'])
 	.pipe(concat('test.js'))
 	.pipe(gulp.dest('./test/'))
-	.pipe(mocha({ reporter: 'spec' }));
+	.pipe(mocha({ reporter: 'min' }));
 });
 
 gulp.task('test', [
