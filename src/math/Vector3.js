@@ -1,11 +1,9 @@
-glacier.Vector3 = function Vector3(xScalarOrVec3, y, z) {
+glacier.Vector3 = function Vector3(x, y, z) {
 	glacier.addTypedProperty(this, 'x', 0.0);
 	glacier.addTypedProperty(this, 'y', 0.0);
 	glacier.addTypedProperty(this, 'z', 0.0);
 	
-	if(xScalarOrVec3 !== undefined && xScalarOrVec3 !== null) {
-		this.assign(xScalarOrVec3, y, z);
-	}
+	this.assign(x, y, z);
 };
 
 glacier.Vector3.prototype = {
@@ -38,26 +36,34 @@ glacier.Vector3.prototype = {
 		return new Float32Array([ this.x, this.y, this.z ]);
 	},
 	
-	assign: function(xScalarOrVec3, y, z) {
-		if(xScalarOrVec3 instanceof glacier.Vector3) {
-			return this.assign(xScalarOrVec3.x, xScalarOrVec3.y, xScalarOrVec3.z);
-		} else if(typeof xScalarOrVec3 == 'number' && y === undefined) {
-			return this.assign(xScalarOrVec3, xScalarOrVec3, xScalarOrVec3);
-		} else {
-			var args = [ 'x', 'y', 'z' ], x = xScalarOrVec3;
-			
-			[ x, y, z ].forEach(function(arg, index) {
-				if(isNaN(arg)) {
-					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector3');
-				}
-			});
-			
-			this.x = x;
-			this.y = y;
-			this.z = z;
+	assign: function(x, y, z) {
+		if(x !== null && x !== undefined) {
+			if(x instanceof glacier.Vector3) {
+				this.assign(x.x, x.y, x.z);
+			} else if(x instanceof glacier.Vector2) {
+				this.assign(x.x, x.y, (typeof y == 'number' ? y : 0.0));
+			} else if(typeof x == 'number' && y === undefined) {
+				this.assign(x, x, x, x);
+			} else {
+				var args = [ 'x', 'y', 'z' ];
+				
+				[ x, y, z ].forEach(function(arg, index) {
+					if(isNaN(arg)) {
+						throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector3');
+					}
+				});
+				
+				this.x = x;
+				this.y = y;
+				this.z = z;
+			}
 		}
 		
 		return this;
+	},
+	
+	get copy() {
+		return new glacier.Vector3(this);
 	},
 	
 	cross: function(vec3) {
@@ -160,7 +166,7 @@ glacier.Vector3.prototype = {
 	},
 	
 	get normalized() {
-		return new glacier.Vector3(this).normalize();
+		return this.copy.normalize();
 	},
 	
 	rotateX: function(radians) {
@@ -232,5 +238,17 @@ glacier.Vector3.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
+	},
+	
+	get xy() {
+		return new glacier.Vector2(this.x, this.y);
+	},
+	
+	get xz() {
+		return new glacier.Vector2(this.x, this.z);
+	},
+	
+	get yz() {
+		return new glacier.Vector2(this.y, this.z);
 	}
 };

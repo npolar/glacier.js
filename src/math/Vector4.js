@@ -1,12 +1,10 @@
-glacier.Vector4 = function Vector4(xScalarOrVec4, y, z, w) {
+glacier.Vector4 = function Vector4(x, y, z, w) {
 	glacier.addTypedProperty(this, 'x', 0.0);
 	glacier.addTypedProperty(this, 'y', 0.0);
 	glacier.addTypedProperty(this, 'z', 0.0);
 	glacier.addTypedProperty(this, 'w', 0.0);
 	
-	if(xScalarOrVec4 !== undefined && xScalarOrVec4 !== null) {
-		this.assign(xScalarOrVec4, y, z, w);
-	}
+	this.assign(x, y, z, w);
 };
 
 glacier.Vector4.prototype = {
@@ -32,31 +30,39 @@ glacier.Vector4.prototype = {
 		return new Float32Array([ this.x, this.y, this.z, this.w ]);
 	},
 	
-	assign: function(xScalarOrVec4, y, z, w) {
-		if(xScalarOrVec4 instanceof glacier.Vector3) {
-			return this.assign(xScalarOrVec4.x, xScalarOrVec4.y, xScalarOrVec4.z, 1.0);
-		} else if(xScalarOrVec4 instanceof glacier.Vector4) {
-			return this.assign(xScalarOrVec4.x, xScalarOrVec4.y, xScalarOrVec4.z, xScalarOrVec4.w);
-		} else if(typeof xScalarOrVec4 == 'number' && y === undefined) {
-			return this.assign(xScalarOrVec4, xScalarOrVec4, xScalarOrVec4, xScalarOrVec4);
-		} else {
-			var args = [ 'x', 'y', 'z', 'w' ], x = xScalarOrVec4;
-			
-			[ x, y, z, w ].forEach(function(arg, index) {
-				if(isNaN(arg)) {
-					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector4');
-				}
-			});
-			
-			this.x = x;
-			this.y = y;
-			this.z = z;
-			this.w = w;
+	assign: function(x, y, z, w) {
+		if(x !== null && x !== undefined) {
+			if(x instanceof glacier.Vector4) {
+				this.assign(x.x, x.y, x.z, x.w);
+			} else if(x instanceof glacier.Vector3) {
+				this.assign(x.x, x.y, x.z, (typeof y == 'number' ? y : 1.0));
+			} else if(x instanceof glacier.Vector2) {
+				this.assign(x.x, x.y, (typeof y == 'number' ? y : 0.0), (typeof z == 'number' ? z : 1.0));
+			} else if(typeof x == 'number' && y === undefined) {
+				this.assign(x, x, x, x);
+			} else {
+				var args = [ 'x', 'y', 'z', 'w' ];
+				
+				[ x, y, z, w ].forEach(function(arg, index) {
+					if(isNaN(arg)) {
+						throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector4');
+					}
+				});
+				
+				this.x = x;
+				this.y = y;
+				this.z = z;
+				this.w = w;
+			}
 		}
 		
 		return this;
 	},
 	
+	get copy() {
+		return new glacier.Vector4(this);
+	},
+
 	divide: function(value) {
 		if(value instanceof glacier.Vector4) {
 			this.x /= value.x;
@@ -131,7 +137,7 @@ glacier.Vector4.prototype = {
 	},
 	
 	get normalized() {
-		return new glacier.Vector4(this).normalize();
+		return this.copy.normalize();
 	},
 	
 	subtract: function(value) {
@@ -154,5 +160,45 @@ glacier.Vector4.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ', ' + this.w + ')');
+	},
+	
+	get xy() {
+		return new glacier.Vector2(this.x, this.y);
+	},
+	
+	get xyz() {
+		return new glacier.Vector3(this.x, this.y, this.z);
+	},
+	
+	get xyw() {
+		return new glacier.Vector3(this.x, this.y, this.w);
+	},
+	
+	get xz() {
+		return new glacier.Vector2(this.x, this.z);
+	},
+	
+	get xzw() {
+		return new glacier.Vector3(this.x, this.z, this.w);
+	},
+	
+	get xw() {
+		return new glacier.Vector2(this.x, this.w);
+	},
+	
+	get yz() {
+		return new glacier.Vector2(this.y, this.z);
+	},
+	
+	get yzw() {
+		return new glacier.Vector3(this.y, this.z, this.w);
+	},
+	
+	get yw() {
+		return new glacier.Vector2(this.y, this.w);
+	},
+	
+	get zw() {
+		return new glacier.Vector2(this.z, this.w);
 	}
 };

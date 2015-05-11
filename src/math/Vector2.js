@@ -46,6 +46,10 @@ glacier.Vector2.prototype = {
 		
 		return this;
 	},
+	
+	get copy() {
+		return new glacier.Vector2(this);
+	},
 
 	distance: function(vec2) {
 		if(vec2 instanceof glacier.Vector2) {
@@ -106,7 +110,7 @@ glacier.Vector2.prototype = {
 	},
 	
 	get normalized() {
-		return new glacier.Vector2(this).normalize();
+		return this.copy.normalize();
 	},
 	
 	rotate: function(radians) {
