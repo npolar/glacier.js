@@ -25,7 +25,7 @@ glacier.Context = function Context(canvas, options) {
 		throw new glacier.exception.ContextError('WebGL is not supported', '(constructor)', 'Context');
 	}
 	
-	// Define canvas, gl, height, projection and width members
+	// Define background, canvas, gl, height, projection, shaders and width members
 	Object.defineProperties(this, {
 		background: {
 			get: function() {
@@ -195,19 +195,19 @@ glacier.Context.prototype = {
 	},
 	worldToScreen: function(point, modelView) {
 		if(point instanceof glacier.Vector3) {
-			var matrix, vec4;
+			var mvp, vec4;
 			
 			if(!modelView || (modelView instanceof glacier.Matrix44)) {
-				matrix = new glacier.Matrix44(modelView || null);
+				mvp = new glacier.Matrix44(modelView || null);
 			} else {
 				throw new glacier.exception.InvalidParameter('modelView', modelView, 'Matrix44 or null', 'worldToScreen', 'Context');
 			}
 			
 			if(this.projection instanceof glacier.Matrix44) {
-				matrix.multiply(this.projection);
+				mvp.multiply(this.projection);
 			}
 			
-			vec4 = new glacier.Vector4(point).multiply(matrix);
+			vec4 = new glacier.Vector4(point).multiply(mvp);
 			
 			if(vec4.w > 0.0) {
 				vec4.x = (vec4.x /= vec4.w) * 0.5 + 0.5;
