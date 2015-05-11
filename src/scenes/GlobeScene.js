@@ -56,7 +56,7 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	// Initialize camera
 	this.camera.clipNear = 0.01;
 	this.camera.clipFar = 100.0;
-	this.context.projection = this.camera.matrix;
+	this.context.projection = this.camera.projection;
 	
 	// Enable mouse controlling as required
 	if(options.mouseControl) {
@@ -75,9 +75,10 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		
 		this.context.clear();
 		
-		this.base.matrix = new glacier.Matrix44();
+		this.base.matrix.assignIdentity();
 		this.base.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
 		this.base.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
+		this.base.matrix.multiply(this.camera.matrix); // View * Model
 		this.base.draw();
 		
 		for(d in this.data) {
