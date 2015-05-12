@@ -169,7 +169,7 @@ body
 
 .info
 {
-	background: rgba(128, 64, 64, 0.4);
+	background: rgba(128, 64, 64, 0.8);
 	border-radius: 5px;
 	color: #fff;
 	font-family: monospace;
@@ -182,7 +182,7 @@ body
 {
 	border-left: 10px solid transparent;
 	border-right: 10px solid transparent;
-	border-top: 10px solid rgba(128, 64, 64, 0.4);
+	border-top: 10px solid rgba(128, 64, 64, 0.8);
 	bottom: -10px;
 	content: '';
 	height: 0;
