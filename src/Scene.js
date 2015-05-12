@@ -33,12 +33,14 @@ glacier.Scene = function Scene(canvas, options) {
 
 glacier.Scene.prototype = {
 	fps: 0.0,
+	
 	end: function() {
 		if(this.running) {
 			this.fps = 0.0;
 			this.running = false;
 		}
 	},
+	
 	run: function() {
 		var self = this, previous;
 		

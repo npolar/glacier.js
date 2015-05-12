@@ -70,6 +70,10 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		gl.enable(gl.DEPTH_TEST);
 		gl.depthFunc(gl.LEQUAL);
 		
+		gl.enable(gl.CULL_FACE);
+		gl.cullFace(gl.BACK);
+		gl.frontFace(gl.CW);
+		
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		
@@ -83,7 +87,8 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		
 		for(d in this.data) {
 			if(this.data[d] instanceof glacier.Drawable) {
-				this.data[d].matrix.assign(this.base.matrix);
+				this.data[d].matrix.assignIdentity();
+				this.data[d].matrix.multiply(this.camera.matrix); // View * Model
 				this.data[d].draw();
 			}
 		}
@@ -138,6 +143,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			throw new glacier.exception.InvalidParameter('geoJsonURL', geoJsonURL, 'string', 'addData', 'GlobeScene');
 		}
 	},
+	
 	latLngToWorld: function(lat, lng, alt) {
 		var theta = glacier.degToRad(lng),
 			phi = glacier.degToRad(lat);
@@ -148,6 +154,20 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			 this.base.radius * Math.sin(phi),
 			 this.base.radius * Math.cos(phi) * Math.sin(theta)
 		);
+	},
+	
+	rayCast: function(x, y) {
+		var ndc = new glacier.Vector3(
+			2.0 * (x / this.context.width) - 1.0,
+			1.0 - 2.0 * (y / this.context.height),
+			-1.0
+		), eye, pos, ray, intersection;
+		
+		eye = this.camera.position.copy;
+		pos = new glacier.Vector4(ndc).multiply(this.camera.projection.inverse).multiply(this.camera.matrix.inverse);
+		ray = new glacier.Ray(eye, pos.divide(pos.w).xyz);
+		
+		return ray.intersects(this.base, this.camera.matrix);
 	}
 });
 
