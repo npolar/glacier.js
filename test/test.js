@@ -123,6 +123,17 @@ describe('Matrix33', function() {
 		});
 	});
 	
+	describe('array', function() {
+		it('', function() {
+			var arr33 = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
+			var mat33 = new glacier.Matrix33(arr33);
+			var arr = mat33.array;
+			
+			assert.equal(true, (arr instanceof Float32Array));
+			assert.equal(true, glacier.compare(arr33, arr));
+		});
+	});
+	
 	describe('assign', function() {
 		it('array', function() {
 			var arr = [ 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3 ];
@@ -314,6 +325,17 @@ describe('Matrix44', function() {
 		});
 	});
 	
+	describe('array', function() {
+		it('', function() {
+			var arr44 = [ 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4 ];
+			var mat44 = new glacier.Matrix44(arr44);
+			var arr = mat44.array;
+			
+			assert.equal(true, (arr instanceof Float32Array));
+			assert.equal(true, glacier.compare(arr44, arr));
+		});
+	});
+	
 	describe('assign', function() {
 		it('array', function() {
 			var arr = [ 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4 ];
@@ -493,7 +515,7 @@ describe('Vector2', function() {
 	
 	describe('(constructor)', function() {
 		it('default', function() {
-			var vec2 = new glacier.Vector2();
+			var vec2 = new glacier.Vector3();
 			
 			assert.equal(true, glacier.compare(0.0, vec2.x));
 			assert.equal(true, glacier.compare(0.0, vec2.y));
@@ -507,8 +529,16 @@ describe('Vector2', function() {
 			assert.equal(true, glacier.compare(y, vec2.y));
 		});
 		
+		it('number (scalar)', function() {
+			var xy = 123.456;
+			var vec2 = new glacier.Vector2(xy);
+			
+			assert.equal(true, glacier.compare(xy, vec2.x));
+			assert.equal(true, glacier.compare(xy, vec2.y));
+		});
+		
 		it('number (x), number (y)', function() {
-			var x = 1.6, y = 2.2;
+			var x = 1.1, y = 2.2;
 			var vec2 = new glacier.Vector2(x, y);
 			
 			assert.equal(true, glacier.compare(x, vec2.x));
@@ -551,23 +581,47 @@ describe('Vector2', function() {
 	
 	describe('assign', function() {
 		it('Vector2', function() {
-			var x1 = 1.1, y1 = 1.2, x2 = 2.1, y2 = 2.2;
-			var vec2 = new glacier.Vector2(x1, y1);
+			var x = 1.0, y = 2.0;
+			var vec2 = new glacier.Vector2();
 			
-			vec2.assign(new glacier.Vector2(x2, y2));
+			vec2.assign(new glacier.Vector2(x, y));
 			
-			assert.equal(true, glacier.compare(x2, vec2.x));
-			assert.equal(true, glacier.compare(y2, vec2.y));
+			assert.equal(true, glacier.compare(x, vec2.x));
+			assert.equal(true, glacier.compare(y, vec2.y));
+		});
+		
+		it('number (scalar)', function() {
+			var xy = 123.456;
+			var vec2 = new glacier.Vector2();
+			
+			vec2.assign(xy);
+			
+			assert.equal(true, glacier.compare(xy, vec2.x));
+			assert.equal(true, glacier.compare(xy, vec2.y));
 		});
 		
 		it('number (x), number (y)', function() {
-			var x1 = 1.5, y1 = 2.4, x2 = 3.7, y2 = 4.4;
-			var vec2 = new glacier.Vector2(x1, x2);
+			var x = 1.1, y = 2.2;
+			var vec2 = new glacier.Vector2();
 			
-			vec2.assign(x2, y2);
+			vec2.assign(x, y);
 			
-			assert.equal(true, glacier.compare(x2, vec2.x));
-			assert.equal(true, glacier.compare(y2, vec2.y));
+			assert.equal(true, glacier.compare(x, vec2.x));
+			assert.equal(true, glacier.compare(y, vec2.y));
+		});
+	});
+	
+	describe('copy', function() {
+		it('', function() {
+			var x = 1.1, y = 2.2, add = 3.3;
+			var vec2 = new glacier.Vector2(x, y);
+			var copy = vec2.copy.add(add);
+			
+			assert.equal(true, glacier.compare(x + add, copy.x));
+			assert.equal(true, glacier.compare(y + add, copy.y));
+			
+			assert.equal(true, glacier.compare(x, vec2.x));
+			assert.equal(true, glacier.compare(y, vec2.y));
 		});
 	});
 	
@@ -725,8 +779,26 @@ describe('Vector3', function() {
 			assert.equal(true, glacier.compare(z, vec3.z));
 		});
 		
+		it('Vector2, number (z)', function() {
+			var x = 1.0, y = 2.0, z = 3.0;
+			var vec3 = new glacier.Vector3(new glacier.Vector2(x, y), z);
+			
+			assert.equal(true, glacier.compare(x, vec3.x));
+			assert.equal(true, glacier.compare(y, vec3.y));
+			assert.equal(true, glacier.compare(z, vec3.z));
+		});
+		
+		it('number (scalar)', function() {
+			var xyz = 123.456;
+			var vec3 = new glacier.Vector3(xyz);
+			
+			assert.equal(true, glacier.compare(xyz, vec3.x));
+			assert.equal(true, glacier.compare(xyz, vec3.y));
+			assert.equal(true, glacier.compare(xyz, vec3.z));
+		});
+		
 		it('number (x), number (y), number (z)', function() {
-			var x = 1.5, y = 2.2, z = 3.9;
+			var x = 1.1, y = 2.2, z = 3.3;
 			var vec3 = new glacier.Vector3(x, y, z);
 			
 			assert.equal(true, glacier.compare(x, vec3.x));
@@ -773,25 +845,63 @@ describe('Vector3', function() {
 	
 	describe('assign', function() {
 		it('Vector3', function() {
-			var x1 = 1.1, y1 = 1.2, z1 = 1.3, x2 = 2.1, y2 = 2.2, z2 = 2.3;
-			var vec3 = new glacier.Vector3(x1, y1, z1);
+			var x = 1.0, y = 2.0, z = 3.0;
+			var vec3 = new glacier.Vector3();
 			
-			vec3.assign(new glacier.Vector3(x2, y2, z2));
+			vec3.assign(new glacier.Vector3(x, y, z));
 			
-			assert.equal(true, glacier.compare(x2, vec3.x));
-			assert.equal(true, glacier.compare(y2, vec3.y));
-			assert.equal(true, glacier.compare(z2, vec3.z));
+			assert.equal(true, glacier.compare(x, vec3.x));
+			assert.equal(true, glacier.compare(y, vec3.y));
+			assert.equal(true, glacier.compare(z, vec3.z));
+		});
+		
+		it('Vector2, number (z)', function() {
+			var x = 1.0, y = 2.0, z = 3.0;
+			var vec3 = new glacier.Vector3();
+			
+			vec3.assign(new glacier.Vector2(x, y), z);
+			
+			assert.equal(true, glacier.compare(x, vec3.x));
+			assert.equal(true, glacier.compare(y, vec3.y));
+			assert.equal(true, glacier.compare(z, vec3.z));
+		});
+		
+		it('number (scalar)', function() {
+			var xyz = 123.456;
+			var vec3 = new glacier.Vector3();
+			
+			vec3.assign(xyz);
+			
+			assert.equal(true, glacier.compare(xyz, vec3.x));
+			assert.equal(true, glacier.compare(xyz, vec3.y));
+			assert.equal(true, glacier.compare(xyz, vec3.z));
 		});
 		
 		it('number (x), number (y), number (z)', function() {
-			var x1 = 1.5, y1 = 2.1, z1 = 3.7, x2 = 4.4, y2 = 5.2, z2 = 6.9;
-			var vec3 = new glacier.Vector3(x1, y1, z1);
+			var x = 1.1, y = 2.2, z = 3.3;
+			var vec3 = new glacier.Vector3();
 			
-			vec3.assign(x2, y2, z2);
+			vec3.assign(x, y, z);
 			
-			assert.equal(true, glacier.compare(x2, vec3.x));
-			assert.equal(true, glacier.compare(y2, vec3.y));
-			assert.equal(true, glacier.compare(z2, vec3.z));
+			assert.equal(true, glacier.compare(x, vec3.x));
+			assert.equal(true, glacier.compare(y, vec3.y));
+			assert.equal(true, glacier.compare(z, vec3.z));
+		});
+	});
+	
+	describe('copy', function() {
+		it('', function() {
+			var x = 1.1, y = 2.2, z = 3.3, add = 4.4;
+			var vec3 = new glacier.Vector3(x, y, z);
+			var copy = vec3.copy.add(add);
+			
+			assert.equal(true, glacier.compare(x + add, copy.x));
+			assert.equal(true, glacier.compare(y + add, copy.y));
+			assert.equal(true, glacier.compare(z + add, copy.z));
+			
+			assert.equal(true, glacier.compare(x, vec3.x));
+			assert.equal(true, glacier.compare(y, vec3.y));
+			assert.equal(true, glacier.compare(z, vec3.z));
 		});
 	});
 	

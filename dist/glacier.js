@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.1.7',
+	VERSION: '0.1.8',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -503,7 +503,9 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 				set: function(value) {
 					if(typeof value == 'number' && value > 0.0) {
 						arg = value;
-						this.update();
+						
+						this.projection.assignIdentity();
+						this.projection.perspective(this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
 					} else {
 						throw new glacier.exception.InvalidAssignment(args[index], value, 'positive number', 'Camera');
 					}
@@ -512,9 +514,10 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 		}
 	}, this);
 	
-	// Declare typed members matrix, position and target
+	// Declare typed members matrix, position, projection and target
 	glacier.addTypedProperty(this, 'matrix', new glacier.Matrix44(), glacier.Matrix44);
 	glacier.addTypedProperty(this, 'position', new glacier.Vector3(0, 1, 1), glacier.Vector3);
+	glacier.addTypedProperty(this, 'projection', new glacier.Matrix44(), glacier.Matrix44);
 	glacier.addTypedProperty(this, 'target', new glacier.Vector3(0, 0, 0), glacier.Vector3);
 	
 	this.update();
@@ -662,14 +665,12 @@ glacier.Camera.prototype = {
 			y.normalize();
 		}
 		
-		this.matrix.assign(new glacier.Matrix44());
-		this.matrix.perspective(this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
-		this.matrix.assign(new glacier.Matrix44([
+		this.matrix.assign([
 			x.x, y.x, z.x, 0.0,
 			x.y, y.y, z.y, 0.0,
 			x.z, y.z, z.z, 0.0,
 			0.0, 0.0, 0.0, 1.0
-		]).multiply(this.matrix)).translate(-this.position.x, -this.position.y, -this.position.z);
+		]).translate(-this.position.x, -this.position.y, -this.position.z);
 	}
 };
 
@@ -895,7 +896,7 @@ glacier.Context = function Context(canvas, options) {
 		throw new glacier.exception.ContextError('WebGL is not supported', '(constructor)', 'Context');
 	}
 	
-	// Define canvas, gl, height, projection and width members
+	// Define background, canvas, gl, height, projection, shaders and width members
 	Object.defineProperties(this, {
 		background: {
 			get: function() {
@@ -1065,19 +1066,19 @@ glacier.Context.prototype = {
 	},
 	worldToScreen: function(point, modelView) {
 		if(point instanceof glacier.Vector3) {
-			var matrix, vec4;
+			var mvp, vec4;
 			
 			if(!modelView || (modelView instanceof glacier.Matrix44)) {
-				matrix = new glacier.Matrix44(modelView || null);
+				mvp = new glacier.Matrix44(modelView || null);
 			} else {
 				throw new glacier.exception.InvalidParameter('modelView', modelView, 'Matrix44 or null', 'worldToScreen', 'Context');
 			}
 			
 			if(this.projection instanceof glacier.Matrix44) {
-				matrix.multiply(this.projection);
+				mvp.multiply(this.projection);
 			}
 			
-			vec4 = new glacier.Vector4(point).multiply(matrix);
+			vec4 = new glacier.Vector4(point).multiply(mvp);
 			
 			if(vec4.w > 0.0) {
 				vec4.x = (vec4.x /= vec4.w) * 0.5 + 0.5;
@@ -1280,12 +1281,14 @@ glacier.Scene = function Scene(canvas, options) {
 
 glacier.Scene.prototype = {
 	fps: 0.0,
+	
 	end: function() {
 		if(this.running) {
 			this.fps = 0.0;
 			this.running = false;
 		}
 	},
+	
 	run: function() {
 		var self = this, previous;
 		
@@ -2278,6 +2281,16 @@ glacier.Matrix33.prototype = {
 		return this;
 	},
 	
+	assignIdentity: function() {
+		for(var i = 0; i < 9; ++i) {
+			this.array[i] = (i % 4 ? 0.0 : 1.0);
+		}
+	},
+	
+	get copy() {
+		return new glacier.Matrix33(this);
+	},
+	
 	get determinant() {
 		return (this.array[0] * (this.array[4] * this.array[8] - this.array[5] * this.array[7]) -
 				this.array[1] * (this.array[3] * this.array[8] - this.array[5] * this.array[6]) +
@@ -2297,7 +2310,7 @@ glacier.Matrix33.prototype = {
 	},
 	
 	get inverse() {
-		var temp = new glacier.Matrix33(this);
+		var temp = this.copy;
 		
 		if(!temp.invert()) {
 			console.warn('Inverse matrix does not exist: ' + temp.toString());
@@ -2385,8 +2398,7 @@ glacier.Matrix33.prototype = {
 	},
 	
 	get transposed() {
-		var temp = new glacier.Matrix33(this);
-		return temp.transpose();
+		return this.copy.transpose();
 	}
 };
 
@@ -2432,6 +2444,16 @@ glacier.Matrix44.prototype = {
 		}
 		
 		return this;
+	},
+	
+	assignIdentity: function() {
+		for(var i = 0; i < 16; ++i) {
+			this.array[i] = (i % 5 ? 0.0 : 1.0);
+		}
+	},
+	
+	get copy() {
+		return new glacier.Matrix44(this);
 	},
 	
 	get determinant() {
@@ -2488,7 +2510,7 @@ glacier.Matrix44.prototype = {
 	},
 	
 	get inverse() {
-		var temp = new glacier.Matrix44(this);
+		var temp = this.copy;
 		
 		if(!temp.invert()) {
 			console.warn('Inverse matrix does not exist: ' + temp.toString());
@@ -2703,6 +2725,10 @@ glacier.Matrix44.prototype = {
 		return this;
 	},
 	
+	get translation() {
+		return new glacier.Vector3(this.array[12], this.array[13], this.array[14]);
+	},
+	
 	transpose: function() {
 		var temp;
 		
@@ -2734,23 +2760,20 @@ glacier.Matrix44.prototype = {
 	},
 	
 	get transposed() {
-		var temp = new glacier.Matrix44(this);
-		return temp.transpose();
+		return this.copy.transpose();
 	}
 };
 
 glacier.Ray = function Ray(start, direction) {
-	glacier.addTypedProperty(this, ['a', 'start'], (start instanceof glacier.Vector3 ? start : new glacier.Vector3(0.0)), glacier.Vector3);
-	glacier.addTypedProperty(this, ['b', 'direction'], (direction instanceof glacier.Vector3 ? direction : new glacier.Vector3(0.0)), glacier.Vector3);
+	glacier.addTypedProperty(this, ['a', 'start'], new glacier.Vector3(0.0), glacier.Vector3);
+	glacier.addTypedProperty(this, ['b', 'direction'], new glacier.Vector3(0.0), glacier.Vector3);
 	
-	if(start instanceof glacier.Ray) {
-		this.assign(start);
-	}
+	this.assign(start, direction);
 };
 
 glacier.Ray.prototype = {
 	get array() {
-		return new Float32Array([ this.a, this.b ]);
+		return new Float32Array([ this.a.x, this.a.y, this.a.z, this.b.x, this.b.y, this.b.z ]);
 	},
 	
 	assign: function(startOrRay, direction) {
@@ -2765,8 +2788,8 @@ glacier.Ray.prototype = {
 				}
 			});
 			
-			this.a = startOrRay;
-			this.b = direction;
+			this.a = startOrRay.copy;
+			this.b = direction.copy;
 		}
 		
 		return this;
@@ -2778,6 +2801,47 @@ glacier.Ray.prototype = {
 		} else {
 			throw new glacier.exception.InvalidParameter('ray', ray, 'Ray', 'deviation', 'Ray');
 		}
+	},
+	
+	intersects: function(geometry, viewMatrix) {
+		if(geometry instanceof glacier.Sphere) {
+			var center = new glacier.Vector3(geometry.x, geometry.y, geometry.z),
+				radius = geometry.radius;
+				
+			if(viewMatrix instanceof glacier.Matrix44) {
+				center.multiply(viewMatrix.inverse);
+			}
+			
+			return this.sphereIntersection(center, radius);
+		} else {
+			console.warn('Ray.intersects currently only supports sphere intersections');
+		}
+		
+		return null;
+	},
+	
+	sphereIntersection: function(center, radius) {
+		if(!(center instanceof glacier.Vector3)) {
+			throw new glacier.exception.InvalidParameter('center', center, 'Vector3', 'sphereIntersection', 'Ray');
+		}
+		
+		if(typeof radius != 'number') {
+			throw new glacier.exception.InvalidParameter('radius', radius, 'number', 'sphereIntersection', 'Ray');
+		}
+		
+		var o = this.a,
+			p = this.b.copy.subtract(o),
+			a = p.dot(p),
+			b = (2 * p.x * (o.x - center.x)) + (2 * p.y * (o.y - center.y)) + (2 * p.z * (o.z - center.z)),
+			c = (center.dot(center) + o.dot(o)) - (2 * center.dot(o)) - (radius * radius),
+			d = (b * b) - (4 * a * c), t;
+			
+		if(d < 0) {
+			return null;
+		}
+		
+		t = (-b - Math.sqrt((b * b) - (4 * a * c))) / (2 * a);
+		return new glacier.Vector3(o.x + (t * p.x), o.y + (t * p.y), o.z + (t * p.z));
 	},
 	
 	toString: function() {
@@ -2832,6 +2896,10 @@ glacier.Vector2.prototype = {
 		}
 		
 		return this;
+	},
+	
+	get copy() {
+		return new glacier.Vector2(this);
 	},
 
 	distance: function(vec2) {
@@ -2893,7 +2961,7 @@ glacier.Vector2.prototype = {
 	},
 	
 	get normalized() {
-		return new glacier.Vector2(this).normalize();
+		return this.copy.normalize();
 	},
 	
 	rotate: function(radians) {
@@ -2932,14 +3000,12 @@ glacier.Vector2.prototype = {
 	}
 };
 
-glacier.Vector3 = function Vector3(xScalarOrVec3, y, z) {
+glacier.Vector3 = function Vector3(x, y, z) {
 	glacier.addTypedProperty(this, 'x', 0.0);
 	glacier.addTypedProperty(this, 'y', 0.0);
 	glacier.addTypedProperty(this, 'z', 0.0);
 	
-	if(xScalarOrVec3 !== undefined && xScalarOrVec3 !== null) {
-		this.assign(xScalarOrVec3, y, z);
-	}
+	this.assign(x, y, z);
 };
 
 glacier.Vector3.prototype = {
@@ -2972,26 +3038,34 @@ glacier.Vector3.prototype = {
 		return new Float32Array([ this.x, this.y, this.z ]);
 	},
 	
-	assign: function(xScalarOrVec3, y, z) {
-		if(xScalarOrVec3 instanceof glacier.Vector3) {
-			return this.assign(xScalarOrVec3.x, xScalarOrVec3.y, xScalarOrVec3.z);
-		} else if(typeof xScalarOrVec3 == 'number' && y === undefined) {
-			return this.assign(xScalarOrVec3, xScalarOrVec3, xScalarOrVec3);
-		} else {
-			var args = [ 'x', 'y', 'z' ], x = xScalarOrVec3;
-			
-			[ x, y, z ].forEach(function(arg, index) {
-				if(isNaN(arg)) {
-					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector3');
-				}
-			});
-			
-			this.x = x;
-			this.y = y;
-			this.z = z;
+	assign: function(x, y, z) {
+		if(x !== null && x !== undefined) {
+			if(x instanceof glacier.Vector3) {
+				this.assign(x.x, x.y, x.z);
+			} else if(x instanceof glacier.Vector2) {
+				this.assign(x.x, x.y, (typeof y == 'number' ? y : 0.0));
+			} else if(typeof x == 'number' && y === undefined) {
+				this.assign(x, x, x, x);
+			} else {
+				var args = [ 'x', 'y', 'z' ];
+				
+				[ x, y, z ].forEach(function(arg, index) {
+					if(isNaN(arg)) {
+						throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector3');
+					}
+				});
+				
+				this.x = x;
+				this.y = y;
+				this.z = z;
+			}
 		}
 		
 		return this;
+	},
+	
+	get copy() {
+		return new glacier.Vector3(this);
 	},
 	
 	cross: function(vec3) {
@@ -3094,7 +3168,7 @@ glacier.Vector3.prototype = {
 	},
 	
 	get normalized() {
-		return new glacier.Vector3(this).normalize();
+		return this.copy.normalize();
 	},
 	
 	rotateX: function(radians) {
@@ -3166,18 +3240,28 @@ glacier.Vector3.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
+	},
+	
+	get xy() {
+		return new glacier.Vector2(this.x, this.y);
+	},
+	
+	get xz() {
+		return new glacier.Vector2(this.x, this.z);
+	},
+	
+	get yz() {
+		return new glacier.Vector2(this.y, this.z);
 	}
 };
 
-glacier.Vector4 = function Vector4(xScalarOrVec4, y, z, w) {
+glacier.Vector4 = function Vector4(x, y, z, w) {
 	glacier.addTypedProperty(this, 'x', 0.0);
 	glacier.addTypedProperty(this, 'y', 0.0);
 	glacier.addTypedProperty(this, 'z', 0.0);
 	glacier.addTypedProperty(this, 'w', 0.0);
 	
-	if(xScalarOrVec4 !== undefined && xScalarOrVec4 !== null) {
-		this.assign(xScalarOrVec4, y, z, w);
-	}
+	this.assign(x, y, z, w);
 };
 
 glacier.Vector4.prototype = {
@@ -3203,31 +3287,39 @@ glacier.Vector4.prototype = {
 		return new Float32Array([ this.x, this.y, this.z, this.w ]);
 	},
 	
-	assign: function(xScalarOrVec4, y, z, w) {
-		if(xScalarOrVec4 instanceof glacier.Vector3) {
-			return this.assign(xScalarOrVec4.x, xScalarOrVec4.y, xScalarOrVec4.z, 1.0);
-		} else if(xScalarOrVec4 instanceof glacier.Vector4) {
-			return this.assign(xScalarOrVec4.x, xScalarOrVec4.y, xScalarOrVec4.z, xScalarOrVec4.w);
-		} else if(typeof xScalarOrVec4 == 'number' && y === undefined) {
-			return this.assign(xScalarOrVec4, xScalarOrVec4, xScalarOrVec4, xScalarOrVec4);
-		} else {
-			var args = [ 'x', 'y', 'z', 'w' ], x = xScalarOrVec4;
-			
-			[ x, y, z, w ].forEach(function(arg, index) {
-				if(isNaN(arg)) {
-					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector4');
-				}
-			});
-			
-			this.x = x;
-			this.y = y;
-			this.z = z;
-			this.w = w;
+	assign: function(x, y, z, w) {
+		if(x !== null && x !== undefined) {
+			if(x instanceof glacier.Vector4) {
+				this.assign(x.x, x.y, x.z, x.w);
+			} else if(x instanceof glacier.Vector3) {
+				this.assign(x.x, x.y, x.z, (typeof y == 'number' ? y : 1.0));
+			} else if(x instanceof glacier.Vector2) {
+				this.assign(x.x, x.y, (typeof y == 'number' ? y : 0.0), (typeof z == 'number' ? z : 1.0));
+			} else if(typeof x == 'number' && y === undefined) {
+				this.assign(x, x, x, x);
+			} else {
+				var args = [ 'x', 'y', 'z', 'w' ];
+				
+				[ x, y, z, w ].forEach(function(arg, index) {
+					if(isNaN(arg)) {
+						throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Vector4');
+					}
+				});
+				
+				this.x = x;
+				this.y = y;
+				this.z = z;
+				this.w = w;
+			}
 		}
 		
 		return this;
 	},
 	
+	get copy() {
+		return new glacier.Vector4(this);
+	},
+
 	divide: function(value) {
 		if(value instanceof glacier.Vector4) {
 			this.x /= value.x;
@@ -3302,7 +3394,7 @@ glacier.Vector4.prototype = {
 	},
 	
 	get normalized() {
-		return new glacier.Vector4(this).normalize();
+		return this.copy.normalize();
 	},
 	
 	subtract: function(value) {
@@ -3325,6 +3417,46 @@ glacier.Vector4.prototype = {
 	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ', ' + this.w + ')');
+	},
+	
+	get xy() {
+		return new glacier.Vector2(this.x, this.y);
+	},
+	
+	get xyz() {
+		return new glacier.Vector3(this.x, this.y, this.z);
+	},
+	
+	get xyw() {
+		return new glacier.Vector3(this.x, this.y, this.w);
+	},
+	
+	get xz() {
+		return new glacier.Vector2(this.x, this.z);
+	},
+	
+	get xzw() {
+		return new glacier.Vector3(this.x, this.z, this.w);
+	},
+	
+	get xw() {
+		return new glacier.Vector2(this.x, this.w);
+	},
+	
+	get yz() {
+		return new glacier.Vector2(this.y, this.z);
+	},
+	
+	get yzw() {
+		return new glacier.Vector3(this.y, this.z, this.w);
+	},
+	
+	get yw() {
+		return new glacier.Vector2(this.y, this.w);
+	},
+	
+	get zw() {
+		return new glacier.Vector2(this.z, this.w);
 	}
 };
 
@@ -3386,7 +3518,7 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	// Initialize camera
 	this.camera.clipNear = 0.01;
 	this.camera.clipFar = 100.0;
-	this.context.projection = this.camera.matrix;
+	this.context.projection = this.camera.projection;
 	
 	// Enable mouse controlling as required
 	if(options.mouseControl) {
@@ -3400,19 +3532,25 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		gl.enable(gl.DEPTH_TEST);
 		gl.depthFunc(gl.LEQUAL);
 		
+		gl.enable(gl.CULL_FACE);
+		gl.cullFace(gl.BACK);
+		gl.frontFace(gl.CW);
+		
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		
 		this.context.clear();
 		
-		this.base.matrix = new glacier.Matrix44();
+		this.base.matrix.assignIdentity();
 		this.base.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
 		this.base.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
+		this.base.matrix.multiply(this.camera.matrix); // View * Model
 		this.base.draw();
 		
 		for(d in this.data) {
 			if(this.data[d] instanceof glacier.Drawable) {
-				this.data[d].matrix.assign(this.base.matrix);
+				this.data[d].matrix.assignIdentity();
+				this.data[d].matrix.multiply(this.camera.matrix); // View * Model
 				this.data[d].draw();
 			}
 		}
@@ -3467,6 +3605,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			throw new glacier.exception.InvalidParameter('geoJsonURL', geoJsonURL, 'string', 'addData', 'GlobeScene');
 		}
 	},
+	
 	latLngToWorld: function(lat, lng, alt) {
 		var theta = glacier.degToRad(lng),
 			phi = glacier.degToRad(lat);
@@ -3477,6 +3616,20 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			 this.base.radius * Math.sin(phi),
 			 this.base.radius * Math.cos(phi) * Math.sin(theta)
 		);
+	},
+	
+	rayCast: function(x, y) {
+		var ndc = new glacier.Vector3(
+			2.0 * (x / this.context.width) - 1.0,
+			1.0 - 2.0 * (y / this.context.height),
+			-1.0
+		), eye, pos, ray, intersection;
+		
+		eye = this.camera.position.copy;
+		pos = new glacier.Vector4(ndc).multiply(this.camera.projection.inverse).multiply(this.camera.matrix.inverse);
+		ray = new glacier.Ray(eye, pos.divide(pos.w).xyz);
+		
+		return ray.intersects(this.base, this.camera.matrix);
 	}
 });
 
