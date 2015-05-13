@@ -138,6 +138,10 @@ glacier.Color = function Color(params) {
 };
 
 glacier.Color.prototype = {
+	get array() {
+		return new Float32Array([ this.r / 255.0, this.g / 255.0, this.b / 255.0, this.a ]);
+	},
+	
 	assign: function(rOrColor, g, b, a) {
 		if(rOrColor instanceof glacier.Color) {
 			this.rgba = rOrColor.rgba;
@@ -164,12 +168,31 @@ glacier.Color.prototype = {
 		
 		return this;
 	},
-	toArray: function() {
-		return new Float32Array([ this.r / 255.0, this.g / 255.0, this.b / 255.0, this.a ]);
+	
+	get copy() {
+		return new glacier.Color(this);
+	},
+	
+	toHtmlString: function(background) {
+		var color = this.copy, str = '#', hex;
+		
+		if(color.a < 1.0) {
+			background = (background instanceof glacier.Color ? background : glacier.color.WHITE);
+			
+			color.r = (color.r * color.a) + ((1.0 - color.a) * background.r);
+			color.g = (color.g * color.a) + ((1.0 - color.a) * background.g);
+			color.b = (color.b * color.a) + ((1.0 - color.a) * background.b);
+			color.a = 1.0;
+		}
+		
+		return '#' +
+			('0' + color.r.toString(16)).slice(-2) +
+			('0' + color.g.toString(16)).slice(-2) +
+			('0' + color.b.toString(16)).slice(-2);
 	},
 	
 	toString: function() {
-		return ('rgba(' + [ this.r, this.g, this.b, this.a.toFixed(2) ].join(', ') + ')');
+		return 'rgba(' + [ this.r, this.g, this.b, this.a.toFixed(2) ].join(', ') + ')';
 	}
 };
 
