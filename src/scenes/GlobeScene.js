@@ -110,7 +110,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 						}
 						
 						self.data.points.addPoint(
-							self.latLngTo3D(object.lat, object.lng, object.alt),
+							self.latLngToPoint(object.lat, object.lng, object.alt),
 							(color instanceof glacier.Color ? color : glacier.color.WHITE)
 						);
 						
@@ -145,7 +145,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 	},
 	
-	latLngTo3D: function(lat, lng, alt) {
+	latLngToPoint: function(lat, lng, alt) {
 		if(typeof lat != 'number') {
 			throw new glacier.exception.InvalidParameter('lat', lat, 'number', 'latLngTo3D', 'GlobeScene');
 		}
@@ -168,6 +168,17 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			alt * this.base.radius * Math.sin(theta),
 			alt * this.base.radius * Math.cos(theta) * Math.sin(phi)
 		);
+	},
+	
+	pointToLatLng: function(point) {
+		if(!(point instanceof glacier.Vector3)) {
+			throw new glacier.exception.InvalidParameter('point', point, 'Vector3', 'worldToLatLng', 'GlobeScene');
+		}
+		
+		return {
+			lat: 90.0 - glacier.radToDeg(Math.acos(point.y / this.base.radius)),
+			lng: 90.0 + glacier.radToDeg(Math.atan(point.x / point.z))
+		};
 	},
 	
 	rayCast: function(x, y) {
@@ -194,17 +205,6 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 		
 		return intersection;
-	},
-	
-	worldToLatLng: function(point) {
-		if(!(point instanceof glacier.Vector3)) {
-			throw new glacier.exception.InvalidParameter('point', point, 'Vector3', 'worldToLatLng', 'GlobeScene');
-		}
-		
-		return {
-			lat: 90.0 - glacier.radToDeg(Math.acos(point.y / this.base.radius)),
-			lng: 90.0 + glacier.radToDeg(Math.atan(point.x / point.z))
-		};
 	}
 });
 
