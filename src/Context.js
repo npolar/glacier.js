@@ -1,5 +1,5 @@
 glacier.Context = function Context(canvas, options) {
-	var background, context, element, projection = null;
+	var background, context, element, projection = null, view = null;
 	
 	// Ensure canvas is a valid HTMLCanvasElement
 	if(!(canvas instanceof HTMLCanvasElement)) {
@@ -25,7 +25,7 @@ glacier.Context = function Context(canvas, options) {
 		throw new glacier.exception.ContextError('WebGL is not supported', '(constructor)', 'Context');
 	}
 	
-	// Define background, canvas, gl, height, projection, shaders and width members
+	// Define background, canvas, gl, height, projection, shaders, view and width members
 	Object.defineProperties(this, {
 		background: {
 			get: function() {
@@ -41,12 +41,15 @@ glacier.Context = function Context(canvas, options) {
 				}
 			}
 		},
+		
 		canvas:	{
 			value: canvas
 		},
+		
 		gl: {
 			value: context
 		},
+		
 		height: {
 			get: function() {
 				return this.canvas.height;
@@ -59,6 +62,7 @@ glacier.Context = function Context(canvas, options) {
 				}
 			}
 		},
+		
 		projection: {
 			get: function() {
 				return projection;
@@ -73,9 +77,26 @@ glacier.Context = function Context(canvas, options) {
 				}
 			}
 		},
+		
 		shaders: {
 			value: new glacier.ShaderBank(this)
 		},
+		
+		view: {
+			get: function() {
+				return view;
+			},
+			set: function(value) {
+				if(value instanceof glacier.Matrix44) {
+					view = value;
+				} else if(value === null) {
+					view = null;
+				} else {
+					throw new glacier.exception.InvalidAssignment('view', value, 'Matrix44 or null', 'Context');
+				}
+			}
+		},
+		
 		width: {
 			get: function() {
 				return this.canvas.width;
@@ -105,11 +126,13 @@ glacier.Context.prototype = {
 	clear: function() {
 		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 	},
+	
 	draw: function(drawable) {
 		if(drawable instanceof glacier.Drawable) {
 			drawable.draw();
 		}
 	},
+	
 	init: function(drawable, options) {
 		if(drawable instanceof glacier.Drawable) {
 			return drawable.init(this, options);
@@ -119,6 +142,7 @@ glacier.Context.prototype = {
 		
 		return false;
 	},
+	
 	resize:	function(width, height) {
 		if(typeof width != 'number' || width <= 0.0) {
 			throw new glacier.exception.InvalidParameter('width', width, 'positive number', 'resize', 'Context');
@@ -132,6 +156,7 @@ glacier.Context.prototype = {
 		this.canvas.height	= height;
 		this.gl.viewport(0, 0, width, height);
 	},
+	
 	createProgram: function(vertShader, fragShader) {
 		if(!(vertShader instanceof WebGLShader)) {
 			throw new glacier.exception.InvalidParameter('vertShader', vertShader, 'WebGLShader', 'createProgram', 'Context');
@@ -153,6 +178,7 @@ glacier.Context.prototype = {
 		
 		return program;
 	},
+	
 	createShader: function(type, source) {
 		var gl = this.gl, last, shader, valid = [ gl.FRAGMENT_SHADER, gl.VERTEX_SHADER ];
 		
@@ -177,6 +203,7 @@ glacier.Context.prototype = {
 		
 		return shader;
 	},
+	
 	createTexture: function(image) {
 		if(image instanceof Image) {
 			var gl = this.gl, tex = gl.createTexture();
@@ -193,27 +220,21 @@ glacier.Context.prototype = {
 		
 		throw new glacier.exception.InvalidParameter('image', image, 'Image', 'createTexture', 'Context');
 	},
-	worldToScreen: function(point, modelView) {
+	
+	worldToScreen: function(point) {
 		if(point instanceof glacier.Vector3) {
-			var mvp, vec4;
+			var vec4 = new glacier.Vector4(point);
 			
-			if(!modelView || (modelView instanceof glacier.Matrix44)) {
-				mvp = new glacier.Matrix44(modelView || null);
-			} else {
-				throw new glacier.exception.InvalidParameter('modelView', modelView, 'Matrix44 or null', 'worldToScreen', 'Context');
+			if(this.view instanceof glacier.Matrix44) {
+				vec4.multiply(this.view);
 			}
 			
 			if(this.projection instanceof glacier.Matrix44) {
-				mvp.multiply(this.projection);
+				vec4.multiply(this.projection);
 			}
 			
-			vec4 = new glacier.Vector4(point).multiply(mvp);
-			
 			if(vec4.w > 0.0) {
-				vec4.x = (vec4.x /= vec4.w) * 0.5 + 0.5;
-				vec4.y = (vec4.y /= vec4.w) * 0.5 + 0.5;
-				vec4.z = (vec4.z /= vec4.w) * 0.5 + 0.5;
-				
+				vec4.divide(vec4.w).multiply(0.5).add(0.5);
 				return new glacier.Vector2(Math.round(vec4.x * this.width), Math.round((1.0 - vec4.y) * this.height));
 			}
 		} else {
