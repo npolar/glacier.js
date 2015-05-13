@@ -196,12 +196,15 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		return intersection;
 	},
 	
-	worldToLatLng: function(position) {
-		var pos = position.copy.multiply(this.base.matrix.inverse),
-			lat = glacier.radToDeg(Math.acos(pos.y / this.base.radius)),
-			lng = glacier.radTodeg(Math.atan(pos.x / pos.z));
-			
-		return [ lat, lng ];
+	worldToLatLng: function(point) {
+		if(!(point instanceof glacier.Vector3)) {
+			throw new glacier.exception.InvalidParameter('point', point, 'Vector3', 'worldToLatLng', 'GlobeScene');
+		}
+		
+		return {
+			lat: 90.0 - glacier.radToDeg(Math.acos(point.y / this.base.radius)),
+			lng: 90.0 + glacier.radToDeg(Math.atan(point.x / point.z))
+		};
 	}
 });
 
