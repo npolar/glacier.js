@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.1.8',
+	VERSION: '0.1.9',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -110,22 +110,26 @@ glacier.extend = function(target, source, sourceN) {
 glacier.addTypedProperty = function(context, members, value, ctor) {
 	members = (members instanceof Array ? members : [ members ]);
 	
+	var onChangeCallback;
+	
 	function typedProperty(index) {
 		Object.defineProperty(context, members[index], {
 			get: function() {
 				return value;
 			},
 			set: function(newValue) {
-				if(typeof ctor == 'function') {
-					if(newValue instanceof ctor) {
-						value = newValue;
-					} else {
-						throw new glacier.exception.InvalidAssignment(members[index], newValue, ctor.name);
-					}
-				} else if(typeof newValue == typeof value) {
-					value = newValue;
-				} else {
+				if(typeof ctor == 'function' && !(newValue instanceof ctor)) {
+					throw new glacier.exception.InvalidAssignment(members[index], newValue, ctor.name);
+				} else if(typeof newValue !== typeof value) {
 					throw new glacier.exception.InvalidAssignment(members[index], newValue, typeof value);
+				}
+				
+				if(newValue !== value) {
+					value = newValue;
+					
+					if(typeof onChangeCallback == 'function') {
+						onChangeCallback(value);
+					}
 				}
 			}
 		});
@@ -134,6 +138,16 @@ glacier.addTypedProperty = function(context, members, value, ctor) {
 	for(var m in members) {
 		typedProperty(m);
 	}
+	
+	return {
+		onChange: function(callback) {
+			if(typeof callback == 'function') {
+				onChangeCallback = callback;
+			} else {
+				throw new glacier.exception.InvalidParameter('callback', callback, 'function', 'onChange');
+			}
+		}
+	};
 };
 
 glacier.parseOptions = function(options, defaults, className) {
@@ -365,6 +379,10 @@ glacier.BufferObject.prototype = {
 			
 			if((uniform = this.shader.uniform('matrix_mvp'))) {
 				mvp = new glacier.Matrix44(this.parent.matrix);
+				
+				if(this.context.view instanceof glacier.Matrix44) {
+					mvp.multiply(this.context.view);
+				}
 				
 				if(this.context.projection instanceof glacier.Matrix44) {
 					mvp.multiply(this.context.projection);
@@ -814,6 +832,10 @@ glacier.Color = function Color(params) {
 };
 
 glacier.Color.prototype = {
+	get array() {
+		return new Float32Array([ this.r / 255.0, this.g / 255.0, this.b / 255.0, this.a ]);
+	},
+	
 	assign: function(rOrColor, g, b, a) {
 		if(rOrColor instanceof glacier.Color) {
 			this.rgba = rOrColor.rgba;
@@ -840,12 +862,31 @@ glacier.Color.prototype = {
 		
 		return this;
 	},
-	toArray: function() {
-		return new Float32Array([ this.r / 255.0, this.g / 255.0, this.b / 255.0, this.a ]);
+	
+	get copy() {
+		return new glacier.Color(this);
+	},
+	
+	toHtmlString: function(background) {
+		var color = this.copy, str = '#', hex;
+		
+		if(color.a < 1.0) {
+			background = (background instanceof glacier.Color ? background : glacier.color.WHITE);
+			
+			color.r = (color.r * color.a) + ((1.0 - color.a) * background.r);
+			color.g = (color.g * color.a) + ((1.0 - color.a) * background.g);
+			color.b = (color.b * color.a) + ((1.0 - color.a) * background.b);
+			color.a = 1.0;
+		}
+		
+		return '#' +
+			('0' + color.r.toString(16)).slice(-2) +
+			('0' + color.g.toString(16)).slice(-2) +
+			('0' + color.b.toString(16)).slice(-2);
 	},
 	
 	toString: function() {
-		return ('rgba(' + [ this.r, this.g, this.b, this.a.toFixed(2) ].join(', ') + ')');
+		return 'rgba(' + [ this.r, this.g, this.b, this.a.toFixed(2) ].join(', ') + ')';
 	}
 };
 
@@ -870,7 +911,7 @@ glacier.color = {
 };
 
 glacier.Context = function Context(canvas, options) {
-	var background, context, element, projection = null;
+	var background, context, element, projection = null, view = null;
 	
 	// Ensure canvas is a valid HTMLCanvasElement
 	if(!(canvas instanceof HTMLCanvasElement)) {
@@ -896,7 +937,7 @@ glacier.Context = function Context(canvas, options) {
 		throw new glacier.exception.ContextError('WebGL is not supported', '(constructor)', 'Context');
 	}
 	
-	// Define background, canvas, gl, height, projection, shaders and width members
+	// Define background, canvas, gl, height, projection, shaders, view and width members
 	Object.defineProperties(this, {
 		background: {
 			get: function() {
@@ -912,12 +953,15 @@ glacier.Context = function Context(canvas, options) {
 				}
 			}
 		},
+		
 		canvas:	{
 			value: canvas
 		},
+		
 		gl: {
 			value: context
 		},
+		
 		height: {
 			get: function() {
 				return this.canvas.height;
@@ -930,6 +974,7 @@ glacier.Context = function Context(canvas, options) {
 				}
 			}
 		},
+		
 		projection: {
 			get: function() {
 				return projection;
@@ -944,9 +989,26 @@ glacier.Context = function Context(canvas, options) {
 				}
 			}
 		},
+		
 		shaders: {
 			value: new glacier.ShaderBank(this)
 		},
+		
+		view: {
+			get: function() {
+				return view;
+			},
+			set: function(value) {
+				if(value instanceof glacier.Matrix44) {
+					view = value;
+				} else if(value === null) {
+					view = null;
+				} else {
+					throw new glacier.exception.InvalidAssignment('view', value, 'Matrix44 or null', 'Context');
+				}
+			}
+		},
+		
 		width: {
 			get: function() {
 				return this.canvas.width;
@@ -976,11 +1038,13 @@ glacier.Context.prototype = {
 	clear: function() {
 		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 	},
+	
 	draw: function(drawable) {
 		if(drawable instanceof glacier.Drawable) {
 			drawable.draw();
 		}
 	},
+	
 	init: function(drawable, options) {
 		if(drawable instanceof glacier.Drawable) {
 			return drawable.init(this, options);
@@ -990,6 +1054,7 @@ glacier.Context.prototype = {
 		
 		return false;
 	},
+	
 	resize:	function(width, height) {
 		if(typeof width != 'number' || width <= 0.0) {
 			throw new glacier.exception.InvalidParameter('width', width, 'positive number', 'resize', 'Context');
@@ -1003,6 +1068,7 @@ glacier.Context.prototype = {
 		this.canvas.height	= height;
 		this.gl.viewport(0, 0, width, height);
 	},
+	
 	createProgram: function(vertShader, fragShader) {
 		if(!(vertShader instanceof WebGLShader)) {
 			throw new glacier.exception.InvalidParameter('vertShader', vertShader, 'WebGLShader', 'createProgram', 'Context');
@@ -1024,6 +1090,7 @@ glacier.Context.prototype = {
 		
 		return program;
 	},
+	
 	createShader: function(type, source) {
 		var gl = this.gl, last, shader, valid = [ gl.FRAGMENT_SHADER, gl.VERTEX_SHADER ];
 		
@@ -1048,6 +1115,7 @@ glacier.Context.prototype = {
 		
 		return shader;
 	},
+	
 	createTexture: function(image) {
 		if(image instanceof Image) {
 			var gl = this.gl, tex = gl.createTexture();
@@ -1064,27 +1132,21 @@ glacier.Context.prototype = {
 		
 		throw new glacier.exception.InvalidParameter('image', image, 'Image', 'createTexture', 'Context');
 	},
-	worldToScreen: function(point, modelView) {
+	
+	worldToScreen: function(point) {
 		if(point instanceof glacier.Vector3) {
-			var mvp, vec4;
+			var vec4 = new glacier.Vector4(point);
 			
-			if(!modelView || (modelView instanceof glacier.Matrix44)) {
-				mvp = new glacier.Matrix44(modelView || null);
-			} else {
-				throw new glacier.exception.InvalidParameter('modelView', modelView, 'Matrix44 or null', 'worldToScreen', 'Context');
+			if(this.view instanceof glacier.Matrix44) {
+				vec4.multiply(this.view);
 			}
 			
 			if(this.projection instanceof glacier.Matrix44) {
-				mvp.multiply(this.projection);
+				vec4.multiply(this.projection);
 			}
 			
-			vec4 = new glacier.Vector4(point).multiply(mvp);
-			
 			if(vec4.w > 0.0) {
-				vec4.x = (vec4.x /= vec4.w) * 0.5 + 0.5;
-				vec4.y = (vec4.y /= vec4.w) * 0.5 + 0.5;
-				vec4.z = (vec4.z /= vec4.w) * 0.5 + 0.5;
-				
+				vec4.divide(vec4.w).multiply(0.5).add(0.5);
 				return new glacier.Vector2(Math.round(vec4.x * this.width), Math.round((1.0 - vec4.y) * this.height));
 			}
 		} else {
@@ -2803,15 +2865,11 @@ glacier.Ray.prototype = {
 		}
 	},
 	
-	intersects: function(geometry, viewMatrix) {
+	intersects: function(geometry) {
 		if(geometry instanceof glacier.Sphere) {
-			var center = new glacier.Vector3(geometry.x, geometry.y, geometry.z),
+			var center = geometry.matrix.translation,
 				radius = geometry.radius;
 				
-			if(viewMatrix instanceof glacier.Matrix44) {
-				center.multiply(viewMatrix.inverse);
-			}
-			
 			return this.sphereIntersection(center, radius);
 		} else {
 			console.warn('Ray.intersects currently only supports sphere intersections');
@@ -3515,9 +3573,12 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	this.base.texture2 = options.normalMap;
 	this.base.init(this.context, { shader: 'globe' });
 	
-	// Initialize camera
+	// Set camera clip planes
 	this.camera.clipNear = 0.01;
 	this.camera.clipFar = 100.0;
+	
+	// Bind view and projection matrices
+	this.context.view = this.camera.matrix;
 	this.context.projection = this.camera.projection;
 	
 	// Enable mouse controlling as required
@@ -3544,13 +3605,11 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		this.base.matrix.assignIdentity();
 		this.base.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
 		this.base.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
-		this.base.matrix.multiply(this.camera.matrix); // View * Model
 		this.base.draw();
 		
 		for(d in this.data) {
 			if(this.data[d] instanceof glacier.Drawable) {
-				this.data[d].matrix.assignIdentity();
-				this.data[d].matrix.multiply(this.camera.matrix); // View * Model
+				this.data[d].matrix.assign(this.base.matrix);
 				this.data[d].draw();
 			}
 		}
@@ -3571,7 +3630,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 						}
 						
 						self.data.points.addPoint(
-							self.latLngToWorld(object.lat, object.lng, object.alt),
+							self.latLngToPoint(object.lat, object.lng, object.alt),
 							(color instanceof glacier.Color ? color : glacier.color.WHITE)
 						);
 						
@@ -3606,19 +3665,51 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 	},
 	
-	latLngToWorld: function(lat, lng, alt) {
-		var theta = glacier.degToRad(lng),
-			phi = glacier.degToRad(lat);
+	latLngToPoint: function(lat, lng, alt) {
+		if(typeof lat != 'number') {
+			throw new glacier.exception.InvalidParameter('lat', lat, 'number', 'latLngTo3D', 'GlobeScene');
+		}
 		
-		// TODO: Implement alt (altitude)
+		if(typeof lng != 'number') {
+			throw new glacier.exception.InvalidParameter('lng', lng, 'number', 'latLngTo3D', 'GlobeScene');
+		}
+		
+		if(alt !== undefined && (typeof alt != 'number')) {
+			throw new glacier.exception.InvalidParameter('alt', alt, 'number', 'latLngTo3D', 'GlobeScene');
+		}
+		
+		var theta = glacier.degToRad(lat), phi = glacier.degToRad(lng);
+		
+		// Altitude based on equatorial radius in WGS-84	
+		alt = 1.0 + ((alt || 0) * (1.0 / 6378137));
+		
 		return new glacier.Vector3(
-			-this.base.radius * Math.cos(phi) * Math.cos(theta),
-			 this.base.radius * Math.sin(phi),
-			 this.base.radius * Math.cos(phi) * Math.sin(theta)
+			alt * -this.base.radius * Math.cos(theta) * Math.cos(phi),
+			alt * this.base.radius * Math.sin(theta),
+			alt * this.base.radius * Math.cos(theta) * Math.sin(phi)
 		);
 	},
 	
+	pointToLatLng: function(point) {
+		if(!(point instanceof glacier.Vector3)) {
+			throw new glacier.exception.InvalidParameter('point', point, 'Vector3', 'worldToLatLng', 'GlobeScene');
+		}
+		
+		return {
+			lat: 90.0 - glacier.radToDeg(Math.acos(point.y / this.base.radius)),
+			lng: 90.0 + glacier.radToDeg(Math.atan(point.x / point.z))
+		};
+	},
+	
 	rayCast: function(x, y) {
+		if(typeof x != 'number') {
+			throw new glacier.exception.InvalidParameter('x', x, 'number', 'rayCast', 'GlobeScene');
+		}
+		
+		if(typeof y != 'number') {
+			throw new glacier.exception.InvalidParameter('y', y, 'number', 'rayCast', 'GlobeScene');
+		}
+		
 		var ndc = new glacier.Vector3(
 			2.0 * (x / this.context.width) - 1.0,
 			1.0 - 2.0 * (y / this.context.height),
@@ -3629,7 +3720,11 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		pos = new glacier.Vector4(ndc).multiply(this.camera.projection.inverse).multiply(this.camera.matrix.inverse);
 		ray = new glacier.Ray(eye, pos.divide(pos.w).xyz);
 		
-		return ray.intersects(this.base, this.camera.matrix);
+		if((intersection = ray.intersects(this.base))) {
+			intersection.multiply(this.base.matrix.inverse);
+		}
+		
+		return intersection;
 	}
 });
 
