@@ -53,9 +53,12 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	this.base.texture2 = options.normalMap;
 	this.base.init(this.context, { shader: 'globe' });
 	
-	// Initialize camera
+	// Set camera clip planes
 	this.camera.clipNear = 0.01;
 	this.camera.clipFar = 100.0;
+	
+	// Bind view and projection matrices
+	this.context.view = this.camera.matrix;
 	this.context.projection = this.camera.projection;
 	
 	// Enable mouse controlling as required
@@ -82,13 +85,11 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		this.base.matrix.assignIdentity();
 		this.base.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
 		this.base.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
-		this.base.matrix.multiply(this.camera.matrix); // View * Model
 		this.base.draw();
 		
 		for(d in this.data) {
 			if(this.data[d] instanceof glacier.Drawable) {
-				this.data[d].matrix.assignIdentity();
-				this.data[d].matrix.multiply(this.camera.matrix); // View * Model
+				this.data[d].matrix.assign(this.base.matrix);
 				this.data[d].draw();
 			}
 		}
@@ -109,7 +110,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 						}
 						
 						self.data.points.addPoint(
-							self.latLngToWorld(object.lat, object.lng, object.alt),
+							self.latLngTo3D(object.lat, object.lng, object.alt),
 							(color instanceof glacier.Color ? color : glacier.color.WHITE)
 						);
 						
@@ -144,19 +145,40 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 	},
 	
-	latLngToWorld: function(lat, lng, alt) {
-		var theta = glacier.degToRad(lng),
-			phi = glacier.degToRad(lat);
+	latLngTo3D: function(lat, lng, alt) {
+		if(typeof lat != 'number') {
+			throw new glacier.exception.InvalidParameter('lat', lat, 'number', 'latLngTo3D', 'GlobeScene');
+		}
 		
-		// TODO: Implement alt (altitude)
+		if(typeof lng != 'number') {
+			throw new glacier.exception.InvalidParameter('lng', lng, 'number', 'latLngTo3D', 'GlobeScene');
+		}
+		
+		if(alt !== undefined && (typeof alt != 'number')) {
+			throw new glacier.exception.InvalidParameter('alt', alt, 'number', 'latLngTo3D', 'GlobeScene');
+		}
+		
+		var theta = glacier.degToRad(lat), phi = glacier.degToRad(lng);
+		
+		// Altitude based on equatorial radius in WGS-84	
+		alt = 1.0 + ((alt || 0) * (1.0 / 6378137));
+		
 		return new glacier.Vector3(
-			-this.base.radius * Math.cos(phi) * Math.cos(theta),
-			 this.base.radius * Math.sin(phi),
-			 this.base.radius * Math.cos(phi) * Math.sin(theta)
+			alt * -this.base.radius * Math.cos(theta) * Math.cos(phi),
+			alt * this.base.radius * Math.sin(theta),
+			alt * this.base.radius * Math.cos(theta) * Math.sin(phi)
 		);
 	},
 	
 	rayCast: function(x, y) {
+		if(typeof x != 'number') {
+			throw new glacier.exception.InvalidParameter('x', x, 'number', 'rayCast', 'GlobeScene');
+		}
+		
+		if(typeof y != 'number') {
+			throw new glacier.exception.InvalidParameter('y', y, 'number', 'rayCast', 'GlobeScene');
+		}
+		
 		var ndc = new glacier.Vector3(
 			2.0 * (x / this.context.width) - 1.0,
 			1.0 - 2.0 * (y / this.context.height),
@@ -167,7 +189,19 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		pos = new glacier.Vector4(ndc).multiply(this.camera.projection.inverse).multiply(this.camera.matrix.inverse);
 		ray = new glacier.Ray(eye, pos.divide(pos.w).xyz);
 		
-		return ray.intersects(this.base, this.camera.matrix);
+		if((intersection = ray.intersects(this.base))) {
+			intersection.multiply(this.base.matrix.inverse);
+		}
+		
+		return intersection;
+	},
+	
+	worldToLatLng: function(position) {
+		var pos = position.copy.multiply(this.base.matrix.inverse),
+			lat = glacier.radToDeg(Math.acos(pos.y / this.base.radius)),
+			lng = glacier.radTodeg(Math.atan(pos.x / pos.z));
+			
+		return [ lat, lng ];
 	}
 });
 
