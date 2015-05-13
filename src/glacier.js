@@ -110,22 +110,26 @@ glacier.extend = function(target, source, sourceN) {
 glacier.addTypedProperty = function(context, members, value, ctor) {
 	members = (members instanceof Array ? members : [ members ]);
 	
+	var onChangeCallback;
+	
 	function typedProperty(index) {
 		Object.defineProperty(context, members[index], {
 			get: function() {
 				return value;
 			},
 			set: function(newValue) {
-				if(typeof ctor == 'function') {
-					if(newValue instanceof ctor) {
-						value = newValue;
-					} else {
-						throw new glacier.exception.InvalidAssignment(members[index], newValue, ctor.name);
-					}
-				} else if(typeof newValue == typeof value) {
-					value = newValue;
-				} else {
+				if(typeof ctor == 'function' && !(newValue instanceof ctor)) {
+					throw new glacier.exception.InvalidAssignment(members[index], newValue, ctor.name);
+				} else if(typeof newValue !== typeof value) {
 					throw new glacier.exception.InvalidAssignment(members[index], newValue, typeof value);
+				}
+				
+				if(newValue !== value) {
+					value = newValue;
+					
+					if(typeof onChangeCallback == 'function') {
+						onChangeCallback(value);
+					}
 				}
 			}
 		});
@@ -134,6 +138,16 @@ glacier.addTypedProperty = function(context, members, value, ctor) {
 	for(var m in members) {
 		typedProperty(m);
 	}
+	
+	return {
+		onChange: function(callback) {
+			if(typeof callback == 'function') {
+				onChangeCallback = callback;
+			} else {
+				throw new glacier.exception.InvalidParameter('callback', callback, 'function', 'onChange');
+			}
+		}
+	};
 };
 
 glacier.parseOptions = function(options, defaults, className) {
