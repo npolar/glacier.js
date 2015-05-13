@@ -117,6 +117,10 @@ glacier.BufferObject.prototype = {
 			if((uniform = this.shader.uniform('matrix_mvp'))) {
 				mvp = new glacier.Matrix44(this.parent.matrix);
 				
+				if(this.context.view instanceof glacier.Matrix44) {
+					mvp.multiply(this.context.view);
+				}
+				
 				if(this.context.projection instanceof glacier.Matrix44) {
 					mvp.multiply(this.context.projection);
 				}

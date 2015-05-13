@@ -37,15 +37,11 @@ glacier.Ray.prototype = {
 		}
 	},
 	
-	intersects: function(geometry, viewMatrix) {
+	intersects: function(geometry) {
 		if(geometry instanceof glacier.Sphere) {
-			var center = new glacier.Vector3(geometry.x, geometry.y, geometry.z),
+			var center = geometry.matrix.translation,
 				radius = geometry.radius;
 				
-			if(viewMatrix instanceof glacier.Matrix44) {
-				center.multiply(viewMatrix.inverse);
-			}
-			
 			return this.sphereIntersection(center, radius);
 		} else {
 			console.warn('Ray.intersects currently only supports sphere intersections');
