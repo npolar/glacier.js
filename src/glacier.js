@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.1.9',
+	VERSION: '0.1.10',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 

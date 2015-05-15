@@ -589,12 +589,12 @@ glacier.Camera.prototype = {
 							// TODO: Improved mouse movement (without hard-coded values)
 							
 							var offset = new glacier.Vector2(
-								(event.clientX - self.mouseHandler.rotationStart.position.x) / self.mouseHandler.container.offsetWidth * 360,
+								(event.clientX - self.mouseHandler.rotationStart.position.x) / self.mouseHandler.container.offsetWidth * 180,
 								-(event.clientY - self.mouseHandler.rotationStart.position.y) / self.mouseHandler.container.offsetHeight * 180
 							);
 							
 							self.mouseHandler.angle = new glacier.Vector2(self.mouseHandler.rotationStart.angle).subtract(offset);
-							self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -89, 89);
+							self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -89.99, 89.99);
 							update();
 						}
 					},
@@ -1683,14 +1683,18 @@ glacier.extend(glacier.TypedArray, Array, {
 
 (function() {
 	var geoJSON = {
-		Point: function(lat, lng, alt) {
-			this.lat = (typeof lat == 'number' ? lat : 0.0);
-			this.lng = (typeof lng == 'number' ? lng : 0.0);
-			this.alt = (typeof alt == 'number' ? alt : undefined);
+		Feature: function(geometry, properties, id) {
+			this.id = (id !== undefined ? id : null);
+			this.geometry = (geometry || null);
+			this.properties = (typeof properties == 'object' ? properties : {});
 		},
 		
-		MultiPoint: function(points) {
-			this.points = (points instanceof Array ? points : []);
+		FeatureCollection: function(features) {
+			this.features = (features instanceof Array ? features : []);
+		},
+		
+		GeometryCollection: function(geometries) {
+			this.geometries = (geometries instanceof Array ? geometries : []);
 		},
 		
 		LineString: function(points) {
@@ -1701,52 +1705,43 @@ glacier.extend(glacier.TypedArray, Array, {
 			this.lineStrings = (lineStrings instanceof Array ? lineStrings : []);
 		},
 		
-		Polygon: function(rings) {
-			this.rings = (rings instanceof Array ? rings : []);
+		MultiPoint: function(points) {
+			this.points = (points instanceof Array ? points : []);
 		},
 		
 		MultiPolygon: function(polygons) {
 			this.polygons = (polygons instanceof Array ? polygons : []);
 		},
 		
-		Feature: function(geometry, properties, id) {
-			this.id = (id !== undefined ? id : null);
-			this.geometry = (geometry || null);
-			this.properties = (typeof properties == 'object' ? properties : {});
+		Point: function(lat, lng, alt) {
+			this.lat = (typeof lat == 'number' ? lat : 0.0);
+			this.lng = (typeof lng == 'number' ? lng : 0.0);
+			this.alt = (typeof alt == 'number' ? alt : undefined);
 		},
 		
-		parsePoint: function(coords) {
-			if(coords instanceof Array) {
-				var point = {
-					lng: (typeof coords[0] == 'number' ? coords[0] : undefined),
-					lat: (typeof coords[1] == 'number' ? coords[1] : undefined),
-					alt: (typeof coords[2] == 'number' ? coords[2] : undefined)
-				};
+		Polygon: function(rings) {
+			this.rings = (rings instanceof Array ? rings : []);
+		},
+		
+		parse: function(string) {
+			var geojson, data;
+			
+			try { geojson = JSON.parse(string); }
+			catch(e) { return null; }
+			
+			return geoJSON.parseObject(geojson);
+		},
+		
+		parseGeometry: function(geometryObject) {
+			if(typeof geometryObject == 'object') {
+				var object, geometries = 'Point,MultiPoint,LineString,MultiLineString,Polygon,MultiPolygon,GeometryCollection'.split(',');
 				
-				if(point.lat !== undefined && point.lng !== undefined) {
-					return new geoJSON.Point(point.lat, point.lng, point.alt);
+				if(geometries.indexOf(geometryObject.type) != -1) {
+					return geoJSON.parseObject(geometryObject);
 				}
 			}
 			
-			return null; // Invalid Point
-		},
-		
-		parseMultiPoint: function(points) {
-			if(points instanceof Array) {
-				var multiPoint = [], p;
-				
-				for(p in points) {
-					if((p = geoJSON.parsePoint(points[p]))) {
-						multiPoint.push(p);
-					}
-				}
-				
-				if(multiPoint.length == points.length) {
-					return new geoJSON.MultiPoint(multiPoint);
-				}
-			}
-			
-			return null; // Invalid MultiPoint
+			return null; // Invalid Geometry
 		},
 		
 		parseLineString: function(points) {
@@ -1787,24 +1782,22 @@ glacier.extend(glacier.TypedArray, Array, {
 			return null; // Invalid MultiLineString
 		},
 		
-		parsePolygon: function(rings) {
-			if(rings instanceof Array) {
-				var polygon = [], r, points;
+		parseMultiPoint: function(points) {
+			if(points instanceof Array) {
+				var multiPoint = [], p;
 				
-				for(r in rings) {
-					if((r = geoJSON.parseLineString(rings[r]))) {
-						if((points = r.length) >= 4 && r[0].compare(r[points - 1])) {
-							polygon.push(r);
-						}
+				for(p in points) {
+					if((p = geoJSON.parsePoint(points[p]))) {
+						multiPoint.push(p);
 					}
 				}
 				
-				if(polygon.length == rings.length) {
-					return new geoJSON.Polygon(polygon);
+				if(multiPoint.length == points.length) {
+					return new geoJSON.MultiPoint(multiPoint);
 				}
 			}
 			
-			return null; // Invalid Polygon
+			return null; // Invalid MultiPoint
 		},
 		
 		parseMultiPolygon: function(polygons) {
@@ -1823,72 +1816,6 @@ glacier.extend(glacier.TypedArray, Array, {
 			}
 			
 			return null; // Invalid MultiPolygon
-		},
-		
-		parseGeometry: function(geometryObject) {
-			if(typeof geometryObject == 'object') {
-				var object, geometries = 'Point,MultiPoint,LineString,MultiLineString,Polygon,MultiPolygon,GeometryCollection'.split(',');
-				
-				if(geometries.indexOf(geometryObject.type) != -1) {
-					return geoJSON.parseObject(geometryObject);
-				}
-			}
-			
-			return null; // Invalid Geometry
-		},
-		
-		parseGeometryCollection: function(geometries) {
-			if(geometries instanceof Array) {
-				var geometryCollection = [], g;
-				
-				for(g in geometries) {
-					if((g = geoJSON.parseGeometry(geometries[g]))) {
-						geometryCollection.push(g);
-					}
-				}
-				
-				if(geometryCollection.length == geometries.length) {
-					return geometryCollection;
-				}
-			}
-			
-			return null; // Invalid GeometryCollection
-		},
-		
-		parseFeature: function(featureObject) {
-			if(typeof featureObject == 'object' && featureObject.type == 'Feature') {
-				var geometry, properties, id = featureObject.id;
-				
-				if(featureObject.geometry !== null && !(geometry = geoJSON.parseGeometry(featureObject.geometry))) {
-					return null; // Invalid geometry member
-				}
-				
-				if((properties = featureObject.properties) !== null && typeof properties != 'object') {
-					return null; // Invalid properties member
-				}
-				
-				return new geoJSON.Feature(geometry, properties, id);
-			}
-			
-			return null; // Invalid Feature
-		},
-		
-		parseFeatureCollection: function(features) {
-			if(features instanceof Array) {
-				var featureCollection = [], f;
-				
-				for(f in features) {
-					if((f = geoJSON.parseFeature(features[f]))) {
-						featureCollection.push(f);
-					}
-				}
-				
-				if(featureCollection.length == features.length) {
-					return featureCollection;
-				}
-			}
-			
-			return null; // Invalid FeatureCollection
 		},
 		
 		parseObject: function(object) {
@@ -1946,13 +1873,94 @@ glacier.extend(glacier.TypedArray, Array, {
 			return null; // Invalid GeoJSON object
 		},
 		
-		parse: function(string) {
-			var geojson, data;
+		parsePoint: function(coords) {
+			if(coords instanceof Array) {
+				var point = {
+					lng: (typeof coords[0] == 'number' ? coords[0] : undefined),
+					lat: (typeof coords[1] == 'number' ? coords[1] : undefined),
+					alt: (typeof coords[2] == 'number' ? coords[2] : undefined)
+				};
+				
+				if(point.lat !== undefined && point.lng !== undefined) {
+					return new geoJSON.Point(point.lat, point.lng, point.alt);
+				}
+			}
 			
-			try { geojson = JSON.parse(string); }
-			catch(e) { return null; }
+			return null; // Invalid Point
+		},
+		
+		parsePolygon: function(rings) {
+			if(rings instanceof Array) {
+				var polygon = [], r, points;
+				
+				for(r in rings) {
+					if((r = geoJSON.parseLineString(rings[r]))) {
+						if((points = r.length) >= 4 && r[0].compare(r[points - 1])) {
+							polygon.push(r);
+						}
+					}
+				}
+				
+				if(polygon.length == rings.length) {
+					return new geoJSON.Polygon(polygon);
+				}
+			}
 			
-			return geoJSON.parseObject(geojson);
+			return null; // Invalid Polygon
+		},
+		
+		parseGeometryCollection: function(geometries) {
+			if(geometries instanceof Array) {
+				var geometryCollection = [], g;
+				
+				for(g in geometries) {
+					if((g = geoJSON.parseGeometry(geometries[g]))) {
+						geometryCollection.push(g);
+					}
+				}
+				
+				if(geometryCollection.length == geometries.length) {
+					return new geoJSON.GeometryCollection(geometryCollection);
+				}
+			}
+			
+			return null; // Invalid GeometryCollection
+		},
+		
+		parseFeature: function(featureObject) {
+			if(typeof featureObject == 'object' && featureObject.type == 'Feature') {
+				var geometry, properties, id = featureObject.id;
+				
+				if(featureObject.geometry !== null && !(geometry = geoJSON.parseGeometry(featureObject.geometry))) {
+					return null; // Invalid geometry member
+				}
+				
+				if((properties = featureObject.properties) !== null && typeof properties != 'object') {
+					return null; // Invalid properties member
+				}
+				
+				return new geoJSON.Feature(geometry, properties, id);
+			}
+			
+			return null; // Invalid Feature
+		},
+		
+		parseFeatureCollection: function(features) {
+			if(features instanceof Array) {
+				var featureCollection = [], f;
+				
+				for(f in features) {
+					if((f = geoJSON.parseFeature(features[f]))) {
+						featureCollection.push(f);
+					}
+				}
+				
+				if(featureCollection.length == features.length) {
+					return new geoJSON.FeatureCollection(featureCollection);
+				}
+			}
+			
+			return null; // Invalid FeatureCollection
 		}
 	};
 	
@@ -3576,6 +3584,7 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	// Set camera clip planes
 	this.camera.clipNear = 0.01;
 	this.camera.clipFar = 100.0;
+	this.camera.follow(this.camera.target, new glacier.Vector2(90, 0), 2);
 	
 	// Bind view and projection matrices
 	this.context.view = this.camera.matrix;
@@ -3607,11 +3616,21 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		this.base.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
 		this.base.draw();
 		
-		for(d in this.data) {
-			if(this.data[d] instanceof glacier.Drawable) {
-				this.data[d].matrix.assign(this.base.matrix);
-				this.data[d].draw();
+		function drawData(data) {
+			if(data instanceof glacier.Drawable) {
+				data.matrix.assign(this.base.matrix);
+				data.draw();
+			} else if(typeof data == 'object') {
+				if(data.drawables instanceof Array) {
+					data.drawables.forEach(function(drawable) {
+						drawData.call(this, drawable);
+					}, this);
+				}
 			}
+		}
+		
+		for(d in this.data) {
+			drawData.call(this, this.data[d]);
 		}
 	});
 };
@@ -3619,43 +3638,44 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 // glacier.GlobeScene extends glacier.Scene
 glacier.extend(glacier.GlobeScene, glacier.Scene, {
 	addData: function(geoJsonURL, color) {
-		var self = this, modified = [];
+		var self = this, dataObject, drawables = {};
 		
 		if(typeof geoJsonURL == 'string') {
 			glacier.load(geoJsonURL, function(data) {
-				function addGeometry(object) {
-					if(object instanceof glacier.geoJSON.Point) {
-						if(!(self.data.points instanceof glacier.PointCollection)) {
-							self.data.points = new glacier.PointCollection();
+				function addDrawables(array, data) {
+					if(data instanceof glacier.geoJSON.Feature) {
+						addDrawables(array, data.geometry);
+					} else if(data instanceof glacier.geoJSON.FeatureCollection) {
+						data.features.forEach(function(feature) {
+							addDrawables(array, feature);
+						});
+					} else if(data instanceof glacier.geoJSON.MultiPoint) {
+						data.points.forEach(function(point) {
+							addDrawables(array, point);
+						});
+					} else if(data instanceof glacier.geoJSON.Point) {
+						if(!drawables.hasOwnProperty('points')) {
+							drawables.points = array.push(new glacier.PointCollection()) - 1;
 						}
 						
-						self.data.points.addPoint(
-							self.latLngToPoint(object.lat, object.lng, object.alt),
+						array[drawables.points].addPoint(
+							self.latLngToPoint(data.lat, data.lng, data.alt),
 							(color instanceof glacier.Color ? color : glacier.color.WHITE)
 						);
-						
-						if(modified.indexOf('points') == -1) {
-							modified.push('points');
-						}
-					} else if(object instanceof glacier.geoJSON.MultiPoint) {
-						object.points.forEach(function(point) {
-							addGeometry(point);
-						});
-					} else if(object instanceof glacier.geoJSON.Feature) {
-						addGeometry(object.geometry);
-					} else if(object instanceof Array) {
-						object.forEach(function(element) {
-							addGeometry(element);
-						});
 					}
 				}
 				
 				if((data = glacier.geoJSON.parse(data))) {
-					addGeometry(data);
+					dataObject = self.data[geoJsonURL] = {
+						data: data,
+						drawables: []
+					};
 					
-					modified.forEach(function(collection) {
-						if(self.data[collection] instanceof glacier.Drawable) {
-							self.data[collection].init(self.context);
+					addDrawables(dataObject.drawables, data);
+					
+					dataObject.drawables.forEach(function(drawable) {
+						if(drawable instanceof glacier.Drawable) {
+							drawable.init(self.context);
 						}
 					});
 				}
@@ -3697,7 +3717,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		
 		return {
 			lat: 90.0 - glacier.radToDeg(Math.acos(point.y / this.base.radius)),
-			lng: 90.0 + glacier.radToDeg(Math.atan(point.x / point.z))
+			lng: ((270.0 + glacier.radToDeg(Math.atan2(point.x, point.z))) % 360) - 180.0
 		};
 	},
 	
