@@ -87,11 +87,21 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 		this.base.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
 		this.base.draw();
 		
-		for(d in this.data) {
-			if(this.data[d] instanceof glacier.Drawable) {
-				this.data[d].matrix.assign(this.base.matrix);
-				this.data[d].draw();
+		function drawData(data) {
+			if(data instanceof glacier.Drawable) {
+				data.matrix.assign(this.base.matrix);
+				data.draw();
+			} else if(typeof data == 'object') {
+				if(data.drawables instanceof Array) {
+					data.drawables.forEach(function(drawable) {
+						drawData.call(this, drawable);
+					}, this);
+				}
 			}
+		}
+		
+		for(d in this.data) {
+			drawData.call(this, this.data[d]);
 		}
 	});
 };
@@ -99,43 +109,44 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 // glacier.GlobeScene extends glacier.Scene
 glacier.extend(glacier.GlobeScene, glacier.Scene, {
 	addData: function(geoJsonURL, color) {
-		var self = this, modified = [];
+		var self = this, dataObject, drawables = {};
 		
 		if(typeof geoJsonURL == 'string') {
 			glacier.load(geoJsonURL, function(data) {
-				function addGeometry(object) {
-					if(object instanceof glacier.geoJSON.Point) {
-						if(!(self.data.points instanceof glacier.PointCollection)) {
-							self.data.points = new glacier.PointCollection();
+				function addDrawables(array, data) {
+					if(data instanceof glacier.geoJSON.Feature) {
+						addDrawables(array, data.geometry);
+					} else if(data instanceof glacier.geoJSON.FeatureCollection) {
+						data.features.forEach(function(feature) {
+							addDrawables(array, feature);
+						});
+					} else if(data instanceof glacier.geoJSON.MultiPoint) {
+						data.points.forEach(function(point) {
+							addDrawables(array, point);
+						});
+					} else if(data instanceof glacier.geoJSON.Point) {
+						if(!drawables.hasOwnProperty('points')) {
+							drawables.points = array.push(new glacier.PointCollection()) - 1;
 						}
 						
-						self.data.points.addPoint(
-							self.latLngToPoint(object.lat, object.lng, object.alt),
+						array[drawables.points].addPoint(
+							self.latLngToPoint(data.lat, data.lng, data.alt),
 							(color instanceof glacier.Color ? color : glacier.color.WHITE)
 						);
-						
-						if(modified.indexOf('points') == -1) {
-							modified.push('points');
-						}
-					} else if(object instanceof glacier.geoJSON.MultiPoint) {
-						object.points.forEach(function(point) {
-							addGeometry(point);
-						});
-					} else if(object instanceof glacier.geoJSON.Feature) {
-						addGeometry(object.geometry);
-					} else if(object instanceof Array) {
-						object.forEach(function(element) {
-							addGeometry(element);
-						});
 					}
 				}
 				
 				if((data = glacier.geoJSON.parse(data))) {
-					addGeometry(data);
+					dataObject = self.data[geoJsonURL] = {
+						data: data,
+						drawables: []
+					};
 					
-					modified.forEach(function(collection) {
-						if(self.data[collection] instanceof glacier.Drawable) {
-							self.data[collection].init(self.context);
+					addDrawables(dataObject.drawables, data);
+					
+					dataObject.drawables.forEach(function(drawable) {
+						if(drawable instanceof glacier.Drawable) {
+							drawable.init(self.context);
 						}
 					});
 				}
