@@ -189,7 +189,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		
 		return {
 			lat: 90.0 - glacier.radToDeg(Math.acos(point.y / this.base.radius)),
-			lng: 90.0 + glacier.radToDeg(Math.atan(point.x / point.z))
+			lng: ((270.0 + glacier.radToDeg(Math.atan2(point.x, point.z))) % 360) - 180.0
 		};
 	},
 	
