@@ -56,6 +56,7 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	// Set camera clip planes
 	this.camera.clipNear = 0.01;
 	this.camera.clipFar = 100.0;
+	this.camera.follow(this.camera.target, new glacier.Vector2(90, 0), 2);
 	
 	// Bind view and projection matrices
 	this.context.view = this.camera.matrix;
