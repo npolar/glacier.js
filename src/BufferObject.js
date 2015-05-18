@@ -129,7 +129,7 @@ glacier.BufferObject.prototype = {
 			}
 			
 			if((uniform = this.shader.uniform('resolution'))) {
-				gl.uniform2f(uniform, context.width, constext.height);
+				gl.uniform2f(uniform, this.context.width, this.context.height);
 			}
 			
 			if(this.buffers.index) {
