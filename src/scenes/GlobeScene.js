@@ -1,6 +1,6 @@
-glacier.GlobeScene = function GlobeScene(canvas, options) {
+glacier.GlobeScene = function GlobeScene(container, options) {
 	// Call Scene constructor
-	glacier.Scene.call(this, canvas, options);
+	glacier.Scene.call(this, container, options);
 	
 	// Parse options with type-checking
 	options = glacier.parseOptions(options, {
@@ -64,7 +64,7 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	
 	// Enable mouse controlling as required
 	if(options.mouseControl) {
-		this.camera.bindMouse(canvas);
+		this.camera.bindMouse(this.context.canvas);
 	}
 	
 	// Add draw callback

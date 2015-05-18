@@ -1,11 +1,37 @@
-glacier.Scene = function Scene(canvas, options) {
-	var running = false,
-		contextOptions = {},
-		context = new glacier.Context(canvas, contextOptions), 
-		camera = new glacier.Camera(60.0, context.width / context.height, 1.0, 100.0);
+glacier.Scene = function Scene(container, options) {
+	var camera, canvas, context, contextOptions = {}, running = false, id;
+	
+	if(typeof container == 'string') {
+		if(!((container = document.getElementById(container)) instanceof HTMLElement)) {
+			throw new glacier.exception.UndefinedElement(container, '(constructor)', 'Scene');
+		}
+	} else if(!(container instanceof HTMLElement)) {
+		throw new glacier.exception.InvalidParameter('container', container, '(constructor)', 'Scene');
+	}
+	
+	if(container instanceof HTMLCanvasElement) {
+		canvas = container;
+		container = document.createElement('DIV');
+		canvas.parentNode.insertBefore(container, canvas);
+		container.appendChild(canvas);
+		
+		if((id = canvas.getAttribute('id'))) {
+			canvas.removeAttribute('id');
+			container.setAttribute('id', id);
+		}
+	} else {
+		canvas = document.createElement('CANVAS');
+		canvas.style.position = 'absolute';
+		canvas.style.height = canvas.style.width = '100%';
+		container.appendChild(canvas);
+	}
+	
+	context = new glacier.Context(canvas, contextOptions);
+	camera = new glacier.Camera(60.0, context.width / context.height, 1.0, 100.0);
 	
 	Object.defineProperties(this, {
 		camera: { value: camera },
+		container: { value: container },
 		context: { value: context },
 		runCallbacks: { value: [] },
 		running: {
