@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.1.9',
+	VERSION: '0.1.11',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -69,7 +69,7 @@ glacier.isArray = function(object, type) {
 	return !!arr;
 };
 
-glacier.extend = function(target, source, sourceN) {
+glacier.extend = function(target, source) {
 	var args = arguments, n, o, obj, p, proto, protos = [];
 	
 	for(n = 1; n < args.length; ++n) {
@@ -110,24 +110,24 @@ glacier.extend = function(target, source, sourceN) {
 glacier.addTypedProperty = function(context, members, value, ctor) {
 	members = (members instanceof Array ? members : [ members ]);
 	
-	var onChangeCallback;
+	var m, onChangeCallback;
 	
-	function typedProperty(index) {
-		Object.defineProperty(context, members[index], {
+	function typedProperty(member) {
+		Object.defineProperty(context, member, {
 			get: function() {
 				return value;
 			},
 			set: function(newValue) {
 				if(typeof ctor == 'function' && !(newValue instanceof ctor)) {
-					throw new glacier.exception.InvalidAssignment(members[index], newValue, ctor.name);
+					throw new glacier.exception.InvalidAssignment(member, newValue, ctor.name);
 				} else if(typeof newValue !== typeof value) {
-					throw new glacier.exception.InvalidAssignment(members[index], newValue, typeof value);
+					throw new glacier.exception.InvalidAssignment(member, newValue, typeof value);
 				}
 				
 				if(newValue !== value) {
 					value = newValue;
 					
-					if(typeof onChangeCallback == 'function') {
+					if(onChangeCallback) {
 						onChangeCallback(value);
 					}
 				}
@@ -135,8 +135,8 @@ glacier.addTypedProperty = function(context, members, value, ctor) {
 		});
 	}
 	
-	for(var m in members) {
-		typedProperty(m);
+	for(m in members) {
+		typedProperty(members[m]);
 	}
 	
 	return {
@@ -392,7 +392,7 @@ glacier.BufferObject.prototype = {
 			}
 			
 			if((uniform = this.shader.uniform('resolution'))) {
-				gl.uniform2f(uniform, context.width, constext.height);
+				gl.uniform2f(uniform, this.context.width, this.context.height);
 			}
 			
 			if(this.buffers.index) {
@@ -542,101 +542,6 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 };
 
 glacier.Camera.prototype = {
-	bindMouse: function(container, options) {
-		if(typeof container == 'string') {
-			container = document.getElementById(container);
-		}
-		
-		if(container instanceof HTMLElement) {
-			var self = this, update;
-			
-			// Parse options with type-checking
-			options = glacier.parseOptions(options, {
-				movementButton:	[ { number: null }, null ],
-				rotationButton:	[ { number:    0 }, null ],
-				zoomButton:		[ { number: null }, null ],
-				zoomMin:		{ number: 1.01, gt: 0.0 },
-				zoomMax:		{ number: 10.0, gt: 0.0 },
-				zoomSteps:		{ number: 30, gt: 0 },
-				wheelMovement:	{ boolean: false },
-				wheelRotation:	{ boolean: false },
-				wheelZoom:		{ boolean: true  },
-			});
-			
-			self.mouseHandler = {
-				container: container,
-				target: new glacier.Vector3(0, 0, 0),
-				angle: new glacier.Vector2(0, 0),
-				zoom: options.zoomMax,
-				zoomStep: options.zoomSteps,
-				
-				callbacks: {
-					mousedown: function(event) {
-						if(options.rotationButton !== null && event.button === options.rotationButton) {
-							self.mouseHandler.rotationStart = {
-								position: new glacier.Vector2(event.clientX, event.clientY),
-								angle: new glacier.Vector2(self.mouseHandler.angle)
-							};
-						}
-					},
-					mouseup: function(event) {
-						if(options.rotationButton !== null && event.button === options.rotationButton) {
-							self.mouseHandler.rotationStart = null;
-						}
-					},
-					mousemove: function(event) {
-						if(self.mouseHandler.rotationStart) {
-							// TODO: Improved mouse movement (without hard-coded values)
-							
-							var offset = new glacier.Vector2(
-								(event.clientX - self.mouseHandler.rotationStart.position.x) / self.mouseHandler.container.offsetWidth * 180,
-								-(event.clientY - self.mouseHandler.rotationStart.position.y) / self.mouseHandler.container.offsetHeight * 180
-							);
-							
-							self.mouseHandler.angle = new glacier.Vector2(self.mouseHandler.rotationStart.angle).subtract(offset);
-							self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -89.99, 89.99);
-							update();
-						}
-					},
-					wheel: function(event) {
-						function easeIn(pos, min, max, len) {
-							return (max - min) * Math.pow(2, 10 * (pos / len - 1)) + min;
-						}
-						
-						if(options.wheelZoom) {
-							self.mouseHandler.zoomStep = glacier.clamp(self.mouseHandler.zoomStep + (event.deltaY > 0 ? 1 : (event.deltaY < 0 ? -1 : 0)), -options.zoomSteps, options.zoomSteps);
-							self.mouseHandler.zoom = easeIn(self.mouseHandler.zoomStep, options.zoomMin, options.zoomMax, options.zoomSteps);
-							update();
-						}
-					}
-				}
-			};
-			
-			(update = function() {
-				self.follow(self.mouseHandler.target, self.mouseHandler.angle, self.mouseHandler.zoom);
-			}).call();
-			
-			for(var c in self.mouseHandler.callbacks) {
-				if(self.mouseHandler.callbacks.hasOwnProperty(c) && typeof self.mouseHandler.callbacks[c] == 'function') {
-					self.mouseHandler.container.addEventListener(c, self.mouseHandler.callbacks[c]);
-				}
-			}
-		} else {
-			throw new glacier.exception.InvalidParameter('container', container, 'HTMLElement', 'bindMouse', 'Scene');
-		}
-	},
-	unbindMouse: function() {
-		if(this.mouseHandler.container instanceof HTMLElement) {
-			for(var c in this.mouseHandler.callbacks) {
-				if(this.mouseHandler.callbacks.hasOwnProperty(c) && typeof this.mouseHandler.callbacks[c] == 'function') {
-					this.mouseHandler.container.removeEventListener(c, this.mouseHandler.callbacks[c]);
-					this.mouseHandler.callbacks[c] = null;
-				}
-			}
-		}
-		
-		this.mouseHandler.container = null;
-	},
 	follow: function(target, angle, distance) {
 		if(!(target instanceof glacier.Vector3)) {
 			throw new glacier.exception.InvalidParameter('target', target, 'Vector3', 'follow', 'Camera');
@@ -668,6 +573,7 @@ glacier.Camera.prototype = {
 		
 		this.update();
 	},
+	
 	update: function() {
 		var z, x, y = new glacier.Vector3(0, 1, 0);
 		
@@ -1133,6 +1039,32 @@ glacier.Context.prototype = {
 		throw new glacier.exception.InvalidParameter('image', image, 'Image', 'createTexture', 'Context');
 	},
 	
+	screenToWorld: function(x, y) {
+		if(typeof x != 'number') {
+			throw new glacier.exception.InvalidParameter('x', x, 'number', 'screenToWorld', 'Context');
+		}
+		
+		if(typeof y != 'number') {
+			throw new glacier.exception.InvalidParameter('y', y, 'number', 'screenToWorld', 'Context');
+		}
+		
+		var ndc = new glacier.Vector3(
+			2.0 * (x / this.width) - 1.0,
+			1.0 - 2.0 * (y / this.height),
+			0.0
+		), vec4 = new glacier.Vector4(ndc);
+		
+		if(this.projection instanceof glacier.Matrix44) {
+			vec4.multiply(this.projection.inverse);
+		}
+		
+		if(this.view instanceof glacier.Matrix44) {
+			vec4.multiply(this.view.inverse);
+		}
+		
+		return vec4.divide(vec4.w).xyz;
+	},
+	
 	worldToScreen: function(point) {
 		if(point instanceof glacier.Vector3) {
 			var vec4 = new glacier.Vector4(point);
@@ -1308,14 +1240,40 @@ glacier.exception = {
 	}
 };
 
-glacier.Scene = function Scene(canvas, options) {
-	var running = false,
-		contextOptions = {},
-		context = new glacier.Context(canvas, contextOptions), 
-		camera = new glacier.Camera(60.0, context.width / context.height, 1.0, 100.0);
+glacier.Scene = function Scene(container, options) {
+	var camera, canvas, context, contextOptions = {}, running = false, id;
+	
+	if(typeof container == 'string') {
+		if(!((container = document.getElementById(container)) instanceof HTMLElement)) {
+			throw new glacier.exception.UndefinedElement(container, '(constructor)', 'Scene');
+		}
+	} else if(!(container instanceof HTMLElement)) {
+		throw new glacier.exception.InvalidParameter('container', container, '(constructor)', 'Scene');
+	}
+	
+	if(container instanceof HTMLCanvasElement) {
+		canvas = container;
+		container = document.createElement('DIV');
+		canvas.parentNode.insertBefore(container, canvas);
+		container.appendChild(canvas);
+		
+		if((id = canvas.getAttribute('id'))) {
+			canvas.removeAttribute('id');
+			container.setAttribute('id', id);
+		}
+	} else {
+		canvas = document.createElement('CANVAS');
+		canvas.style.position = 'absolute';
+		canvas.style.height = canvas.style.width = '100%';
+		container.appendChild(canvas);
+	}
+	
+	context = new glacier.Context(canvas, contextOptions);
+	camera = new glacier.Camera(60.0, context.width / context.height, 1.0, 100.0);
 	
 	Object.defineProperties(this, {
 		camera: { value: camera },
+		container: { value: container },
 		context: { value: context },
 		runCallbacks: { value: [] },
 		running: {
@@ -2080,13 +2038,14 @@ glacier.shaders = {
 			'attribute highp vec2 texture_uv;',
 			'attribute highp vec4 color_rgba;',
 			'uniform highp mat4 matrix_mvp;',
+			'varying highp vec4 vertex_pos;',
 			'varying highp vec2 tex_coords;',
 			'varying highp vec4 frag_color;',
 			'varying highp vec3 mvp_normal;',
 			'void main()',
 			'{',
 				'gl_PointSize = 2.0;',
-				'gl_Position = matrix_mvp * vec4(vertex_xyz, 1.0);',
+				'gl_Position = vertex_pos = matrix_mvp * vec4(vertex_xyz, 1.0);',
 				'tex_coords = texture_uv; frag_color = color_rgba;',
 				'mvp_normal = normalize(matrix_mvp * vec4(normal_xyz, 1.0)).xyz;',
 			'}'
@@ -2105,7 +2064,6 @@ glacier.shaders = {
 			'uniform sampler2D tex_samp_0;',
 			'uniform sampler2D tex_samp_1;',
 			'uniform sampler2D tex_samp_2;',
-			'uniform highp vec2 resolution;',
 			'varying highp vec2 tex_coords;',
 			'varying highp vec4 frag_color;',
 			'varying highp vec3 mvp_normal;',
@@ -2916,8 +2874,8 @@ glacier.Ray.prototype = {
 };
 
 glacier.Vector2 = function Vector2(xScalarOrVec2, y) {
-	glacier.addTypedProperty(this, [ 'x', 'u' ], 0.0);
-	glacier.addTypedProperty(this, [ 'y', 'v' ], 0.0);
+	glacier.addTypedProperty(this, [ 'x', 'u', 'lng' ], 0.0);
+	glacier.addTypedProperty(this, [ 'y', 'v', 'lat' ], 0.0);
 	
 	if(xScalarOrVec2 !== undefined && xScalarOrVec2 !== null) {
 		this.assign(xScalarOrVec2, y);
@@ -3526,9 +3484,9 @@ glacier.Vector4.prototype = {
 	}
 };
 
-glacier.GlobeScene = function GlobeScene(canvas, options) {
+glacier.GlobeScene = function GlobeScene(container, options) {
 	// Call Scene constructor
-	glacier.Scene.call(this, canvas, options);
+	glacier.Scene.call(this, container, options);
 	
 	// Parse options with type-checking
 	options = glacier.parseOptions(options, {
@@ -3592,7 +3550,7 @@ glacier.GlobeScene = function GlobeScene(canvas, options) {
 	
 	// Enable mouse controlling as required
 	if(options.mouseControl) {
-		this.camera.bindMouse(canvas);
+		this.bindMouse();
 	}
 	
 	// Add draw callback
@@ -3685,6 +3643,69 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 	},
 	
+	bindMouse: function(options) {
+		var self = this, camUpdate, c;
+		
+		// Parse options with type-checking
+		options = glacier.parseOptions(options, {
+			movementButton:	[ { number: null }, null ],
+			rotationButton:	[ { number:    0 }, null ],
+			zoomButton:		[ { number: null }, null ],
+			zoomMin:		{ number: 1.01, gt: 0.0 },
+			zoomMax:		{ number: 10.0, gt: 0.0 },
+			zoomSteps:		{ number: 30, gt: 0 },
+			wheelMovement:	{ boolean: false },
+			wheelRotation:	{ boolean: false },
+			wheelZoom:		{ boolean: true  },
+		});
+		
+		self.mouseHandler = {
+			target: new glacier.Vector3(0, 0, 0),
+			angle: new glacier.Vector2(0, 0),
+			zoom: options.zoomMax,
+			zoomStep: options.zoomSteps,
+			
+			callbacks: {
+				mousedown: function(event) {
+					if(options.rotationButton !== null && event.button === options.rotationButton) {
+						self.mouseHandler.clickLatLng = ((ray = self.rayCast(event.clientX, event.clientY)) ? self.pointToLatLng(ray) : null);
+					}
+				},
+				mouseup: function(event) {
+					if(options.rotationButton !== null && event.button === options.rotationButton) {
+						self.mouseHandler.clickLatLng = null;
+					}
+				},
+				mousemove: function(event) {
+					if(self.mouseHandler.clickLatLng && (ray = self.rayCast(event.clientX, event.clientY))) {
+						self.mouseHandler.angle.subtract(self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng));
+						self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -90.0 + Number.MIN_VALUE, 90.0 - Number.MIN_VALUE);
+						camUpdate();
+					}
+				},
+				wheel: function(event) {
+					function easeIn(pos, min, max, len) {
+						return (max - min) * Math.pow(2, 10 * (pos / len - 1)) + min;
+					}
+					
+					self.mouseHandler.zoomStep = glacier.clamp(self.mouseHandler.zoomStep + (event.deltaY > 0 ? 1 : (event.deltaY < 0 ? -1 : 0)), -options.zoomSteps, options.zoomSteps);
+					self.mouseHandler.zoom = easeIn(self.mouseHandler.zoomStep, options.zoomMin, options.zoomMax, options.zoomSteps);
+					camUpdate();
+				}
+			}
+		};
+			
+		(camUpdate = function() {
+			self.camera.follow(self.mouseHandler.target, self.mouseHandler.angle, self.mouseHandler.zoom);
+		}).call();
+			
+		for(c in self.mouseHandler.callbacks) {
+			if(self.mouseHandler.callbacks.hasOwnProperty(c) && typeof self.mouseHandler.callbacks[c] == 'function') {
+				self.context.canvas.addEventListener(c, self.mouseHandler.callbacks[c]);
+			}
+		}
+	},
+	
 	latLngToPoint: function(lat, lng, alt) {
 		if(typeof lat != 'number') {
 			throw new glacier.exception.InvalidParameter('lat', lat, 'number', 'latLngTo3D', 'GlobeScene');
@@ -3715,10 +3736,10 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			throw new glacier.exception.InvalidParameter('point', point, 'Vector3', 'worldToLatLng', 'GlobeScene');
 		}
 		
-		return {
-			lat: 90.0 - glacier.radToDeg(Math.acos(point.y / this.base.radius)),
-			lng: ((270.0 + glacier.radToDeg(Math.atan2(point.x, point.z))) % 360) - 180.0
-		};
+		return new glacier.Vector2(
+			((270.0 + glacier.radToDeg(Math.atan2(point.x, point.z))) % 360) - 180.0,
+			90.0 - glacier.radToDeg(Math.acos(point.y / this.base.radius))
+		);
 	},
 	
 	rayCast: function(x, y) {
@@ -3745,7 +3766,20 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 		
 		return intersection;
-	}
+	},
+	
+	unbindMouse: function() {
+		if(this.mouseHandler) {
+			for(var c in this.mouseHandler.callbacks) {
+				if(this.mouseHandler.callbacks.hasOwnProperty(c) && typeof this.mouseHandler.callbacks[c] == 'function') {
+					this.context.canvas.removeEventListener(c, this.mouseHandler.callbacks[c]);
+					this.mouseHandler.callbacks[c] = null;
+				}
+			}
+		}
+		
+		this.mouseHandler = null;
+	},
 });
 
 /* Index Limits
