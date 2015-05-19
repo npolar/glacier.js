@@ -6,14 +6,11 @@
 	</head>
 	
 	<body>
-		<canvas id="canvas"></canvas>
+		<div id="glacier"></div>
 		<div id="console"></div>
 		<div id="stats"></div>
 		
-		<!--
-		<div id="lanceInfo" class="info">Lance</div>
-		<div id="npolarInfo" class="info">Tromsø</div>
-		-->
+		<div id="box" class="glacier-info-bottom" style="top: 20px; left: 20px;">...</div>
 		
 		<script src="../dist/glacier.js"></script>
 		<script src="js/konsoll.min.js"></script>
@@ -31,103 +28,19 @@
 			konsoll.log('');
 			konsoll.callback('reload', function() { window.location.reload(); });
 			
-			/*
-			var stats = (function(elem) {
-				return new function() {
-					this.element = document.getElementById(elem);
-					this.properties = {};
-					
-					if(this.element instanceof HTMLElement) {
-						this.update = function() {
-							while(this.element.childElementCount) {
-								this.element.removeChild(this.element.lastChild);
-							}
-							
-							if(typeof this.properties == 'object') {
-								var prop, table = document.createElement('table'), row, cell;
-								
-								for(prop in this.properties) {
-									if(this.properties.hasOwnProperty(prop)) {
-										row = document.createElement('tr');
-										
-										cell = document.createElement('td');
-										cell.innerHTML = prop;
-										row.appendChild(cell);
-										
-										cell = document.createElement('td');
-										cell.innerHTML = this.properties[prop];
-										row.appendChild(cell);
-										
-										table.appendChild(row);
-									}
-								}
-								
-								this.element.appendChild(table);
-							}
-						};
-					}
-				};
-			})('stats');
-			
-			var lanceInfo = (function(elem) {
-				return new function() {
-					this.element = document.getElementById(elem);
-					
-					if(this.element instanceof HTMLElement) {
-						this.move = function(x, y) {
-							this.element.style.left = (x - (this.element.offsetWidth / 2)) + 'px';
-							this.element.style.top = (y - (this.element.offsetHeight + 10)) + 'px';
-						}
-					}
-				};
-			})('lanceInfo');
-			
-			var npolarInfo = (function(elem) {
-				return new function() {
-					this.element = document.getElementById(elem);
-					
-					if(this.element instanceof HTMLElement) {
-						this.move = function(x, y) {
-							this.element.style.left = (x - (this.element.offsetWidth / 2)) + 'px';
-							this.element.style.top = (y - (this.element.offsetHeight + 10)) + 'px';
-						}
-					}
-				};
-			})('npolarInfo');
-			*/
-			
 			try {
 				
-			var globe = new glacier.GlobeScene('canvas', {
-				obliquity:			23.4,							// Degrees Axial Tilt	(default 0.0)
+			var globe = new glacier.GlobeScene('glacier', {
+				//obliquity:			23.4,							// Degrees Axial Tilt	(default 0.0)
 				texture: 			'gfx/earth.jpg',				// Base texture			(default null)
 				nightTexture:		'gfx/earth_night.jpg',			// Night time texture	(default null)
 				normalMap:			'gfx/normal_bathymetry.jpg',	// Normal map texture	(default null)
+				mouseControl: 		true
 			});
 			
 			globe.run();
 			
-			// Generate axis indicator
-			globe.data.axis = new glacier.PointCollection();
-			globe.data.axis.addPoint(new glacier.Vector3(0, 0, 0), glacier.color.RED);
-			globe.data.axis.addPoint(new glacier.Vector3(2, 0, 0), glacier.color.RED);
-			globe.data.axis.addPoint(new glacier.Vector3(0, 0, 0), glacier.color.GREEN);
-			globe.data.axis.addPoint(new glacier.Vector3(0, 2, 0), glacier.color.GREEN);
-			globe.data.axis.addPoint(new glacier.Vector3(0, 0, 0), glacier.color.BLUE);
-			globe.data.axis.addPoint(new glacier.Vector3(0, 0, 2), glacier.color.BLUE);
-			globe.data.axis.init(globe.context);
-			globe.data.axis.buffer.drawMode = 1;
-			
-			globe.data.pc = new glacier.PointCollection();
-			
-			globe.context.canvas.addEventListener('click', function(event) {
-				var intersection;
-				
-				if((intersection = globe.rayCast(event.clientX, event.clientY))) {
-					globe.data.pc.addPoint(intersection, glacier.color.RED);
-					globe.data.pc.init(globe.context);
-				}
-			});
+			globe.addData('http://api.npolar.no/expedition/track/?q=&filter-code=N-ICE2015&format=geojson&limit=all', glacier.color.AQUA);
 			
 			} catch(e) { console.log(e); }
 		</script>
