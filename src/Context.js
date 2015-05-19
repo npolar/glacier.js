@@ -221,6 +221,32 @@ glacier.Context.prototype = {
 		throw new glacier.exception.InvalidParameter('image', image, 'Image', 'createTexture', 'Context');
 	},
 	
+	screenToWorld: function(x, y) {
+		if(typeof x != 'number') {
+			throw new glacier.exception.InvalidParameter('x', x, 'number', 'screenToWorld', 'Context');
+		}
+		
+		if(typeof y != 'number') {
+			throw new glacier.exception.InvalidParameter('y', y, 'number', 'screenToWorld', 'Context');
+		}
+		
+		var ndc = new glacier.Vector3(
+			2.0 * (x / this.width) - 1.0,
+			1.0 - 2.0 * (y / this.height),
+			0.0
+		), vec4 = new glacier.Vector4(ndc);
+		
+		if(this.projection instanceof glacier.Matrix44) {
+			vec4.multiply(this.projection.inverse);
+		}
+		
+		if(this.view instanceof glacier.Matrix44) {
+			vec4.multiply(this.view.inverse);
+		}
+		
+		return vec4.divide(vec4.w).xyz;
+	},
+	
 	worldToScreen: function(point) {
 		if(point instanceof glacier.Vector3) {
 			var vec4 = new glacier.Vector4(point);
