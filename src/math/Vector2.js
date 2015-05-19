@@ -1,6 +1,6 @@
 glacier.Vector2 = function Vector2(xScalarOrVec2, y) {
-	glacier.addTypedProperty(this, [ 'x', 'u' ], 0.0);
-	glacier.addTypedProperty(this, [ 'y', 'v' ], 0.0);
+	glacier.addTypedProperty(this, [ 'x', 'u', 'lng' ], 0.0);
+	glacier.addTypedProperty(this, [ 'y', 'v', 'lat' ], 0.0);
 	
 	if(xScalarOrVec2 !== undefined && xScalarOrVec2 !== null) {
 		this.assign(xScalarOrVec2, y);
