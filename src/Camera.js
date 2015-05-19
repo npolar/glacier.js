@@ -38,101 +38,6 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 };
 
 glacier.Camera.prototype = {
-	bindMouse: function(container, options) {
-		if(typeof container == 'string') {
-			container = document.getElementById(container);
-		}
-		
-		if(container instanceof HTMLElement) {
-			var self = this, update;
-			
-			// Parse options with type-checking
-			options = glacier.parseOptions(options, {
-				movementButton:	[ { number: null }, null ],
-				rotationButton:	[ { number:    0 }, null ],
-				zoomButton:		[ { number: null }, null ],
-				zoomMin:		{ number: 1.01, gt: 0.0 },
-				zoomMax:		{ number: 10.0, gt: 0.0 },
-				zoomSteps:		{ number: 30, gt: 0 },
-				wheelMovement:	{ boolean: false },
-				wheelRotation:	{ boolean: false },
-				wheelZoom:		{ boolean: true  },
-			});
-			
-			self.mouseHandler = {
-				container: container,
-				target: new glacier.Vector3(0, 0, 0),
-				angle: new glacier.Vector2(0, 0),
-				zoom: options.zoomMax,
-				zoomStep: options.zoomSteps,
-				
-				callbacks: {
-					mousedown: function(event) {
-						if(options.rotationButton !== null && event.button === options.rotationButton) {
-							self.mouseHandler.rotationStart = {
-								position: new glacier.Vector2(event.clientX, event.clientY),
-								angle: new glacier.Vector2(self.mouseHandler.angle)
-							};
-						}
-					},
-					mouseup: function(event) {
-						if(options.rotationButton !== null && event.button === options.rotationButton) {
-							self.mouseHandler.rotationStart = null;
-						}
-					},
-					mousemove: function(event) {
-						if(self.mouseHandler.rotationStart) {
-							// TODO: Improved mouse movement (without hard-coded values)
-							
-							var offset = new glacier.Vector2(
-								(event.clientX - self.mouseHandler.rotationStart.position.x) / self.mouseHandler.container.offsetWidth * 360,
-								-(event.clientY - self.mouseHandler.rotationStart.position.y) / self.mouseHandler.container.offsetHeight * 180
-							);
-							
-							self.mouseHandler.angle = new glacier.Vector2(self.mouseHandler.rotationStart.angle).subtract(offset);
-							self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -89, 89);
-							update();
-						}
-					},
-					wheel: function(event) {
-						function easeIn(pos, min, max, len) {
-							return (max - min) * Math.pow(2, 10 * (pos / len - 1)) + min;
-						}
-						
-						if(options.wheelZoom) {
-							self.mouseHandler.zoomStep = glacier.clamp(self.mouseHandler.zoomStep + (event.deltaY > 0 ? 1 : (event.deltaY < 0 ? -1 : 0)), -options.zoomSteps, options.zoomSteps);
-							self.mouseHandler.zoom = easeIn(self.mouseHandler.zoomStep, options.zoomMin, options.zoomMax, options.zoomSteps);
-							update();
-						}
-					}
-				}
-			};
-			
-			(update = function() {
-				self.follow(self.mouseHandler.target, self.mouseHandler.angle, self.mouseHandler.zoom);
-			}).call();
-			
-			for(var c in self.mouseHandler.callbacks) {
-				if(self.mouseHandler.callbacks.hasOwnProperty(c) && typeof self.mouseHandler.callbacks[c] == 'function') {
-					self.mouseHandler.container.addEventListener(c, self.mouseHandler.callbacks[c]);
-				}
-			}
-		} else {
-			throw new glacier.exception.InvalidParameter('container', container, 'HTMLElement', 'bindMouse', 'Scene');
-		}
-	},
-	unbindMouse: function() {
-		if(this.mouseHandler.container instanceof HTMLElement) {
-			for(var c in this.mouseHandler.callbacks) {
-				if(this.mouseHandler.callbacks.hasOwnProperty(c) && typeof this.mouseHandler.callbacks[c] == 'function') {
-					this.mouseHandler.container.removeEventListener(c, this.mouseHandler.callbacks[c]);
-					this.mouseHandler.callbacks[c] = null;
-				}
-			}
-		}
-		
-		this.mouseHandler.container = null;
-	},
 	follow: function(target, angle, distance) {
 		if(!(target instanceof glacier.Vector3)) {
 			throw new glacier.exception.InvalidParameter('target', target, 'Vector3', 'follow', 'Camera');
@@ -164,6 +69,7 @@ glacier.Camera.prototype = {
 		
 		this.update();
 	},
+	
 	update: function() {
 		var z, x, y = new glacier.Vector3(0, 1, 0);
 		
