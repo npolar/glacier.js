@@ -64,7 +64,7 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 	
 	// Enable mouse controlling as required
 	if(options.mouseControl) {
-		this.camera.bindMouse(this.context.canvas);
+		this.bindMouse();
 	}
 	
 	// Add draw callback
@@ -157,6 +157,69 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 	},
 	
+	bindMouse: function(options) {
+		var self = this, camUpdate, c;
+		
+		// Parse options with type-checking
+		options = glacier.parseOptions(options, {
+			movementButton:	[ { number: null }, null ],
+			rotationButton:	[ { number:    0 }, null ],
+			zoomButton:		[ { number: null }, null ],
+			zoomMin:		{ number: 1.01, gt: 0.0 },
+			zoomMax:		{ number: 10.0, gt: 0.0 },
+			zoomSteps:		{ number: 30, gt: 0 },
+			wheelMovement:	{ boolean: false },
+			wheelRotation:	{ boolean: false },
+			wheelZoom:		{ boolean: true  },
+		});
+		
+		self.mouseHandler = {
+			target: new glacier.Vector3(0, 0, 0),
+			angle: new glacier.Vector2(0, 0),
+			zoom: options.zoomMax,
+			zoomStep: options.zoomSteps,
+			
+			callbacks: {
+				mousedown: function(event) {
+					if(options.rotationButton !== null && event.button === options.rotationButton) {
+						self.mouseHandler.clickLatLng = ((ray = self.rayCast(event.clientX, event.clientY)) ? self.pointToLatLng(ray) : null);
+					}
+				},
+				mouseup: function(event) {
+					if(options.rotationButton !== null && event.button === options.rotationButton) {
+						self.mouseHandler.clickLatLng = null;
+					}
+				},
+				mousemove: function(event) {
+					if(self.mouseHandler.clickLatLng && (ray = self.rayCast(event.clientX, event.clientY))) {
+						self.mouseHandler.angle.subtract(self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng));
+						self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -90.0 + Number.MIN_VALUE, 90.0 - Number.MIN_VALUE);
+						camUpdate();
+					}
+				},
+				wheel: function(event) {
+					function easeIn(pos, min, max, len) {
+						return (max - min) * Math.pow(2, 10 * (pos / len - 1)) + min;
+					}
+					
+					self.mouseHandler.zoomStep = glacier.clamp(self.mouseHandler.zoomStep + (event.deltaY > 0 ? 1 : (event.deltaY < 0 ? -1 : 0)), -options.zoomSteps, options.zoomSteps);
+					self.mouseHandler.zoom = easeIn(self.mouseHandler.zoomStep, options.zoomMin, options.zoomMax, options.zoomSteps);
+					camUpdate();
+				}
+			}
+		};
+			
+		(camUpdate = function() {
+			self.camera.follow(self.mouseHandler.target, self.mouseHandler.angle, self.mouseHandler.zoom);
+		}).call();
+			
+		for(c in self.mouseHandler.callbacks) {
+			if(self.mouseHandler.callbacks.hasOwnProperty(c) && typeof self.mouseHandler.callbacks[c] == 'function') {
+				self.context.canvas.addEventListener(c, self.mouseHandler.callbacks[c]);
+			}
+		}
+	},
+	
 	latLngToPoint: function(lat, lng, alt) {
 		if(typeof lat != 'number') {
 			throw new glacier.exception.InvalidParameter('lat', lat, 'number', 'latLngTo3D', 'GlobeScene');
@@ -187,10 +250,10 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			throw new glacier.exception.InvalidParameter('point', point, 'Vector3', 'worldToLatLng', 'GlobeScene');
 		}
 		
-		return {
-			lat: 90.0 - glacier.radToDeg(Math.acos(point.y / this.base.radius)),
-			lng: ((270.0 + glacier.radToDeg(Math.atan2(point.x, point.z))) % 360) - 180.0
-		};
+		return new glacier.Vector2(
+			((270.0 + glacier.radToDeg(Math.atan2(point.x, point.z))) % 360) - 180.0,
+			90.0 - glacier.radToDeg(Math.acos(point.y / this.base.radius))
+		);
 	},
 	
 	rayCast: function(x, y) {
@@ -217,7 +280,20 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 		
 		return intersection;
-	}
+	},
+	
+	unbindMouse: function() {
+		if(this.mouseHandler) {
+			for(var c in this.mouseHandler.callbacks) {
+				if(this.mouseHandler.callbacks.hasOwnProperty(c) && typeof this.mouseHandler.callbacks[c] == 'function') {
+					this.context.canvas.removeEventListener(c, this.mouseHandler.callbacks[c]);
+					this.mouseHandler.callbacks[c] = null;
+				}
+			}
+		}
+		
+		this.mouseHandler = null;
+	},
 });
 
 /* Index Limits
