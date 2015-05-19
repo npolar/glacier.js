@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.1.10',
+	VERSION: '0.1.11',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -69,7 +69,7 @@ glacier.isArray = function(object, type) {
 	return !!arr;
 };
 
-glacier.extend = function(target, source, sourceN) {
+glacier.extend = function(target, source) {
 	var args = arguments, n, o, obj, p, proto, protos = [];
 	
 	for(n = 1; n < args.length; ++n) {
@@ -110,24 +110,24 @@ glacier.extend = function(target, source, sourceN) {
 glacier.addTypedProperty = function(context, members, value, ctor) {
 	members = (members instanceof Array ? members : [ members ]);
 	
-	var onChangeCallback;
+	var m, onChangeCallback;
 	
-	function typedProperty(index) {
-		Object.defineProperty(context, members[index], {
+	function typedProperty(member) {
+		Object.defineProperty(context, member, {
 			get: function() {
 				return value;
 			},
 			set: function(newValue) {
 				if(typeof ctor == 'function' && !(newValue instanceof ctor)) {
-					throw new glacier.exception.InvalidAssignment(members[index], newValue, ctor.name);
+					throw new glacier.exception.InvalidAssignment(member, newValue, ctor.name);
 				} else if(typeof newValue !== typeof value) {
-					throw new glacier.exception.InvalidAssignment(members[index], newValue, typeof value);
+					throw new glacier.exception.InvalidAssignment(member, newValue, typeof value);
 				}
 				
 				if(newValue !== value) {
 					value = newValue;
 					
-					if(typeof onChangeCallback == 'function') {
+					if(onChangeCallback) {
 						onChangeCallback(value);
 					}
 				}
@@ -135,8 +135,8 @@ glacier.addTypedProperty = function(context, members, value, ctor) {
 		});
 	}
 	
-	for(var m in members) {
-		typedProperty(m);
+	for(m in members) {
+		typedProperty(members[m]);
 	}
 	
 	return {
