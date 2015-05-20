@@ -101,7 +101,7 @@ glacier.Vector4.prototype = {
 	},
 	
 	maximize: function(max) {
-		if(min instanceof glacier.Vector4) {
+		if(max instanceof glacier.Vector4) {
 			this.x = Math.max(this.x, max.x);
 			this.y = Math.max(this.y, max.y);
 			this.z = Math.max(this.z, max.z);
