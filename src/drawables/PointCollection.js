@@ -38,6 +38,13 @@ glacier.extend(glacier.PointCollection, glacier.Drawable, {
 				self.buffer.drawMode = context.gl.POINTS;
 				self.buffer.elements = self.vertices.length;
 				
+				self.aabb.reset();
+				
+				self.vertices.forEach(function(vertex) {
+					self.aabb.min.minimize(vertex);
+					self.aabb.max.maximize(vertex);
+				});
+				
 				return true;
 			}
 		}
