@@ -160,6 +160,16 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 	bindMouse: function(options) {
 		var self = this, camUpdate, c;
 		
+		self.unbindMouse();
+		
+		function easeIn(pos, min, max, len) {
+			return (max - min) * Math.pow(2, 10 * (pos / len - 1)) + min;
+		}
+		
+		function easeOut(pos, initial, target, len) {
+			return (target - initial) * (-Math.pow(2, -10 * pos / len) + 1) + initial;
+		}
+		
 		// Parse options with type-checking
 		options = glacier.parseOptions(options, {
 			movementButton:	[ { number: null }, null ],
@@ -175,7 +185,8 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		
 		self.mouseHandler = {
 			target: new glacier.Vector3(0, 0, 0),
-			angle: new glacier.Vector2(0, 0),
+			angle: new glacier.Vector2(90, 0),
+			angleVelocity: null,
 			zoom: options.zoomMax,
 			zoomStep: options.zoomSteps,
 			
@@ -183,33 +194,53 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 				mousedown: function(event) {
 					if(options.rotationButton !== null && event.button === options.rotationButton) {
 						self.mouseHandler.clickLatLng = ((ray = self.rayCast(event.clientX, event.clientY)) ? self.pointToLatLng(ray) : null);
+						self.mouseHandler.angleVelocity = null;
 					}
 				},
 				mouseup: function(event) {
 					if(options.rotationButton !== null && event.button === options.rotationButton) {
 						self.mouseHandler.clickLatLng = null;
+						
+						self.mouseHandler.angleVelocity = {
+							initial: self.mouseHandler.deltaLatLng.copy,
+							current: new glacier.Vector2(0, 0),
+							dtime: 0.0
+						};
 					}
 				},
 				mousemove: function(event) {
 					if(self.mouseHandler.clickLatLng && (ray = self.rayCast(event.clientX, event.clientY))) {
-						self.mouseHandler.angle.subtract(self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng));
-						self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -90.0 + Number.MIN_VALUE, 90.0 - Number.MIN_VALUE);
+						self.mouseHandler.deltaLatLng = self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng);
+						self.mouseHandler.angle.subtract(self.mouseHandler.deltaLatLng);
 						camUpdate();
 					}
 				},
 				wheel: function(event) {
-					function easeIn(pos, min, max, len) {
-						return (max - min) * Math.pow(2, 10 * (pos / len - 1)) + min;
-					}
-					
 					self.mouseHandler.zoomStep = glacier.clamp(self.mouseHandler.zoomStep + (event.deltaY > 0 ? 1 : (event.deltaY < 0 ? -1 : 0)), -options.zoomSteps, options.zoomSteps);
 					self.mouseHandler.zoom = easeIn(self.mouseHandler.zoomStep, options.zoomMin, options.zoomMax, options.zoomSteps);
 					camUpdate();
+				}
+			},
+			
+			camEaseCallback: function(dtime) {
+				if(self.mouseHandler.angleVelocity) {
+					var velocity = self.mouseHandler.angleVelocity, length = velocity.initial.length;
+					
+					velocity.current.x = easeOut((velocity.dtime += dtime), velocity.initial.x, 0.0, length);
+					velocity.current.y = easeOut((velocity.dtime += dtime), velocity.initial.y, 0.0, length);
+					self.mouseHandler.angle.subtract(velocity.current);
+					
+					camUpdate();
+					
+					if(glacier.compare(velocity.current.length, 0.0)) {
+						self.mouseHandler.angleVelocity = null;
+					}
 				}
 			}
 		};
 			
 		(camUpdate = function() {
+			self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -89.99, 89.99);
 			self.camera.follow(self.mouseHandler.target, self.mouseHandler.angle, self.mouseHandler.zoom);
 		}).call();
 			
@@ -218,6 +249,8 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 				self.context.canvas.addEventListener(c, self.mouseHandler.callbacks[c]);
 			}
 		}
+		
+		self.runCallbacks.push(self.mouseHandler.camEaseCallback);
 	},
 	
 	latLngToPoint: function(lat, lng, alt) {
@@ -239,9 +272,9 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		alt = 1.0 + ((alt || 0) * (1.0 / 6378137));
 		
 		return new glacier.Vector3(
-			alt * -this.base.radius * Math.cos(theta) * Math.cos(phi),
-			alt * this.base.radius * Math.sin(theta),
-			alt * this.base.radius * Math.cos(theta) * Math.sin(phi)
+			alt * this.base.radius * -Math.cos(theta) * Math.cos(phi),
+			alt * this.base.radius *  Math.sin(theta),
+			alt * this.base.radius *  Math.cos(theta) * Math.sin(phi)
 		);
 	},
 	
@@ -283,16 +316,25 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 	},
 	
 	unbindMouse: function() {
-		if(this.mouseHandler) {
-			for(var c in this.mouseHandler.callbacks) {
-				if(this.mouseHandler.callbacks.hasOwnProperty(c) && typeof this.mouseHandler.callbacks[c] == 'function') {
-					this.context.canvas.removeEventListener(c, this.mouseHandler.callbacks[c]);
-					this.mouseHandler.callbacks[c] = null;
+		var self = this, c;
+		
+		if(self.mouseHandler) {
+			for(c in self.mouseHandler.callbacks) {
+				if(self.mouseHandler.callbacks.hasOwnProperty(c) && typeof self.mouseHandler.callbacks[c] == 'function') {
+					self.context.canvas.removeEventListener(c, self.mouseHandler.callbacks[c]);
+					self.mouseHandler.callbacks[c] = null;
+				}
+			}
+			
+			for(c in self.runCallbacks) {
+				if(self.runCallbacks[c] === self.mouseHandler.camEaseCallback) {
+					self.runCallbacks.splice(c, 1);
+					break;
 				}
 			}
 		}
 		
-		this.mouseHandler = null;
+		self.mouseHandler = null;
 	},
 });
 
