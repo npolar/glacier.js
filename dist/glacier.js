@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.1.11',
+	VERSION: '0.2.0',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -1090,7 +1090,8 @@ glacier.Context.prototype = {
 };
 
 glacier.Drawable = function Drawable() {
-	// Define matrix and visible members
+	// Define aabb, matrix and visible members
+	glacier.addTypedProperty(this, 'aabb', new glacier.BoundingBox(), glacier.BoundingBox);
 	glacier.addTypedProperty(this, 'matrix', new glacier.Matrix44(), glacier.Matrix44);
 	glacier.addTypedProperty(this, 'visible', true);
 	
@@ -2171,6 +2172,13 @@ glacier.extend(glacier.Mesh, glacier.Drawable, {
 					self['texture' + tex].onFree(function() { self.buffer.freeTexture(tex); });
 				});
 				
+				self.aabb.reset();
+				
+				self.vertices.forEach(function(vertex) {
+					self.aabb.min.minimize(vertex);
+					self.aabb.max.maximize(vertex);
+				});
+				
 				return true;
 			}
 		}
@@ -2219,6 +2227,13 @@ glacier.extend(glacier.PointCollection, glacier.Drawable, {
 			if(self.buffer.init(self.vertices, null, null, null, self.colors)) {
 				self.buffer.drawMode = context.gl.POINTS;
 				self.buffer.elements = self.vertices.length;
+				
+				self.aabb.reset();
+				
+				self.vertices.forEach(function(vertex) {
+					self.aabb.min.minimize(vertex);
+					self.aabb.max.maximize(vertex);
+				});
 				
 				return true;
 			}
@@ -2269,6 +2284,110 @@ glacier.extend(glacier.PointCollection, glacier.Drawable, {
 		});
 	}
 });
+
+glacier.BoundingBox = function BoundingBox(minOrBoundingBox, max) {
+	glacier.addTypedProperty(this, 'min', new glacier.Vector3( Number.MAX_VALUE), glacier.Vector3);
+	glacier.addTypedProperty(this, 'max', new glacier.Vector3(-Number.MAX_VALUE), glacier.Vector3);
+	
+	if(minOrBoundingBox !== undefined && minOrBoundingBox !== null) {
+		this.assign(minOrBoundingBox, max);
+	}
+};
+
+glacier.BoundingBox.prototype = {
+	add: function(vec3) {
+		if(vec3 instanceof glacier.Vector3) {
+			this.min.add(vec3);
+			this.max.add(vec3);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'add', 'BoundingBox');
+		}
+		
+		return this;
+	},
+	
+	assign: function(minOrBoundingBox, max) {
+		if(minOrBoundingBox instanceof glacier.BoundingBox) {
+			return this.assign(minOrBoundingBox.min, minOrBoundingBox.max);
+		} else {
+			var args = [ 'min', 'max' ], min = minOrBoundingBox;
+			
+			[ min, max ].forEach(function(arg, index) {
+				if(!(arg instanceof glacier.Vector3)) {
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'Vector3', 'assign', 'BoundingBox');
+				}
+			});
+			
+			this.min.assign(min);
+			this.max.assign(max);
+		}
+		
+		return this;
+	},
+	
+	get copy() {
+		return new glacier.BoundingBox(this);
+	},
+	
+	get matrix() {
+		var half = new glacier.Vector3(this.max).subtract(this.min).divide(2),
+			matrix = new glacier.Matrix44();
+			
+		return matrix.translate(this.min.copy.add(half)).scale(half);
+	},
+	
+	reset: function() {
+		this.min.assign( Number.MAX_VALUE);
+		this.max.assign(-Number.MAX_VALUE);
+	},
+	
+	subtract: function(vec3) {
+		if(vec3 instanceof glacier.Vector3) {
+			this.min.subtract(vec3);
+			this.max.subtract(vec3);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'subtract', 'BoundingBox');
+		}
+		
+		return this;
+	},
+	
+	toString: function() {
+		return ('BoundingBox(' + this.min.toString() + ', ' + this.max.toString() + ')');
+	},
+	
+	update: function(min, max, matrix) {
+		if(!(min instanceof glacier.Vector3)) {
+			throw new glacier.exception.InvalidParameter('min', min, 'Vector3', 'update', 'BoundingBox');
+		}
+		
+		if(!(max instanceof glacier.Vector3)) {
+			throw new glacier.exception.InvalidParameter('max', max, 'Vector3', 'update', 'BoundingBox');
+		}
+		
+		if(!(matrix instanceof glacier.Matrix44)) {
+			matrix = new glacier.Matrix44();
+		}
+		
+		this.reset();
+		
+		[
+			[ max.x, max.y, max.z ], // rtf
+			[ min.x, max.y, max.z ], // ltf
+			[ max.x, max.y, min.z ], // rtb
+			[ min.x, max.y, min.z ], // ltb
+			[ max.x, min.y, max.z ], // rbf
+			[ min.x, min.y, max.z ], // lbf
+			[ max.x, min.y, min.z ], // rbb
+			[ min.x, min.y, min.z ]  // lbb
+		]
+		.forEach(function(plane) {
+			var vec3 = new glacier.Vector3(plane[0], plane[1], plane[2]).multiply(matrix);
+			this.min.minimize(vec3);
+			this.max.maximize(vec3);
+		}, this);
+	}
+};
 
 glacier.Matrix33 = function Matrix33(value) {
 	Object.defineProperty(this, 'array', {
@@ -2961,6 +3080,28 @@ glacier.Vector2.prototype = {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y));
 	},
 	
+	maximize: function(max) {
+		if(max instanceof glacier.Vector2) {
+			this.x = Math.max(this.x, max.x);
+			this.y = Math.max(this.y, max.y);
+		} else {
+			throw new glacier.exception.InvalidParameter('max', max, 'Vector2', 'minimize', 'Vector2');
+		}
+		
+		return this;
+	},
+	
+	minimize: function(min) {
+		if(min instanceof glacier.Vector2) {
+			this.x = Math.min(this.x, min.x);
+			this.y = Math.min(this.y, min.y);
+		} else {
+			throw new glacier.exception.InvalidParameter('min', min, 'Vector2', 'minimize', 'Vector2');
+		}
+		
+		return this;
+	},
+	
 	multiply: function(value) {
 		if(value instanceof glacier.Vector2) {
 			this.x *= value.x;
@@ -3151,6 +3292,30 @@ glacier.Vector3.prototype = {
 	
 	get length() {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z));
+	},
+	
+	maximize: function(max) {
+		if(max instanceof glacier.Vector3) {
+			this.x = Math.max(this.x, max.x);
+			this.y = Math.max(this.y, max.y);
+			this.z = Math.max(this.z, max.z);
+		} else {
+			throw new glacier.exception.InvalidParameter('max', max, 'Vector3', 'minimize', 'Vector3');
+		}
+		
+		return this;
+	},
+	
+	minimize: function(min) {
+		if(min instanceof glacier.Vector3) {
+			this.x = Math.min(this.x, min.x);
+			this.y = Math.min(this.y, min.y);
+			this.z = Math.min(this.z, min.z);
+		} else {
+			throw new glacier.exception.InvalidParameter('min', min, 'Vector3', 'minimize', 'Vector3');
+		}
+		
+		return this;
 	},
 	
 	multiply: function(value) {
@@ -3379,6 +3544,32 @@ glacier.Vector4.prototype = {
 	
 	get length() {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z) + (this.w * this.w));
+	},
+	
+	maximize: function(max) {
+		if(max instanceof glacier.Vector4) {
+			this.x = Math.max(this.x, max.x);
+			this.y = Math.max(this.y, max.y);
+			this.z = Math.max(this.z, max.z);
+			this.w = Math.max(this.w, max.w);
+		} else {
+			throw new glacier.exception.InvalidParameter('max', max, 'Vector4', 'minimize', 'Vector4');
+		}
+		
+		return this;
+	},
+	
+	minimize: function(min) {
+		if(min instanceof glacier.Vector4) {
+			this.x = Math.min(this.x, min.x);
+			this.y = Math.min(this.y, min.y);
+			this.z = Math.min(this.z, min.z);
+			this.w = Math.min(this.w, min.w);
+		} else {
+			throw new glacier.exception.InvalidParameter('min', min, 'Vector4', 'minimize', 'Vector4');
+		}
+		
+		return this;
 	},
 	
 	multiply: function(value) {
@@ -3646,6 +3837,16 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 	bindMouse: function(options) {
 		var self = this, camUpdate, c;
 		
+		self.unbindMouse();
+		
+		function easeIn(pos, min, max, len) {
+			return (max - min) * Math.pow(2, 10 * (pos / len - 1)) + min;
+		}
+		
+		function easeOut(pos, initial, target, len) {
+			return (target - initial) * (-Math.pow(2, -10 * pos / len) + 1) + initial;
+		}
+		
 		// Parse options with type-checking
 		options = glacier.parseOptions(options, {
 			movementButton:	[ { number: null }, null ],
@@ -3661,7 +3862,8 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		
 		self.mouseHandler = {
 			target: new glacier.Vector3(0, 0, 0),
-			angle: new glacier.Vector2(0, 0),
+			angle: new glacier.Vector2(90, 0),
+			angleVelocity: null,
 			zoom: options.zoomMax,
 			zoomStep: options.zoomSteps,
 			
@@ -3669,33 +3871,55 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 				mousedown: function(event) {
 					if(options.rotationButton !== null && event.button === options.rotationButton) {
 						self.mouseHandler.clickLatLng = ((ray = self.rayCast(event.clientX, event.clientY)) ? self.pointToLatLng(ray) : null);
+						self.mouseHandler.angleVelocity = null;
 					}
 				},
 				mouseup: function(event) {
 					if(options.rotationButton !== null && event.button === options.rotationButton) {
 						self.mouseHandler.clickLatLng = null;
+						
+						if(self.mouseHandler.deltaLatLng) {
+							self.mouseHandler.angleVelocity = {
+								initial: self.mouseHandler.deltaLatLng.copy,
+								current: new glacier.Vector2(0, 0),
+								dtime: 0.0
+							};
+						}
 					}
 				},
 				mousemove: function(event) {
 					if(self.mouseHandler.clickLatLng && (ray = self.rayCast(event.clientX, event.clientY))) {
-						self.mouseHandler.angle.subtract(self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng));
-						self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -90.0 + Number.MIN_VALUE, 90.0 - Number.MIN_VALUE);
+						self.mouseHandler.deltaLatLng = self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng);
+						self.mouseHandler.angle.subtract(self.mouseHandler.deltaLatLng);
 						camUpdate();
 					}
 				},
 				wheel: function(event) {
-					function easeIn(pos, min, max, len) {
-						return (max - min) * Math.pow(2, 10 * (pos / len - 1)) + min;
-					}
-					
 					self.mouseHandler.zoomStep = glacier.clamp(self.mouseHandler.zoomStep + (event.deltaY > 0 ? 1 : (event.deltaY < 0 ? -1 : 0)), -options.zoomSteps, options.zoomSteps);
 					self.mouseHandler.zoom = easeIn(self.mouseHandler.zoomStep, options.zoomMin, options.zoomMax, options.zoomSteps);
 					camUpdate();
+				}
+			},
+			
+			camEaseCallback: function(dtime) {
+				if(self.mouseHandler.angleVelocity) {
+					var velocity = self.mouseHandler.angleVelocity, length = velocity.initial.length;
+					
+					velocity.current.x = easeOut((velocity.dtime += dtime), velocity.initial.x, 0.0, length);
+					velocity.current.y = easeOut((velocity.dtime += dtime), velocity.initial.y, 0.0, length);
+					self.mouseHandler.angle.subtract(velocity.current);
+					
+					camUpdate();
+					
+					if(glacier.compare(velocity.current.length, 0.0)) {
+						self.mouseHandler.angleVelocity = null;
+					}
 				}
 			}
 		};
 			
 		(camUpdate = function() {
+			self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -89.99, 89.99);
 			self.camera.follow(self.mouseHandler.target, self.mouseHandler.angle, self.mouseHandler.zoom);
 		}).call();
 			
@@ -3704,6 +3928,8 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 				self.context.canvas.addEventListener(c, self.mouseHandler.callbacks[c]);
 			}
 		}
+		
+		self.runCallbacks.push(self.mouseHandler.camEaseCallback);
 	},
 	
 	latLngToPoint: function(lat, lng, alt) {
@@ -3725,9 +3951,9 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		alt = 1.0 + ((alt || 0) * (1.0 / 6378137));
 		
 		return new glacier.Vector3(
-			alt * -this.base.radius * Math.cos(theta) * Math.cos(phi),
-			alt * this.base.radius * Math.sin(theta),
-			alt * this.base.radius * Math.cos(theta) * Math.sin(phi)
+			alt * this.base.radius * -Math.cos(theta) * Math.cos(phi),
+			alt * this.base.radius *  Math.sin(theta),
+			alt * this.base.radius *  Math.cos(theta) * Math.sin(phi)
 		);
 	},
 	
@@ -3769,16 +3995,25 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 	},
 	
 	unbindMouse: function() {
-		if(this.mouseHandler) {
-			for(var c in this.mouseHandler.callbacks) {
-				if(this.mouseHandler.callbacks.hasOwnProperty(c) && typeof this.mouseHandler.callbacks[c] == 'function') {
-					this.context.canvas.removeEventListener(c, this.mouseHandler.callbacks[c]);
-					this.mouseHandler.callbacks[c] = null;
+		var self = this, c;
+		
+		if(self.mouseHandler) {
+			for(c in self.mouseHandler.callbacks) {
+				if(self.mouseHandler.callbacks.hasOwnProperty(c) && typeof self.mouseHandler.callbacks[c] == 'function') {
+					self.context.canvas.removeEventListener(c, self.mouseHandler.callbacks[c]);
+					self.mouseHandler.callbacks[c] = null;
+				}
+			}
+			
+			for(c in self.runCallbacks) {
+				if(self.runCallbacks[c] === self.mouseHandler.camEaseCallback) {
+					self.runCallbacks.splice(c, 1);
+					break;
 				}
 			}
 		}
 		
-		this.mouseHandler = null;
+		self.mouseHandler = null;
 	},
 });
 
