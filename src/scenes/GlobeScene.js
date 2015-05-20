@@ -201,11 +201,13 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 					if(options.rotationButton !== null && event.button === options.rotationButton) {
 						self.mouseHandler.clickLatLng = null;
 						
-						self.mouseHandler.angleVelocity = {
-							initial: self.mouseHandler.deltaLatLng.copy,
-							current: new glacier.Vector2(0, 0),
-							dtime: 0.0
-						};
+						if(self.mouseHandler.deltaLatLng) {
+							self.mouseHandler.angleVelocity = {
+								initial: self.mouseHandler.deltaLatLng.copy,
+								current: new glacier.Vector2(0, 0),
+								dtime: 0.0
+							};
+						}
 					}
 				},
 				mousemove: function(event) {
