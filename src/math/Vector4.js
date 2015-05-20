@@ -100,6 +100,32 @@ glacier.Vector4.prototype = {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z) + (this.w * this.w));
 	},
 	
+	maximize: function(max) {
+		if(min instanceof glacier.Vector4) {
+			this.x = Math.max(this.x, max.x);
+			this.y = Math.max(this.y, max.y);
+			this.z = Math.max(this.z, max.z);
+			this.w = Math.max(this.w, max.w);
+		} else {
+			throw new glacier.exception.InvalidParameter('max', max, 'Vector4', 'minimize', 'Vector4');
+		}
+		
+		return this;
+	},
+	
+	minimize: function(min) {
+		if(min instanceof glacier.Vector4) {
+			this.x = Math.min(this.x, min.x);
+			this.y = Math.min(this.y, min.y);
+			this.z = Math.min(this.z, min.z);
+			this.w = Math.min(this.w, min.w);
+		} else {
+			throw new glacier.exception.InvalidParameter('min', min, 'Vector4', 'minimize', 'Vector4');
+		}
+		
+		return this;
+	},
+	
 	multiply: function(value) {
 		if(value instanceof glacier.Vector4) {
 			this.x *= value.x;

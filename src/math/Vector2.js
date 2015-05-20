@@ -86,6 +86,28 @@ glacier.Vector2.prototype = {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y));
 	},
 	
+	maximize: function(max) {
+		if(min instanceof glacier.Vector2) {
+			this.x = Math.max(this.x, max.x);
+			this.y = Math.max(this.y, max.y);
+		} else {
+			throw new glacier.exception.InvalidParameter('max', max, 'Vector2', 'minimize', 'Vector2');
+		}
+		
+		return this;
+	},
+	
+	minimize: function(min) {
+		if(min instanceof glacier.Vector2) {
+			this.x = Math.min(this.x, min.x);
+			this.y = Math.min(this.y, min.y);
+		} else {
+			throw new glacier.exception.InvalidParameter('min', min, 'Vector2', 'minimize', 'Vector2');
+		}
+		
+		return this;
+	},
+	
 	multiply: function(value) {
 		if(value instanceof glacier.Vector2) {
 			this.x *= value.x;
