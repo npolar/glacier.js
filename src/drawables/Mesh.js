@@ -56,6 +56,13 @@ glacier.extend(glacier.Mesh, glacier.Drawable, {
 					self['texture' + tex].onFree(function() { self.buffer.freeTexture(tex); });
 				});
 				
+				self.aabb.reset();
+				
+				self.vertices.forEach(function(vertex) {
+					self.aabb.min.minimize(vertex);
+					self.aabb.max.maximize(vertex);
+				});
+				
 				return true;
 			}
 		}
