@@ -1,5 +1,6 @@
 glacier.Drawable = function Drawable() {
-	// Define matrix and visible members
+	// Define aabb, matrix and visible members
+	glacier.addTypedProperty(this, 'aabb', new glacier.BoundingBox(), glacier.BoundingBox);
 	glacier.addTypedProperty(this, 'matrix', new glacier.Matrix44(), glacier.Matrix44);
 	glacier.addTypedProperty(this, 'visible', true);
 	
