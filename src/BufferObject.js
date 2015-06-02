@@ -35,6 +35,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 				}
 			}
 		},
+		
 		drawMode: {
 			get: function() {
 				return mode;
@@ -50,6 +51,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 				}
 			}
 		},
+		
 		shader: {
 			get: function() {
 				return shader;
@@ -145,10 +147,12 @@ glacier.BufferObject.prototype = {
 			gl.bindTexture(gl.TEXTURE_2D, null);
 		}
 	},
+	
 	init: function(vertices, indices, normals, texCoords, colors) {
 		if(this.context && this.shader) {
 			var gl = this.context.gl, array;
 			
+			// Vertex Position buffer
 			if(glacier.isArray(vertices, glacier.Vector3)) {
 				if(vertices.length) {
 					array = [];
@@ -160,6 +164,7 @@ glacier.BufferObject.prototype = {
 				throw new glacier.exception.InvalidParameter('vertices', vertices, 'Vector3 array', 'init', 'BufferObject');
 			}
 			
+			// Geometry Index buffer
 			if(glacier.isArray(indices, 'number')) {
 				if(indices.length) {
 					array = [];
@@ -171,6 +176,7 @@ glacier.BufferObject.prototype = {
 				throw new glacier.exception.InvalidParameter('indices', indices, 'number array', 'init', 'BufferObject');
 			}
 			
+			// Vertex Normal buffer
 			if(glacier.isArray(normals, glacier.Vector3)) {
 				if(normals.length) {
 					array = [];
@@ -182,6 +188,7 @@ glacier.BufferObject.prototype = {
 				throw new glacier.exception.InvalidParameter('normals', normals, 'Vector3 array', 'init', 'BufferObject');
 			}
 			
+			// Texture Coordinates buffer
 			if(glacier.isArray(texCoords, glacier.Vector2)) {
 				if(texCoords.length) {
 					array = [];
@@ -193,6 +200,7 @@ glacier.BufferObject.prototype = {
 				throw new glacier.exception.InvalidParameter('texCoords', texCoords, 'Vector2 array', 'init', 'BufferObject');
 			}
 			
+			// Vertex Color buffer
 			if(glacier.isArray(colors, glacier.Color)) {
 				if(colors.length) {
 					array = [];
@@ -212,6 +220,7 @@ glacier.BufferObject.prototype = {
 		
 		return false;
 	},
+	
 	free: function() {
 		if(this.context) {
 			var i;
@@ -228,6 +237,7 @@ glacier.BufferObject.prototype = {
 			}
 		}
 	},
+	
 	freeTexture: function(index) {
 		if(this.context && this.textures[index]) {
 			if(this.textures[index] instanceof WebGLTexture) {
