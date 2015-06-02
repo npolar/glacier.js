@@ -184,6 +184,17 @@ glacier.Vector4.prototype = {
 		return this;
 	},
 	
+	swap: function(vec4) {
+		if(vec4 instanceof glacier.Vector4) {
+			this.x = vec4.x + (vec4.x = this.x, 0);
+			this.y = vec4.y + (vec4.y = this.y, 0);
+			this.z = vec4.z + (vec4.z = this.z, 0);
+			this.w = vec4.w + (vec4.w = this.w, 0);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec4', vec4, 'Vector4', 'swap', 'Vector4');
+		}
+	},
+	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ', ' + this.w + ')');
 	},

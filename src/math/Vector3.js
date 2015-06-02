@@ -260,6 +260,16 @@ glacier.Vector3.prototype = {
 		return this;
 	},
 	
+	swap: function(vec3) {
+		if(vec3 instanceof glacier.Vector3) {
+			this.x = vec3.x + (vec3.x = this.x, 0);
+			this.y = vec3.y + (vec3.y = this.y, 0);
+			this.z = vec3.z + (vec3.z = this.z, 0);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'swap', 'Vector3');
+		}
+	},
+	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
 	},

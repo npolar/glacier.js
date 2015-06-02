@@ -166,6 +166,15 @@ glacier.Vector2.prototype = {
 		return this;
 	},
 	
+	swap: function(vec2) {
+		if(vec2 instanceof glacier.Vector2) {
+			this.x = vec2.x + (vec2.x = this.x, 0);
+			this.y = vec2.y + (vec2.y = this.y, 0);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'swap', 'Vector2');
+		}
+	},
+	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ')');
 	}
