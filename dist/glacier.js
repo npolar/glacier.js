@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.2.0',
+	VERSION: '0.2.1',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -298,6 +298,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 				}
 			}
 		},
+		
 		drawMode: {
 			get: function() {
 				return mode;
@@ -313,6 +314,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 				}
 			}
 		},
+		
 		shader: {
 			get: function() {
 				return shader;
@@ -408,10 +410,12 @@ glacier.BufferObject.prototype = {
 			gl.bindTexture(gl.TEXTURE_2D, null);
 		}
 	},
+	
 	init: function(vertices, indices, normals, texCoords, colors) {
 		if(this.context && this.shader) {
 			var gl = this.context.gl, array;
 			
+			// Vertex Position buffer
 			if(glacier.isArray(vertices, glacier.Vector3)) {
 				if(vertices.length) {
 					array = [];
@@ -423,6 +427,7 @@ glacier.BufferObject.prototype = {
 				throw new glacier.exception.InvalidParameter('vertices', vertices, 'Vector3 array', 'init', 'BufferObject');
 			}
 			
+			// Geometry Index buffer
 			if(glacier.isArray(indices, 'number')) {
 				if(indices.length) {
 					array = [];
@@ -434,6 +439,7 @@ glacier.BufferObject.prototype = {
 				throw new glacier.exception.InvalidParameter('indices', indices, 'number array', 'init', 'BufferObject');
 			}
 			
+			// Vertex Normal buffer
 			if(glacier.isArray(normals, glacier.Vector3)) {
 				if(normals.length) {
 					array = [];
@@ -445,6 +451,7 @@ glacier.BufferObject.prototype = {
 				throw new glacier.exception.InvalidParameter('normals', normals, 'Vector3 array', 'init', 'BufferObject');
 			}
 			
+			// Texture Coordinates buffer
 			if(glacier.isArray(texCoords, glacier.Vector2)) {
 				if(texCoords.length) {
 					array = [];
@@ -456,6 +463,7 @@ glacier.BufferObject.prototype = {
 				throw new glacier.exception.InvalidParameter('texCoords', texCoords, 'Vector2 array', 'init', 'BufferObject');
 			}
 			
+			// Vertex Color buffer
 			if(glacier.isArray(colors, glacier.Color)) {
 				if(colors.length) {
 					array = [];
@@ -475,6 +483,7 @@ glacier.BufferObject.prototype = {
 		
 		return false;
 	},
+	
 	free: function() {
 		if(this.context) {
 			var i;
@@ -491,6 +500,7 @@ glacier.BufferObject.prototype = {
 			}
 		}
 	},
+	
 	freeTexture: function(index) {
 		if(this.context && this.textures[index]) {
 			if(this.textures[index] instanceof WebGLTexture) {
@@ -2163,20 +2173,22 @@ glacier.extend(glacier.Mesh, glacier.Drawable, {
 		var self = this;
 		
 		if(glacier.Drawable.prototype.init.call(this, context, options)) {
+			// Calculate AABB
+			self.aabb.reset();
+			self.vertices.forEach(function(vertex) {
+				self.aabb.min.minimize(vertex);
+				self.aabb.max.maximize(vertex);
+			});
+			
+			// Initialize buffers
 			if(self.buffer.init(self.vertices, self.indices, self.normals, self.texCoords, self.colors)) {
 				self.buffer.drawMode = context.gl.TRIANGLES;
 				self.buffer.elements = (self.indices.length ? self.indices.length : self.vertices.length / 3);
 				
+				// Enable texture hot-swapping
 				[ 0, 1, 2, 3 ].forEach(function(tex) {
 					self['texture' + tex].onLoad(function(image) { self.buffer.textures[tex] = context.createTexture(image); });
 					self['texture' + tex].onFree(function() { self.buffer.freeTexture(tex); });
-				});
-				
-				self.aabb.reset();
-				
-				self.vertices.forEach(function(vertex) {
-					self.aabb.min.minimize(vertex);
-					self.aabb.max.maximize(vertex);
 				});
 				
 				return true;
@@ -2224,17 +2236,17 @@ glacier.extend(glacier.PointCollection, glacier.Drawable, {
 		var self = this;
 		
 		if(glacier.Drawable.prototype.init.call(this, context, options)) {
+			// Calculate AABB
+			self.aabb.reset();
+			self.vertices.forEach(function(vertex) {
+				self.aabb.min.minimize(vertex);
+				self.aabb.max.maximize(vertex);
+			});
+			
+			// Initialize buffers
 			if(self.buffer.init(self.vertices, null, null, null, self.colors)) {
 				self.buffer.drawMode = context.gl.POINTS;
 				self.buffer.elements = self.vertices.length;
-				
-				self.aabb.reset();
-				
-				self.vertices.forEach(function(vertex) {
-					self.aabb.min.minimize(vertex);
-					self.aabb.max.maximize(vertex);
-				});
-				
 				return true;
 			}
 		}
@@ -2911,11 +2923,11 @@ glacier.Matrix44.prototype = {
 	}
 };
 
-glacier.Ray = function Ray(start, direction) {
-	glacier.addTypedProperty(this, ['a', 'start'], new glacier.Vector3(0.0), glacier.Vector3);
+glacier.Ray = function Ray(origin, direction) {
+	glacier.addTypedProperty(this, ['a', 'origin'], new glacier.Vector3(0.0), glacier.Vector3);
 	glacier.addTypedProperty(this, ['b', 'direction'], new glacier.Vector3(0.0), glacier.Vector3);
 	
-	this.assign(start, direction);
+	this.assign(origin, direction);
 };
 
 glacier.Ray.prototype = {
@@ -2923,23 +2935,45 @@ glacier.Ray.prototype = {
 		return new Float32Array([ this.a.x, this.a.y, this.a.z, this.b.x, this.b.y, this.b.z ]);
 	},
 	
-	assign: function(startOrRay, direction) {
-		if(startOrRay instanceof glacier.Ray) {
-			return this.assign(startOrRay.a, startOrRay.b);
+	assign: function(originOrRay, direction) {
+		if(originOrRay instanceof glacier.Ray) {
+			return this.assign(originOrRay.a, originOrRay.b);
 		} else {
-			var args = [ 'start', 'direction' ];
+			var args = [ 'origin', 'direction' ];
 			
-			[ startOrRay, direction ].forEach(function(arg, index) {
+			[ originOrRay, direction ].forEach(function(arg, index) {
 				if(!(arg instanceof glacier.Vector3)) {
 					throw new glacier.exception.InvalidParameter(args[index], arg, 'Vector3', 'assign', 'Ray');
 				}
 			});
 			
-			this.a = startOrRay.copy;
+			this.a = originOrRay.copy;
 			this.b = direction.copy;
 		}
 		
 		return this;
+	},
+	
+	boxIntersection: function(min, max) {
+		if(!(min instanceof glacier.Vector3)) {
+			throw new glacier.excepetion.InvalidParameter('min', min, 'Vector3', 'boxIntersection', 'Ray');
+		}
+		
+		if(!(max instanceof glacier.Vector3)) {
+			throw new glacier.excepetion.InvalidParameter('max', max, 'Vector3', 'boxIntersection', 'Ray');
+		}
+		
+		var dir = new glacier.Vector3(1.0).divide(this.b),
+			t1 = (min.x - this.a.x) * dir.x,
+			t2 = (max.x - this.a.x) * dir.x,
+			t3 = (min.y - this.a.y) * dir.y,
+			t4 = (max.y - this.a.y) * dir.y,
+			t5 = (min.z - this.a.z) * dir.z,
+			t6 = (max.z - this.a.z) * dir.z,
+			tmax = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6)),
+			tmin = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
+			
+		return ((tmax < 0 || tmin > tmax) ? null : new glacier.Vector3(tmin, tmin, tmin));
 	},
 	
 	deviation: function(ray) {
@@ -2952,10 +2986,9 @@ glacier.Ray.prototype = {
 	
 	intersects: function(geometry) {
 		if(geometry instanceof glacier.Sphere) {
-			var center = geometry.matrix.translation,
-				radius = geometry.radius;
-				
-			return this.sphereIntersection(center, radius);
+			return this.sphereIntersection(geometry.matrix.translation, geometry.radius);
+		} else if(geometry instanceof glacier.BoundingBox) {
+			return this.boxIntersection(geometry.min, geometry.max);
 		} else {
 			console.warn('Ray.intersects currently only supports sphere intersections');
 		}
@@ -3158,6 +3191,15 @@ glacier.Vector2.prototype = {
 		}
 		
 		return this;
+	},
+	
+	swap: function(vec2) {
+		if(vec2 instanceof glacier.Vector2) {
+			this.x = vec2.x + (vec2.x = this.x, 0);
+			this.y = vec2.y + (vec2.y = this.y, 0);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'swap', 'Vector2');
+		}
 	},
 	
 	toString: function() {
@@ -3427,6 +3469,16 @@ glacier.Vector3.prototype = {
 		return this;
 	},
 	
+	swap: function(vec3) {
+		if(vec3 instanceof glacier.Vector3) {
+			this.x = vec3.x + (vec3.x = this.x, 0);
+			this.y = vec3.y + (vec3.y = this.y, 0);
+			this.z = vec3.z + (vec3.z = this.z, 0);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'swap', 'Vector3');
+		}
+	},
+	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ')');
 	},
@@ -3630,6 +3682,17 @@ glacier.Vector4.prototype = {
 		return this;
 	},
 	
+	swap: function(vec4) {
+		if(vec4 instanceof glacier.Vector4) {
+			this.x = vec4.x + (vec4.x = this.x, 0);
+			this.y = vec4.y + (vec4.y = this.y, 0);
+			this.z = vec4.z + (vec4.z = this.z, 0);
+			this.w = vec4.w + (vec4.w = this.w, 0);
+		} else {
+			throw new glacier.exception.InvalidParameter('vec4', vec4, 'Vector4', 'swap', 'Vector4');
+		}
+	},
+	
 	toString: function() {
 		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ', ' + this.w + ')');
 	},
@@ -3733,7 +3796,11 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 	// Set camera clip planes
 	this.camera.clipNear = 0.01;
 	this.camera.clipFar = 100.0;
-	this.camera.follow(this.camera.target, new glacier.Vector2(90, 0), 2);
+	
+	// Add angle and zoom properties to camera, and initialize following
+	this.camera.angle = new glacier.Vector2(90, 0);
+	this.camera.zoom = 2.0;
+	this.camera.follow(this.camera.target, this.camera.angle, this.camera.zoom);
 	
 	// Bind view and projection matrices
 	this.context.view = this.camera.matrix;
@@ -3835,7 +3902,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 	},
 	
 	bindMouse: function(options) {
-		var self = this, camUpdate, c;
+		var self = this, camUpdate, c, ray;
 		
 		self.unbindMouse();
 		
@@ -3860,11 +3927,11 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			wheelZoom:		{ boolean: true  },
 		});
 		
+		self.camera.zoom = options.zoomMax;
+		
 		self.mouseHandler = {
 			target: new glacier.Vector3(0, 0, 0),
-			angle: new glacier.Vector2(90, 0),
 			angleVelocity: null,
-			zoom: options.zoomMax,
 			zoomStep: options.zoomSteps,
 			
 			callbacks: {
@@ -3888,16 +3955,25 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 					}
 				},
 				mousemove: function(event) {
-					if(self.mouseHandler.clickLatLng && (ray = self.rayCast(event.clientX, event.clientY))) {
-						self.mouseHandler.deltaLatLng = self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng);
-						self.mouseHandler.angle.subtract(self.mouseHandler.deltaLatLng);
-						camUpdate();
+					if((ray = self.rayCast(event.clientX, event.clientY))) {
+						self.context.canvas.style.cursor = 'move';
+						
+						if(self.mouseHandler.clickLatLng) {
+							self.mouseHandler.deltaLatLng = self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng);
+							self.camera.angle.subtract(self.mouseHandler.deltaLatLng);
+							camUpdate();
+						}
+					} else {
+						self.context.canvas.style.cursor = 'default';
+						self.mouseHandler.deltaLatLng = null;
 					}
 				},
 				wheel: function(event) {
-					self.mouseHandler.zoomStep = glacier.clamp(self.mouseHandler.zoomStep + (event.deltaY > 0 ? 1 : (event.deltaY < 0 ? -1 : 0)), -options.zoomSteps, options.zoomSteps);
-					self.mouseHandler.zoom = easeIn(self.mouseHandler.zoomStep, options.zoomMin, options.zoomMax, options.zoomSteps);
-					camUpdate();
+					if(event.deltaY) {
+						self.mouseHandler.zoomStep = glacier.clamp(self.mouseHandler.zoomStep + (event.deltaY > 0 ? 1 : -1), -options.zoomSteps, options.zoomSteps);
+						self.camera.zoom = easeIn(self.mouseHandler.zoomStep, options.zoomMin, options.zoomMax, options.zoomSteps);
+						camUpdate();
+					}
 				}
 			},
 			
@@ -3907,7 +3983,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 					
 					velocity.current.x = easeOut((velocity.dtime += dtime), velocity.initial.x, 0.0, length);
 					velocity.current.y = easeOut((velocity.dtime += dtime), velocity.initial.y, 0.0, length);
-					self.mouseHandler.angle.subtract(velocity.current);
+					self.camera.angle.subtract(velocity.current);
 					
 					camUpdate();
 					
@@ -3919,8 +3995,8 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		};
 			
 		(camUpdate = function() {
-			self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -89.99, 89.99);
-			self.camera.follow(self.mouseHandler.target, self.mouseHandler.angle, self.mouseHandler.zoom);
+			self.camera.angle.y = glacier.clamp(self.camera.angle.y, -89.99, 89.99);
+			self.camera.follow(self.mouseHandler.target, self.camera.angle, self.camera.zoom);
 		}).call();
 			
 		for(c in self.mouseHandler.callbacks) {
@@ -3930,6 +4006,42 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 		
 		self.runCallbacks.push(self.mouseHandler.camEaseCallback);
+	},
+	
+	focus: function(latOrVec2, lng) {
+		if(typeof lng == 'number') {
+			if(typeof latOrVec2 == 'number') {
+				latOrVec2 = new glacier.Vector2(lng, latOrVec2);
+			} else {
+				throw new glacier.exception.InvalidParameter('lat', latOrVec2, 'number', 'focus', 'GlobeScene');
+			}
+		} else if(!(latOrVec2 instanceof glacier.Vector2)) {
+			throw new glacier.exception.InvalidParameter('vec2', latOrVec2, 'Vector2', 'focus', 'GlobeScene');
+		}
+		
+		function easeInOut(t, b, c, d) {
+			var f = ((t /= (d / 2)) < 1 ? Math.pow(2, 10 * --t) : -Math.pow(2, -10 * --t) + 2) || 0;
+			return new glacier.Vector2((c.x / 2) * f + b.x, (c.y / 2) * f + b.y);
+		}
+		
+		var self = this, focusUpdate, step = 0, steps, start = self.camera.angle.copy;
+		latOrVec2.lng += 90.0;
+		
+		if(self.mouseHandler) {
+			self.camera.angle.assign(latOrVec2);
+			self.mouseHandler.target.assign(self.camera.target);
+		}
+		
+		steps = start.distance(latOrVec2);
+		latOrVec2.subtract(start);
+		
+		(focusUpdate = function() {
+			self.camera.follow(self.camera.target, self.camera.angle.assign(easeInOut(step, start, latOrVec2, steps)), self.camera.zoom);
+			
+			if(++step < steps) {
+				requestAnimationFrame(focusUpdate);
+			}
+		}).call();
 	},
 	
 	latLngToPoint: function(lat, lng, alt) {
@@ -4014,6 +4126,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 		
 		self.mouseHandler = null;
+		self.context.canvas.style.cursor = 'default';
 	},
 });
 
