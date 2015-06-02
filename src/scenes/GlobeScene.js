@@ -88,8 +88,8 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 		this.context.clear();
 		
 		this.base.matrix.assignIdentity();
-		this.base.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
-		this.base.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
+		//this.base.matrix.rotate(glacier.degToRad(-this.obliquity), 0, 0, 1);
+		//this.base.matrix.rotate(glacier.degToRad(this.rotation), 0, 1, 0);
 		this.base.draw();
 		
 		function drawData(data) {
