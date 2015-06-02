@@ -56,7 +56,11 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 	// Set camera clip planes
 	this.camera.clipNear = 0.01;
 	this.camera.clipFar = 100.0;
-	this.camera.follow(this.camera.target, new glacier.Vector2(90, 0), 2);
+	
+	// Add angle and zoom properties to camera, and initialize following
+	this.camera.angle = new glacier.Vector2(90, 0);
+	this.camera.zoom = 2.0;
+	this.camera.follow(this.camera.target, this.camera.angle, this.camera.zoom);
 	
 	// Bind view and projection matrices
 	this.context.view = this.camera.matrix;
@@ -183,11 +187,11 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			wheelZoom:		{ boolean: true  },
 		});
 		
+		self.camera.zoom = options.zoomMax;
+		
 		self.mouseHandler = {
 			target: new glacier.Vector3(0, 0, 0),
-			angle: new glacier.Vector2(90, 0),
 			angleVelocity: null,
-			zoom: options.zoomMax,
 			zoomStep: options.zoomSteps,
 			
 			callbacks: {
@@ -216,7 +220,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 						
 						if(self.mouseHandler.clickLatLng) {
 							self.mouseHandler.deltaLatLng = self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng);
-							self.mouseHandler.angle.subtract(self.mouseHandler.deltaLatLng);
+							self.camera.angle.subtract(self.mouseHandler.deltaLatLng);
 							camUpdate();
 						}
 					} else {
@@ -227,7 +231,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 				wheel: function(event) {
 					if(event.deltaY) {
 						self.mouseHandler.zoomStep = glacier.clamp(self.mouseHandler.zoomStep + (event.deltaY > 0 ? 1 : -1), -options.zoomSteps, options.zoomSteps);
-						self.mouseHandler.zoom = easeIn(self.mouseHandler.zoomStep, options.zoomMin, options.zoomMax, options.zoomSteps);
+						self.camera.zoom = easeIn(self.mouseHandler.zoomStep, options.zoomMin, options.zoomMax, options.zoomSteps);
 						camUpdate();
 					}
 				}
@@ -239,7 +243,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 					
 					velocity.current.x = easeOut((velocity.dtime += dtime), velocity.initial.x, 0.0, length);
 					velocity.current.y = easeOut((velocity.dtime += dtime), velocity.initial.y, 0.0, length);
-					self.mouseHandler.angle.subtract(velocity.current);
+					self.camera.angle.subtract(velocity.current);
 					
 					camUpdate();
 					
@@ -251,8 +255,8 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		};
 			
 		(camUpdate = function() {
-			self.mouseHandler.angle.y = glacier.clamp(self.mouseHandler.angle.y, -89.99, 89.99);
-			self.camera.follow(self.mouseHandler.target, self.mouseHandler.angle, self.mouseHandler.zoom);
+			self.camera.angle.y = glacier.clamp(self.camera.angle.y, -89.99, 89.99);
+			self.camera.follow(self.mouseHandler.target, self.camera.angle, self.camera.zoom);
 		}).call();
 			
 		for(c in self.mouseHandler.callbacks) {
@@ -280,21 +284,19 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			return new glacier.Vector2((c.x / 2) * f + b.x, (c.y / 2) * f + b.y);
 		}
 		
-		var self = this, focusUpdate, step = 0, steps, zoom = 2.0, start = new glacier.Vector2(90, 0);
-		latOrVec2.lng += start.lng;
+		var self = this, focusUpdate, step = 0, steps, start = self.camera.angle.copy;
+		latOrVec2.lng += 90.0;
 		
-		if(this.mouseHandler) {
-			start.assign(this.mouseHandler.angle);
-			zoom = this.mouseHandler.zoom;
-			this.mouseHandler.angle.assign(latOrVec2);
-			this.mouseHandler.target = this.camera.target;
+		if(self.mouseHandler) {
+			self.camera.angle.assign(latOrVec2);
+			self.mouseHandler.target.assign(self.camera.target);
 		}
 		
 		steps = start.distance(latOrVec2);
 		latOrVec2.subtract(start);
 		
 		(focusUpdate = function() {
-			self.camera.follow(self.camera.target, easeInOut(step, start, latOrVec2, steps), zoom);
+			self.camera.follow(self.camera.target, self.camera.angle.assign(easeInOut(step, start, latOrVec2, steps)), self.camera.zoom);
 			
 			if(++step < steps) {
 				requestAnimationFrame(focusUpdate);
