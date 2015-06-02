@@ -34,17 +34,17 @@ glacier.extend(glacier.PointCollection, glacier.Drawable, {
 		var self = this;
 		
 		if(glacier.Drawable.prototype.init.call(this, context, options)) {
+			// Calculate AABB
+			self.aabb.reset();
+			self.vertices.forEach(function(vertex) {
+				self.aabb.min.minimize(vertex);
+				self.aabb.max.maximize(vertex);
+			});
+			
+			// Initialize buffers
 			if(self.buffer.init(self.vertices, null, null, null, self.colors)) {
 				self.buffer.drawMode = context.gl.POINTS;
 				self.buffer.elements = self.vertices.length;
-				
-				self.aabb.reset();
-				
-				self.vertices.forEach(function(vertex) {
-					self.aabb.min.minimize(vertex);
-					self.aabb.max.maximize(vertex);
-				});
-				
 				return true;
 			}
 		}

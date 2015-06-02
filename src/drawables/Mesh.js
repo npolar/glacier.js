@@ -47,20 +47,22 @@ glacier.extend(glacier.Mesh, glacier.Drawable, {
 		var self = this;
 		
 		if(glacier.Drawable.prototype.init.call(this, context, options)) {
+			// Calculate AABB
+			self.aabb.reset();
+			self.vertices.forEach(function(vertex) {
+				self.aabb.min.minimize(vertex);
+				self.aabb.max.maximize(vertex);
+			});
+			
+			// Initialize buffers
 			if(self.buffer.init(self.vertices, self.indices, self.normals, self.texCoords, self.colors)) {
 				self.buffer.drawMode = context.gl.TRIANGLES;
 				self.buffer.elements = (self.indices.length ? self.indices.length : self.vertices.length / 3);
 				
+				// Enable texture hot-swapping
 				[ 0, 1, 2, 3 ].forEach(function(tex) {
 					self['texture' + tex].onLoad(function(image) { self.buffer.textures[tex] = context.createTexture(image); });
 					self['texture' + tex].onFree(function() { self.buffer.freeTexture(tex); });
-				});
-				
-				self.aabb.reset();
-				
-				self.vertices.forEach(function(vertex) {
-					self.aabb.min.minimize(vertex);
-					self.aabb.max.maximize(vertex);
 				});
 				
 				return true;
