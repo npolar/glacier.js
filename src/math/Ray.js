@@ -1,8 +1,8 @@
-glacier.Ray = function Ray(start, direction) {
-	glacier.addTypedProperty(this, ['a', 'start'], new glacier.Vector3(0.0), glacier.Vector3);
+glacier.Ray = function Ray(origin, direction) {
+	glacier.addTypedProperty(this, ['a', 'origin'], new glacier.Vector3(0.0), glacier.Vector3);
 	glacier.addTypedProperty(this, ['b', 'direction'], new glacier.Vector3(0.0), glacier.Vector3);
 	
-	this.assign(start, direction);
+	this.assign(origin, direction);
 };
 
 glacier.Ray.prototype = {
@@ -10,23 +10,45 @@ glacier.Ray.prototype = {
 		return new Float32Array([ this.a.x, this.a.y, this.a.z, this.b.x, this.b.y, this.b.z ]);
 	},
 	
-	assign: function(startOrRay, direction) {
-		if(startOrRay instanceof glacier.Ray) {
-			return this.assign(startOrRay.a, startOrRay.b);
+	assign: function(originOrRay, direction) {
+		if(originOrRay instanceof glacier.Ray) {
+			return this.assign(originOrRay.a, originOrRay.b);
 		} else {
-			var args = [ 'start', 'direction' ];
+			var args = [ 'origin', 'direction' ];
 			
-			[ startOrRay, direction ].forEach(function(arg, index) {
+			[ originOrRay, direction ].forEach(function(arg, index) {
 				if(!(arg instanceof glacier.Vector3)) {
 					throw new glacier.exception.InvalidParameter(args[index], arg, 'Vector3', 'assign', 'Ray');
 				}
 			});
 			
-			this.a = startOrRay.copy;
+			this.a = originOrRay.copy;
 			this.b = direction.copy;
 		}
 		
 		return this;
+	},
+	
+	boxIntersection: function(min, max) {
+		if(!(min instanceof glacier.Vector3)) {
+			throw new glacier.excepetion.InvalidParameter('min', min, 'Vector3', 'boxIntersection', 'Ray');
+		}
+		
+		if(!(max instanceof glacier.Vector3)) {
+			throw new glacier.excepetion.InvalidParameter('max', max, 'Vector3', 'boxIntersection', 'Ray');
+		}
+		
+		var dir = new glacier.Vector3(1.0).divide(this.b),
+			t1 = (min.x - this.a.x) * dir.x,
+			t2 = (max.x - this.a.x) * dir.x,
+			t3 = (min.y - this.a.y) * dir.y,
+			t4 = (max.y - this.a.y) * dir.y,
+			t5 = (min.z - this.a.z) * dir.z,
+			t6 = (max.z - this.a.z) * dir.z,
+			tmax = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6)),
+			tmin = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
+			
+		return ((tmax < 0 || tmin > tmax) ? null : new glacier.Vector3(tmin, tmin, tmin));
 	},
 	
 	deviation: function(ray) {
@@ -39,10 +61,9 @@ glacier.Ray.prototype = {
 	
 	intersects: function(geometry) {
 		if(geometry instanceof glacier.Sphere) {
-			var center = geometry.matrix.translation,
-				radius = geometry.radius;
-				
-			return this.sphereIntersection(center, radius);
+			return this.sphereIntersection(geometry.matrix.translation, geometry.radius);
+		} else if(geometry instanceof glacier.BoundingBox) {
+			return this.boxIntersection(geometry.min, geometry.max);
 		} else {
 			console.warn('Ray.intersects currently only supports sphere intersections');
 		}
