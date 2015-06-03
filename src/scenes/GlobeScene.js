@@ -4,6 +4,7 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 	
 	// Parse options with type-checking
 	options = glacier.parseOptions(options, {
+		background:		{ Color: glacier.color.BLACK, class: glacier.Color },
 		latitudes:		{ number: 45, gt: 2 },
 		longitudes:		{ number: 90, gt: 2 },
 		radius:			{ number: 1.0, gt: 0.0 },
@@ -71,6 +72,9 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 		this.bindMouse();
 	}
 	
+	// Set context background color
+	this.context.background = options.background;
+	
 	// Add draw callback
 	this.runCallbacks.push(function() {
 		var gl = this.context.gl, d;
@@ -113,7 +117,7 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 
 // glacier.GlobeScene extends glacier.Scene
 glacier.extend(glacier.GlobeScene, glacier.Scene, {
-	addData: function(geoJsonURL, color) {
+	addData: function(geoJsonURL, color, callback) {
 		var self = this, dataObject, drawables = {};
 		
 		if(typeof geoJsonURL == 'string') {
@@ -154,6 +158,10 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 							drawable.init(self.context);
 						}
 					});
+					
+					if(typeof callback == 'function') {
+						callback(geoJsonURL, dataObject.data);
+					}
 				}
 			});
 		} else {
@@ -284,19 +292,19 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			return new glacier.Vector2((c.x / 2) * f + b.x, (c.y / 2) * f + b.y);
 		}
 		
-		var self = this, focusUpdate, step = 0, steps, start = self.camera.angle.copy;
-		latOrVec2.lng += 90.0;
+		var self = this, focusUpdate, step = 0, steps, start = self.camera.angle.copy, vec2 = latOrVec2.copy;
+		vec2.lng += 90.0;
 		
 		if(self.mouseHandler) {
-			self.camera.angle.assign(latOrVec2);
+			self.camera.angle.assign(vec2);
 			self.mouseHandler.target.assign(self.camera.target);
 		}
 		
-		steps = start.distance(latOrVec2);
-		latOrVec2.subtract(start);
+		steps = start.distance(vec2);
+		vec2.subtract(start);
 		
 		(focusUpdate = function() {
-			self.camera.follow(self.camera.target, self.camera.angle.assign(easeInOut(step, start, latOrVec2, steps)), self.camera.zoom);
+			self.camera.follow(self.camera.target, self.camera.angle.assign(easeInOut(step, start, vec2, steps)), self.camera.zoom);
 			
 			if(++step < steps) {
 				requestAnimationFrame(focusUpdate);
