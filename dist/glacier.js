@@ -119,12 +119,10 @@ glacier.addTypedProperty = function(context, members, value, ctor) {
 			},
 			set: function(newValue) {
 				if(typeof ctor == 'function' && !(newValue instanceof ctor)) {
-					throw new glacier.exception.InvalidAssignment(member, newValue, ctor.name);
+					glacier.error.invalidAssignment(member, newValue, ctor.name);
 				} else if(typeof newValue !== typeof value) {
-					throw new glacier.exception.InvalidAssignment(member, newValue, typeof value);
-				}
-				
-				if(newValue !== value) {
+					glacier.error.invalidAssignment(member, newValue, typeof value);
+				} else if(newValue !== value) {
 					value = newValue;
 					
 					if(onChangeCallback) {
@@ -321,7 +319,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 				if(typeof value == 'number' && value >= 0) {
 					elements = Math.round(value);
 				} else {
-					throw new glacier.exception.InvalidAssignment('elements', value, 'positive integer', 'BufferObject');
+					glacier.error.invalidAssignment('elements', value, 'positive integer', 'BufferObject');
 				}
 			}
 		},
@@ -337,7 +335,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 					modes.sort(function(a, b) { return a-b; });
 					var valid = modes.join(', '), last = valid.lastIndexOf(', ');
 					valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
-					throw new glacier.exception.InvalidAssignment('drawMode', value, valid, 'BufferObject');
+					glacier.error.invalidAssignment('drawMode', value, valid, 'BufferObject');
 				}
 			}
 		},
@@ -355,10 +353,10 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 					if(bankShader instanceof glacier.Shader) {
 						shader = bankShader;
 					} else {
-						console.warn('Undefined WebGL shader program: ' + value);
+						glacier.error.invalidAssignment('shader', value, 'valid shader name as string', 'BufferObject');
 					}
 				} else {
-					throw new glacier.exception.InvalidAssignment('shader', shader, 'Shader', 'BufferObject');
+					glacier.error.invalidAssignment('shader', shader, 'Shader', 'BufferObject');
 				}
 			}
 		}
@@ -562,7 +560,7 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 						this.projection.assignIdentity();
 						this.projection.perspective(this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
 					} else {
-						throw new glacier.exception.InvalidAssignment(args[index], value, 'positive number', 'Camera');
+						glacier.error.invalidAssignment(args[index], value, 'positive number', 'Camera');
 					}
 				}
 			});
@@ -647,7 +645,7 @@ glacier.Color = function Color(params) {
 				if(typeof red == 'number' && red >= 0 && red <= 255) {
 					value = (((red & 0xFF) << 24) + (value & 0x00FFFFFF)) >>> 0;
 				} else {
-					throw new glacier.exception.InvalidAssignment('r', red, 'number between 0 and 255', 'Color');
+					glacier.error.invalidAssignment('r', red, 'number between 0 and 255', 'Color');
 				}
 			}
 		},
@@ -659,7 +657,7 @@ glacier.Color = function Color(params) {
 				if(typeof green == 'number' && green >= 0 && green <= 255) {
 					value = (((green & 0xFF) << 16) + (value & 0xFF00FFFF)) >>> 0;
 				} else {
-					throw new glacier.exception.InvalidAssignment('g', green, 'number between 0 and 255', 'Color');
+					glacier.error.invalidAssignment('g', green, 'number between 0 and 255', 'Color');
 				}
 			}
 		},
@@ -671,7 +669,7 @@ glacier.Color = function Color(params) {
 				if(typeof blue == 'number' && blue >= 0 && blue <= 255) {
 					value = (((blue & 0xFF) << 8) + (value & 0xFFFF00FF)) >>> 0;
 				} else {
-					throw new glacier.exception.InvalidAssignment('b', blue, 'number between 0 and 255', 'Color');
+					glacier.error.invalidAssignment('b', blue, 'number between 0 and 255', 'Color');
 				}
 			}
 		},
@@ -683,7 +681,7 @@ glacier.Color = function Color(params) {
 				if(typeof alpha == 'number' && alpha >= 0.0 && alpha <= 1.0) {
 					value = ((((alpha * 255) & 0xFF) << 0) + (value & 0xFFFFFF00)) >>> 0;
 				} else {
-					throw new glacier.exception.InvalidAssignment('a', alpha, 'number between 0.0 and 1.0', 'Color');
+					glacier.error.invalidAssignment('a', alpha, 'number between 0.0 and 1.0', 'Color');
 				}
 			}
 		},
@@ -704,11 +702,11 @@ glacier.Color = function Color(params) {
 					if(vals.length == 3) {
 						this.rgb = (((vals[0] * 255) << 16) + ((vals[1] * 255) << 8) + (vals[2] * 255)) >>> 0;
 					} else {
-						throw new glacier.exception.InvalidAssignment('rgb', '[' + rgb.join(', ') + ']', 'array[3] of numbers between 0.0 and 1.0', 'Color');
+						glacier.error.invalidAssignment('rgb', '[' + rgb.join(', ') + ']', 'array[3] of numbers between 0.0 and 1.0', 'Color');
 					}
 				} else {
 					rgb = (typeof rgb == 'number' ? '0x' + rgb.toString(16).toUpperCase() : rgb);
-					throw new glacier.exception.InvalidAssignment('rgb', rgb, 'RGB as 24-bits integer or array[3] of numbers between 0.0 and 1.0', 'Color');
+					glacier.error.invalidAssignment('rgb', rgb, 'RGB as 24-bits integer or array[3] of numbers between 0.0 and 1.0', 'Color');
 				}
 			}
 		},
@@ -729,11 +727,11 @@ glacier.Color = function Color(params) {
 					if(vals.length == 4) {
 						this.rgba = (((vals[0] * 255) << 24) + ((vals[1] * 255) << 16) + ((vals[2] * 255) << 8) + (vals[3] * 255)) >>> 0;
 					} else {
-						throw new glacier.exception.InvalidAssignment('rgba', '[' + rgba.join(', ') + ']', 'array[4] of numbers between 0.0 and 1.0', 'Color');
+						glacier.error.invalidAssignment('rgba', '[' + rgba.join(', ') + ']', 'array[4] of numbers between 0.0 and 1.0', 'Color');
 					}
 				} else {
 					rgba = (typeof rgba == 'number' ? '0x' + rgba.toString(16).toUpperCase() : rgba);
-					throw new glacier.exception.InvalidAssignment('rgba', rgb, 'RGBA as 32-bits integer or array[4] of numbers between 0.0 and 1.0', 'Color');
+					glacier.error.invalidAssignment('rgba', rgb, 'RGBA as 32-bits integer or array[4] of numbers between 0.0 and 1.0', 'Color');
 				}
 			}
 		}
@@ -901,7 +899,7 @@ glacier.Context = function Context(canvas, options) {
 					context.clearColor(color.r / 255, color.g / 255, color.b / 255, color.a);
 					context.clear(context.COLOR_BUFFER_BIT);
 				} else {
-					throw new glacier.exception.InvalidAssignment('background', color, 'Color', 'Context');
+					glacier.error.invalidAssignment('background', color, 'Color', 'Context');
 				}
 			}
 		},
@@ -922,7 +920,7 @@ glacier.Context = function Context(canvas, options) {
 				if(typeof value == 'number' && value > 0) {
 					this.resize(width, value);
 				} else {
-					throw new glacier.exception.InvalidAssignment('height', value, 'positive number', 'Context');
+					glacier.error.invalidAssignment('height', value, 'positive number', 'Context');
 				}
 			}
 		},
@@ -937,7 +935,7 @@ glacier.Context = function Context(canvas, options) {
 				} else if(value === null) {
 					projection = null;
 				} else {
-					throw new glacier.exception.InvalidAssignment('projection', value, 'Matrix44 or null', 'Context');
+					glacier.error.invalidAssignment('projection', value, 'Matrix44 or null', 'Context');
 				}
 			}
 		},
@@ -956,7 +954,7 @@ glacier.Context = function Context(canvas, options) {
 				} else if(value === null) {
 					view = null;
 				} else {
-					throw new glacier.exception.InvalidAssignment('view', value, 'Matrix44 or null', 'Context');
+					glacier.error.invalidAssignment('view', value, 'Matrix44 or null', 'Context');
 				}
 			}
 		},
@@ -969,7 +967,7 @@ glacier.Context = function Context(canvas, options) {
 				if(typeof value == 'number' && value > 0) {
 					this.resize(value, height);
 				} else {
-					throw new glacier.exception.InvalidAssignment('width', value, 'positive number', 'Context');
+					glacier.error.invalidAssignment('width', value, 'positive number', 'Context');
 				}
 			}
 		}
@@ -1151,7 +1149,7 @@ glacier.Drawable = function Drawable() {
 				if(typeof value == 'number') {
 					this.matrix.array[12 + index] = value;
 				} else {
-					throw new glacier.exception.InvalidAssignment(property, value, 'number', 'Drawable');
+					glacier.error.invalidAssignment(property, value, 'number', 'Drawable');
 				}
 			}
 		});
@@ -1174,7 +1172,7 @@ glacier.Drawable = function Drawable() {
 				
 				bufferObject = null;
 			} else {
-				throw new glacier.exception.InvalidAssignment('buffer', buffer, 'BufferObject', 'Drawable');
+				glacier.error.invalidAssignment('buffer', buffer, 'BufferObject', 'Drawable');
 			}
 		}
 	});
@@ -1335,7 +1333,7 @@ glacier.Scene = function Scene(container, options) {
 						this.end();
 					}
 				} else {
-					throw new glacier.exception.InvalidAssignment('running', value, 'boolean', 'Scene');
+					glacier.error.invalidAssignment('running', value, 'boolean', 'Scene');
 				}
 			}
 		}
@@ -1358,6 +1356,8 @@ glacier.Scene.prototype = {
 	
 	run: function() {
 		var self = this, previous;
+		
+		console.log(self.running, 'running');
 		
 		if(!self.running) {
 			self.running = true;
@@ -1589,7 +1589,7 @@ glacier.Texture = function Texture(source) {
 					
 					image = null;
 				} else {
-					throw new glacier.exception.InvalidAssignment('image', value, 'Image or null', 'Texture');
+					glacier.error.invalidAssignment('image', value, 'Image or null', 'Texture');
 				}
 			}
 		}
@@ -1688,6 +1688,10 @@ glacier.extend(glacier.TypedArray, Array, {
 
 (function() {
 	var geoJSON = {
+		// geoJSON Object super-class
+		Object: function() {
+		},
+		
 		Feature: function(geometry, properties, id) {
 			this.id = (id !== undefined ? id : null);
 			this.geometry = (geometry || null);
@@ -1975,14 +1979,24 @@ glacier.extend(glacier.TypedArray, Array, {
 		}
 	};
 	
-	geoJSON.Point.prototype = {
+	// Extend geoJSON objects to inherit geoJSON.Object (super class)
+	glacier.extend(geoJSON.Feature,				geoJSON.Object);
+	glacier.extend(geoJSON.FeatureCollection,	geoJSON.Object);
+	glacier.extend(geoJSON.GeometryCollection,	geoJSON.Object);
+	glacier.extend(geoJSON.LineString,			geoJSON.Object);
+	glacier.extend(geoJSON.MultiLineString, 	geoJSON.Object);
+	glacier.extend(geoJSON.MultiPoint,			geoJSON.Object);
+	glacier.extend(geoJSON.MultiPolygon,		geoJSON.Object);
+	glacier.extend(geoJSON.Polygon,				geoJSON.Object);
+	
+	glacier.extend(geoJSON.Point, geoJSON.Object, {
 		compare: function(point, epsilon) {
 			return ((point instanceof geoJSON.Point) &&
 					(Math.abs(this.lat - point.lat) <= (epsilon || 0.0)) &&
 					(Math.abs(this.lng - point.lng) <= (epsilon || 0.0)) &&
 					(Math.abs(this.alt - point.alt) <= (epsilon || 0.0)));
 		}
-	};
+	});
 	
 	glacier.geoJSON = geoJSON;
 })();
@@ -2198,7 +2212,7 @@ glacier.Mesh = function Mesh() {
 				} else if(value === null) {
 					tex.free();
 				} else {
-					throw new glacier.exception.InvalidAssignment(property, value, 'string or null', 'Mesh');
+					glacier.error.invalidAssignment(property, value, 'string or null', 'Mesh');
 				}
 			}
 		});
@@ -3934,6 +3948,37 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			glacier.load(geoJson, function(data) {
 				self.addData(JSON.parse(data), color, callback);
 			});
+		} else if(geoJson instanceof glacier.geoJSON.Object) {
+			dataObject = self.data[(uid = glacier.generateUID())] = {
+				geoJSON: geoJson,
+				drawables: [],
+				hide: function() {
+					this.drawables.forEach(function(drawable) {
+						if(drawable instanceof glacier.Drawable) {
+							drawable.visible = false;
+						}
+					});
+				},
+				show: function() {
+					this.drawables.forEach(function(drawable) {
+						if(drawable instanceof glacier.Drawable) {
+							drawable.visible = true;
+						}
+					});
+				}
+			};
+			
+			addDrawables(dataObject.drawables, geoJson);
+			
+			dataObject.drawables.forEach(function(drawable) {
+				if(drawable instanceof glacier.Drawable) {
+					drawable.init(self.context);
+				}
+			});
+			
+			if(typeof callback == 'function') {
+				callback(uid, dataObject);
+			}
 		} else if(typeof geoJson == 'object') {
 			if((data = glacier.geoJSON.parse(geoJson))) {
 				dataObject = self.data[(uid = glacier.generateUID())] = {
@@ -4239,7 +4284,7 @@ glacier.Sphere = function Sphere(latitudes, longitudes, radius) {
 				
 				radius = value;
 			} else {
-				throw new glacier.exception.InvalidAssignment('radius', value, 'positive number', 'Sphere');
+				glacier.error.invalidAssignment('radius', value, 'positive number', 'Sphere');
 			}
 		}
 	});
