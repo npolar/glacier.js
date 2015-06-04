@@ -40,11 +40,17 @@
 			this.rings = (rings instanceof Array ? rings : []);
 		},
 		
-		parse: function(string) {
+		parse: function(stringOrObject) {
 			var geojson, data;
 			
-			try { geojson = JSON.parse(string); }
-			catch(e) { return null; }
+			if(typeof stringOrObject == 'string') {
+				try { geojson = JSON.parse(string); }
+				catch(e) { return null; }
+			} else if(typeof stringOrObject == 'object') {
+				geojson = stringOrObject;
+			} else {
+				return null;
+			}
 			
 			return geoJSON.parseObject(geojson);
 		},
