@@ -117,69 +117,73 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 
 // glacier.GlobeScene extends glacier.Scene
 glacier.extend(glacier.GlobeScene, glacier.Scene, {
-	addData: function(geoJsonURL, color, callback) {
-		var self = this, dataObject, drawables = {};
+	addData: function(geoJson, color, callback) {
+		var self = this, dataObject, drawables = {}, uid;
 		
-		if(typeof geoJsonURL == 'string') {
-			glacier.load(geoJsonURL, function(data) {
-				function addDrawables(array, data) {
-					if(data instanceof glacier.geoJSON.Feature) {
-						addDrawables(array, data.geometry);
-					} else if(data instanceof glacier.geoJSON.FeatureCollection) {
-						data.features.forEach(function(feature) {
-							addDrawables(array, feature);
-						});
-					} else if(data instanceof glacier.geoJSON.MultiPoint) {
-						data.points.forEach(function(point) {
-							addDrawables(array, point);
-						});
-					} else if(data instanceof glacier.geoJSON.Point) {
-						if(!drawables.hasOwnProperty('points')) {
-							drawables.points = array.push(new glacier.PointCollection()) - 1;
-						}
-						
-						array[drawables.points].addPoint(
-							self.latLngToPoint(new glacier.Vector2(data.lng, data.lat), data.alt),
-							(color instanceof glacier.Color ? color : glacier.color.WHITE)
-						);
-					}
+		function addDrawables(array, data) {
+			if(data instanceof glacier.geoJSON.Feature) {
+				addDrawables(array, data.geometry);
+			} else if(data instanceof glacier.geoJSON.FeatureCollection) {
+				data.features.forEach(function(feature) {
+					addDrawables(array, feature);
+				});
+			} else if(data instanceof glacier.geoJSON.MultiPoint) {
+				data.points.forEach(function(point) {
+					addDrawables(array, point);
+				});
+			} else if(data instanceof glacier.geoJSON.Point) {
+				if(!drawables.hasOwnProperty('points')) {
+					drawables.points = array.push(new glacier.PointCollection()) - 1;
 				}
 				
-				if((data = glacier.geoJSON.parse(data))) {
-					dataObject = self.data[geoJsonURL] = {
-						geoJSON: data,
-						drawables: [],
-						hide: function() {
-							this.drawables.forEach(function(drawable) {
-								if(drawable instanceof glacier.Drawable) {
-									drawable.visible = false;
-								}
-							});
-						},
-						show: function() {
-							this.drawables.forEach(function(drawable) {
-								if(drawable instanceof glacier.Drawable) {
-									drawable.visible = true;
-								}
-							});
-						}
-					};
-					
-					addDrawables(dataObject.drawables, data);
-					
-					dataObject.drawables.forEach(function(drawable) {
-						if(drawable instanceof glacier.Drawable) {
-							drawable.init(self.context);
-						}
-					});
-					
-					if(typeof callback == 'function') {
-						callback(geoJsonURL, dataObject);
-					}
-				}
+				array[drawables.points].addPoint(
+					self.latLngToPoint(new glacier.Vector2(data.lng, data.lat), data.alt),
+					(color instanceof glacier.Color ? color : glacier.color.WHITE)
+				);
+			}
+		}
+		
+		if(typeof geoJson == 'string') {
+			glacier.load(geoJson, function(data) {
+				self.addData(JSON.parse(data), color, callback);
 			});
+		} else if(typeof geoJson == 'object') {
+			if((data = glacier.geoJSON.parse(geoJson))) {
+				dataObject = self.data[(uid = glacier.generateUID())] = {
+					geoJSON: data,
+					drawables: [],
+					hide: function() {
+						this.drawables.forEach(function(drawable) {
+							if(drawable instanceof glacier.Drawable) {
+								drawable.visible = false;
+							}
+						});
+					},
+					show: function() {
+						this.drawables.forEach(function(drawable) {
+							if(drawable instanceof glacier.Drawable) {
+								drawable.visible = true;
+							}
+						});
+					}
+				};
+				
+				addDrawables(dataObject.drawables, data);
+				
+				dataObject.drawables.forEach(function(drawable) {
+					if(drawable instanceof glacier.Drawable) {
+						drawable.init(self.context);
+					}
+				});
+				
+				console.log(uid, 'loaded', callback);
+				
+				if(typeof callback == 'function') {
+					callback(uid, dataObject);
+				}
+			}
 		} else {
-			throw new glacier.exception.InvalidParameter('geoJsonURL', geoJsonURL, 'string', 'addData', 'GlobeScene');
+			throw new glacier.exception.InvalidParameter('geoJson', geoJson, 'geoJSON object or URL as string', 'addData', 'GlobeScene');
 		}
 	},
 	
