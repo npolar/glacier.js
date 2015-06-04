@@ -344,6 +344,10 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		);
 	},
 	
+	latLngToScreen: function(latLng, alt) {
+		return this.context.worldToScreen(this.latLngToPoint(latLng, alt).multiply(this.base.matrix));
+	},
+	
 	pointToLatLng: function(point) {
 		if(!(point instanceof glacier.Vector3)) {
 			throw new glacier.exception.InvalidParameter('point', point, 'Vector3', 'worldToLatLng', 'GlobeScene');
@@ -379,6 +383,16 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 		
 		return intersection;
+	},
+	
+	screenToLatLng: function(x, y) {
+		var intersection;
+		
+		if((intersection = this.rayCast(x, y))) {
+			return this.pointToLatLng(intersection);
+		}
+		
+		return null;
 	},
 	
 	unbindMouse: function() {
