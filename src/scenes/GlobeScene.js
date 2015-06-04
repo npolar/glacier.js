@@ -147,7 +147,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 				
 				if((data = glacier.geoJSON.parse(data))) {
 					dataObject = self.data[geoJsonURL] = {
-						data: data,
+						geoJSON: data,
 						drawables: [],
 						hide: function() {
 							this.drawables.forEach(function(drawable) {
@@ -174,7 +174,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 					});
 					
 					if(typeof callback == 'function') {
-						callback(geoJsonURL, dataObject.data);
+						callback(geoJsonURL, dataObject);
 					}
 				}
 			});
