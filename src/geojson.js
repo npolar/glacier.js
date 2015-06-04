@@ -1,5 +1,9 @@
 (function() {
 	var geoJSON = {
+		// geoJSON Object super-class
+		Object: function() {
+		},
+		
 		Feature: function(geometry, properties, id) {
 			this.id = (id !== undefined ? id : null);
 			this.geometry = (geometry || null);
@@ -287,14 +291,24 @@
 		}
 	};
 	
-	geoJSON.Point.prototype = {
+	// Extend geoJSON objects to inherit geoJSON.Object (super class)
+	glacier.extend(geoJSON.Feature,				geoJSON.Object);
+	glacier.extend(geoJSON.FeatureCollection,	geoJSON.Object);
+	glacier.extend(geoJSON.GeometryCollection,	geoJSON.Object);
+	glacier.extend(geoJSON.LineString,			geoJSON.Object);
+	glacier.extend(geoJSON.MultiLineString, 	geoJSON.Object);
+	glacier.extend(geoJSON.MultiPoint,			geoJSON.Object);
+	glacier.extend(geoJSON.MultiPolygon,		geoJSON.Object);
+	glacier.extend(geoJSON.Polygon,				geoJSON.Object);
+	
+	glacier.extend(geoJSON.Point, geoJSON.Object, {
 		compare: function(point, epsilon) {
 			return ((point instanceof geoJSON.Point) &&
 					(Math.abs(this.lat - point.lat) <= (epsilon || 0.0)) &&
 					(Math.abs(this.lng - point.lng) <= (epsilon || 0.0)) &&
 					(Math.abs(this.alt - point.alt) <= (epsilon || 0.0)));
 		}
-	};
+	});
 	
 	glacier.geoJSON = geoJSON;
 })();
