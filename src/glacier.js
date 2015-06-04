@@ -260,3 +260,30 @@ glacier.parseOptions = function(options, defaults, className) {
 	
 	return result;
 };
+
+glacier.error = {
+	invalidAssignment: function(property, value, expected, className) {
+		console.error('Invalid assignment of ' + (className ? className + '.' : '') + property + ': ' + value + ' (' + typeof value + '), ' + 'expected ' + expected);
+	}
+};
+
+(function() {
+	var uids = [], chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	
+	function generateUID() {
+		var c, uid = '';
+		
+		for(c = 0; c < 32; ++c) {
+			uid += chars[Math.floor(Math.random() * chars.length)];
+		}
+		
+		if(uids.indexOf(uid) == -1) {
+			uids.push(uid);
+			return uid;
+		}
+		
+		return generateUID();
+	}
+	
+	glacier.generateUID = generateUID;
+})();
