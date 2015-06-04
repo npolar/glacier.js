@@ -173,6 +173,15 @@ glacier.Color.prototype = {
 		return new glacier.Color(this);
 	},
 	
+	invert: function() {
+		this.rgb = (0xFFFFFF - this.rgb);
+		return this;
+	},
+	
+	get inverted() {
+		return this.copy.invert();
+	},
+	
 	toHtmlString: function(background) {
 		var color = this.copy, str = '#', hex;
 		
