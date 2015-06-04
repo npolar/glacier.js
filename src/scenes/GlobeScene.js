@@ -139,7 +139,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 						}
 						
 						array[drawables.points].addPoint(
-							self.latLngToPoint(data.lat, data.lng, data.alt),
+							self.latLngToPoint(new glacier.Vector2(data.lng, data.lat), data.alt),
 							(color instanceof glacier.Color ? color : glacier.color.WHITE)
 						);
 					}
@@ -290,15 +290,9 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		self.runCallbacks.push(self.mouseHandler.camEaseCallback);
 	},
 	
-	focus: function(latOrVec2, lng) {
-		if(typeof lng == 'number') {
-			if(typeof latOrVec2 == 'number') {
-				latOrVec2 = new glacier.Vector2(lng, latOrVec2);
-			} else {
-				throw new glacier.exception.InvalidParameter('lat', latOrVec2, 'number', 'focus', 'GlobeScene');
-			}
-		} else if(!(latOrVec2 instanceof glacier.Vector2)) {
-			throw new glacier.exception.InvalidParameter('vec2', latOrVec2, 'Vector2', 'focus', 'GlobeScene');
+	focus: function(latLng, callback) {
+		if(!(latLng instanceof glacier.Vector2)) {
+			throw new glacier.exception.InvalidParameter('latLng', latLng, 'Vector2', 'focus', 'GlobeScene');
 		}
 		
 		function easeInOut(t, b, c, d) {
@@ -306,7 +300,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			return new glacier.Vector2((c.x / 2) * f + b.x, (c.y / 2) * f + b.y);
 		}
 		
-		var self = this, focusUpdate, step = 0, steps, start = self.camera.angle.copy, vec2 = latOrVec2.copy;
+		var self = this, focusUpdate, step = 0, steps, start = self.camera.angle.copy, vec2 = latLng.copy;
 		vec2.lng += 90.0;
 		
 		if(self.mouseHandler) {
@@ -322,24 +316,22 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			
 			if(++step < steps) {
 				requestAnimationFrame(focusUpdate);
+			} else if(typeof callback == 'function') {
+				callback(latLng);
 			}
 		}).call();
 	},
 	
-	latLngToPoint: function(lat, lng, alt) {
-		if(typeof lat != 'number') {
-			throw new glacier.exception.InvalidParameter('lat', lat, 'number', 'latLngTo3D', 'GlobeScene');
-		}
-		
-		if(typeof lng != 'number') {
-			throw new glacier.exception.InvalidParameter('lng', lng, 'number', 'latLngTo3D', 'GlobeScene');
+	latLngToPoint: function(latLng, alt) {
+		if(!(latLng instanceof glacier.Vector2)) {
+			throw new glacier.exception.InvalidParameter('latLng', latLng, 'Vector2', 'latLngToPoint', 'GlobeScene');
 		}
 		
 		if(alt !== undefined && (typeof alt != 'number')) {
-			throw new glacier.exception.InvalidParameter('alt', alt, 'number', 'latLngTo3D', 'GlobeScene');
+			throw new glacier.exception.InvalidParameter('alt', alt, 'number', 'latLngToPoint', 'GlobeScene');
 		}
 		
-		var theta = glacier.degToRad(lat), phi = glacier.degToRad(lng);
+		var theta = glacier.degToRad(latLng.lat), phi = glacier.degToRad(latLng.lng);
 		
 		// Altitude based on equatorial radius in WGS-84	
 		alt = 1.0 + ((alt || 0) * (1.0 / 6378137));
