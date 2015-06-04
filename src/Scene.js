@@ -46,7 +46,7 @@ glacier.Scene = function Scene(container, options) {
 						this.end();
 					}
 				} else {
-					throw new glacier.exception.InvalidAssignment('running', value, 'boolean', 'Scene');
+					glacier.error.invalidAssignment('running', value, 'boolean', 'Scene');
 				}
 			}
 		}

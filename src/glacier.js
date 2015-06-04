@@ -119,12 +119,10 @@ glacier.addTypedProperty = function(context, members, value, ctor) {
 			},
 			set: function(newValue) {
 				if(typeof ctor == 'function' && !(newValue instanceof ctor)) {
-					throw new glacier.exception.InvalidAssignment(member, newValue, ctor.name);
+					glacier.error.invalidAssignment(member, newValue, ctor.name);
 				} else if(typeof newValue !== typeof value) {
-					throw new glacier.exception.InvalidAssignment(member, newValue, typeof value);
-				}
-				
-				if(newValue !== value) {
+					glacier.error.invalidAssignment(member, newValue, typeof value);
+				} else if(newValue !== value) {
 					value = newValue;
 					
 					if(onChangeCallback) {

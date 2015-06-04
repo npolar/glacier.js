@@ -21,7 +21,7 @@ glacier.Camera = function Camera(fieldOfView, aspectRatio, clipNear, clipFar) {
 						this.projection.assignIdentity();
 						this.projection.perspective(this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
 					} else {
-						throw new glacier.exception.InvalidAssignment(args[index], value, 'positive number', 'Camera');
+						glacier.error.invalidAssignment(args[index], value, 'positive number', 'Camera');
 					}
 				}
 			});

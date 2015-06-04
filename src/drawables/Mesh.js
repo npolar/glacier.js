@@ -25,7 +25,7 @@ glacier.Mesh = function Mesh() {
 				} else if(value === null) {
 					tex.free();
 				} else {
-					throw new glacier.exception.InvalidAssignment(property, value, 'string or null', 'Mesh');
+					glacier.error.invalidAssignment(property, value, 'string or null', 'Mesh');
 				}
 			}
 		});

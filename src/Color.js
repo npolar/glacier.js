@@ -10,7 +10,7 @@ glacier.Color = function Color(params) {
 				if(typeof red == 'number' && red >= 0 && red <= 255) {
 					value = (((red & 0xFF) << 24) + (value & 0x00FFFFFF)) >>> 0;
 				} else {
-					throw new glacier.exception.InvalidAssignment('r', red, 'number between 0 and 255', 'Color');
+					glacier.error.invalidAssignment('r', red, 'number between 0 and 255', 'Color');
 				}
 			}
 		},
@@ -22,7 +22,7 @@ glacier.Color = function Color(params) {
 				if(typeof green == 'number' && green >= 0 && green <= 255) {
 					value = (((green & 0xFF) << 16) + (value & 0xFF00FFFF)) >>> 0;
 				} else {
-					throw new glacier.exception.InvalidAssignment('g', green, 'number between 0 and 255', 'Color');
+					glacier.error.invalidAssignment('g', green, 'number between 0 and 255', 'Color');
 				}
 			}
 		},
@@ -34,7 +34,7 @@ glacier.Color = function Color(params) {
 				if(typeof blue == 'number' && blue >= 0 && blue <= 255) {
 					value = (((blue & 0xFF) << 8) + (value & 0xFFFF00FF)) >>> 0;
 				} else {
-					throw new glacier.exception.InvalidAssignment('b', blue, 'number between 0 and 255', 'Color');
+					glacier.error.invalidAssignment('b', blue, 'number between 0 and 255', 'Color');
 				}
 			}
 		},
@@ -46,7 +46,7 @@ glacier.Color = function Color(params) {
 				if(typeof alpha == 'number' && alpha >= 0.0 && alpha <= 1.0) {
 					value = ((((alpha * 255) & 0xFF) << 0) + (value & 0xFFFFFF00)) >>> 0;
 				} else {
-					throw new glacier.exception.InvalidAssignment('a', alpha, 'number between 0.0 and 1.0', 'Color');
+					glacier.error.invalidAssignment('a', alpha, 'number between 0.0 and 1.0', 'Color');
 				}
 			}
 		},
@@ -67,11 +67,11 @@ glacier.Color = function Color(params) {
 					if(vals.length == 3) {
 						this.rgb = (((vals[0] * 255) << 16) + ((vals[1] * 255) << 8) + (vals[2] * 255)) >>> 0;
 					} else {
-						throw new glacier.exception.InvalidAssignment('rgb', '[' + rgb.join(', ') + ']', 'array[3] of numbers between 0.0 and 1.0', 'Color');
+						glacier.error.invalidAssignment('rgb', '[' + rgb.join(', ') + ']', 'array[3] of numbers between 0.0 and 1.0', 'Color');
 					}
 				} else {
 					rgb = (typeof rgb == 'number' ? '0x' + rgb.toString(16).toUpperCase() : rgb);
-					throw new glacier.exception.InvalidAssignment('rgb', rgb, 'RGB as 24-bits integer or array[3] of numbers between 0.0 and 1.0', 'Color');
+					glacier.error.invalidAssignment('rgb', rgb, 'RGB as 24-bits integer or array[3] of numbers between 0.0 and 1.0', 'Color');
 				}
 			}
 		},
@@ -92,11 +92,11 @@ glacier.Color = function Color(params) {
 					if(vals.length == 4) {
 						this.rgba = (((vals[0] * 255) << 24) + ((vals[1] * 255) << 16) + ((vals[2] * 255) << 8) + (vals[3] * 255)) >>> 0;
 					} else {
-						throw new glacier.exception.InvalidAssignment('rgba', '[' + rgba.join(', ') + ']', 'array[4] of numbers between 0.0 and 1.0', 'Color');
+						glacier.error.invalidAssignment('rgba', '[' + rgba.join(', ') + ']', 'array[4] of numbers between 0.0 and 1.0', 'Color');
 					}
 				} else {
 					rgba = (typeof rgba == 'number' ? '0x' + rgba.toString(16).toUpperCase() : rgba);
-					throw new glacier.exception.InvalidAssignment('rgba', rgb, 'RGBA as 32-bits integer or array[4] of numbers between 0.0 and 1.0', 'Color');
+					glacier.error.invalidAssignment('rgba', rgb, 'RGBA as 32-bits integer or array[4] of numbers between 0.0 and 1.0', 'Color');
 				}
 			}
 		}

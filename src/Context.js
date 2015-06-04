@@ -37,7 +37,7 @@ glacier.Context = function Context(canvas, options) {
 					context.clearColor(color.r / 255, color.g / 255, color.b / 255, color.a);
 					context.clear(context.COLOR_BUFFER_BIT);
 				} else {
-					throw new glacier.exception.InvalidAssignment('background', color, 'Color', 'Context');
+					glacier.error.invalidAssignment('background', color, 'Color', 'Context');
 				}
 			}
 		},
@@ -58,7 +58,7 @@ glacier.Context = function Context(canvas, options) {
 				if(typeof value == 'number' && value > 0) {
 					this.resize(width, value);
 				} else {
-					throw new glacier.exception.InvalidAssignment('height', value, 'positive number', 'Context');
+					glacier.error.invalidAssignment('height', value, 'positive number', 'Context');
 				}
 			}
 		},
@@ -73,7 +73,7 @@ glacier.Context = function Context(canvas, options) {
 				} else if(value === null) {
 					projection = null;
 				} else {
-					throw new glacier.exception.InvalidAssignment('projection', value, 'Matrix44 or null', 'Context');
+					glacier.error.invalidAssignment('projection', value, 'Matrix44 or null', 'Context');
 				}
 			}
 		},
@@ -92,7 +92,7 @@ glacier.Context = function Context(canvas, options) {
 				} else if(value === null) {
 					view = null;
 				} else {
-					throw new glacier.exception.InvalidAssignment('view', value, 'Matrix44 or null', 'Context');
+					glacier.error.invalidAssignment('view', value, 'Matrix44 or null', 'Context');
 				}
 			}
 		},
@@ -105,7 +105,7 @@ glacier.Context = function Context(canvas, options) {
 				if(typeof value == 'number' && value > 0) {
 					this.resize(value, height);
 				} else {
-					throw new glacier.exception.InvalidAssignment('width', value, 'positive number', 'Context');
+					glacier.error.invalidAssignment('width', value, 'positive number', 'Context');
 				}
 			}
 		}

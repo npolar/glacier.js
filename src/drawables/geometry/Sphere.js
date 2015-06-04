@@ -23,7 +23,7 @@ glacier.Sphere = function Sphere(latitudes, longitudes, radius) {
 				
 				radius = value;
 			} else {
-				throw new glacier.exception.InvalidAssignment('radius', value, 'positive number', 'Sphere');
+				glacier.error.invalidAssignment('radius', value, 'positive number', 'Sphere');
 			}
 		}
 	});

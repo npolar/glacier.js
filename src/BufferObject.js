@@ -31,7 +31,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 				if(typeof value == 'number' && value >= 0) {
 					elements = Math.round(value);
 				} else {
-					throw new glacier.exception.InvalidAssignment('elements', value, 'positive integer', 'BufferObject');
+					glacier.error.invalidAssignment('elements', value, 'positive integer', 'BufferObject');
 				}
 			}
 		},
@@ -47,7 +47,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 					modes.sort(function(a, b) { return a-b; });
 					var valid = modes.join(', '), last = valid.lastIndexOf(', ');
 					valid = (last >= 0 ? valid.substr(0, last) + ' or' + valid.substr(last + 1) : valid);
-					throw new glacier.exception.InvalidAssignment('drawMode', value, valid, 'BufferObject');
+					glacier.error.invalidAssignment('drawMode', value, valid, 'BufferObject');
 				}
 			}
 		},
@@ -65,10 +65,10 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 					if(bankShader instanceof glacier.Shader) {
 						shader = bankShader;
 					} else {
-						console.warn('Undefined WebGL shader program: ' + value);
+						glacier.error.invalidAssignment('shader', value, 'valid shader name as string', 'BufferObject');
 					}
 				} else {
-					throw new glacier.exception.InvalidAssignment('shader', shader, 'Shader', 'BufferObject');
+					glacier.error.invalidAssignment('shader', shader, 'Shader', 'BufferObject');
 				}
 			}
 		}

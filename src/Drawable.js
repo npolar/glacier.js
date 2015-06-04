@@ -14,7 +14,7 @@ glacier.Drawable = function Drawable() {
 				if(typeof value == 'number') {
 					this.matrix.array[12 + index] = value;
 				} else {
-					throw new glacier.exception.InvalidAssignment(property, value, 'number', 'Drawable');
+					glacier.error.invalidAssignment(property, value, 'number', 'Drawable');
 				}
 			}
 		});
@@ -37,7 +37,7 @@ glacier.Drawable = function Drawable() {
 				
 				bufferObject = null;
 			} else {
-				throw new glacier.exception.InvalidAssignment('buffer', buffer, 'BufferObject', 'Drawable');
+				glacier.error.invalidAssignment('buffer', buffer, 'BufferObject', 'Drawable');
 			}
 		}
 	});
