@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.2.4',
+	VERSION: '0.2.5',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -2020,8 +2020,13 @@ glacier.limitAngle = function(angle, max, min) {
 		max = min + (min = max, 0);
 	}
 	
-	while(angle > max) angle -= max;
-	while(angle < min) angle += max;
+	while(angle > max) {
+		angle = min + (angle - max);
+	}
+	
+	while(angle < min) {
+		angle = max + (angle - min);
+	}
 	
 	return angle;
 };
@@ -4017,6 +4022,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		};
 			
 		(camUpdate = function() {
+			self.camera.angle.x = glacier.limitAngle(self.camera.angle.x, -180, 180);
 			self.camera.angle.y = glacier.clamp(self.camera.angle.y, -89.99, 89.99);
 			self.camera.follow(self.mouseHandler.target, self.camera.angle, self.camera.zoom);
 		}).call();
@@ -4083,6 +4089,10 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		);
 	},
 	
+	latLngToScreen: function(latLng, alt) {
+		return this.context.worldToScreen(this.latLngToPoint(latLng, alt).multiply(this.base.matrix));
+	},
+	
 	pointToLatLng: function(point) {
 		if(!(point instanceof glacier.Vector3)) {
 			throw new glacier.exception.InvalidParameter('point', point, 'Vector3', 'worldToLatLng', 'GlobeScene');
@@ -4118,6 +4128,16 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 		
 		return intersection;
+	},
+	
+	screenToLatLng: function(x, y) {
+		var intersection;
+		
+		if((intersection = this.rayCast(x, y))) {
+			return this.pointToLatLng(intersection);
+		}
+		
+		return null;
 	},
 	
 	unbindMouse: function() {
