@@ -73,8 +73,13 @@ glacier.limitAngle = function(angle, max, min) {
 		max = min + (min = max, 0);
 	}
 	
-	while(angle > max) angle -= max;
-	while(angle < min) angle += max;
+	while(angle > max) {
+		angle = min + (angle - max);
+	}
+	
+	while(angle < min) {
+		angle = max + (angle - min);
+	}
 	
 	return angle;
 };

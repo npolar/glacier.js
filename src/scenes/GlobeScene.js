@@ -277,6 +277,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		};
 			
 		(camUpdate = function() {
+			self.camera.angle.x = glacier.limitAngle(self.camera.angle.x, -180, 180);
 			self.camera.angle.y = glacier.clamp(self.camera.angle.y, -89.99, 89.99);
 			self.camera.follow(self.mouseHandler.target, self.camera.angle, self.camera.zoom);
 		}).call();
