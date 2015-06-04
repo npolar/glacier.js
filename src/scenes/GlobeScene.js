@@ -176,8 +176,6 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 					}
 				});
 				
-				console.log(uid, 'loaded', callback);
-				
 				if(typeof callback == 'function') {
 					callback(uid, dataObject);
 				}
