@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.2.6',
+	VERSION: '0.2.7',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -1286,7 +1286,7 @@ glacier.exception = {
 };
 
 glacier.Scene = function Scene(container, options) {
-	var camera, canvas, context, contextOptions = {}, running = false, id;
+	var camera, canvas, context, contextOptions = {}, running = false, id, self = this, previous;
 	
 	if(typeof container == 'string') {
 		if(!((container = document.getElementById(container)) instanceof HTMLElement)) {
@@ -1316,21 +1316,23 @@ glacier.Scene = function Scene(container, options) {
 	context = new glacier.Context(canvas, contextOptions);
 	camera = new glacier.Camera(60.0, context.width / context.height, 1.0, 100.0);
 	
-	Object.defineProperties(this, {
+	Object.defineProperties(self, {
 		camera: { value: camera },
 		container: { value: container },
 		context: { value: context },
 		runCallbacks: { value: [] },
 		running: {
 			get: function() {
-				return running;
+				return !!running;
 			},
 			set: function(value) {
 				if(typeof value == 'boolean') {
-					if((running = value)) {
-						this.run();
-					} else {
-						this.end();
+					if(value != running) {
+						if((running = value)) {
+							self.run();
+						} else {
+							self.end();
+						}
 					}
 				} else {
 					glacier.error.invalidAssignment('running', value, 'boolean', 'Scene');
@@ -1340,45 +1342,35 @@ glacier.Scene = function Scene(container, options) {
 	});
 	
 	window.addEventListener('resize', function(event) {
-		this.camera.aspectRatio = (context.width / context.height);
-	}.bind(this));
+		self.camera.aspectRatio = (context.width / context.height);
+	});
+	
+	(function sceneRunner(timestamp) {
+		if(self.running) {
+			// Calculate dtime and FPS
+			var dtime = (((timestamp - previous) / 1000.0) || 0.0);
+			self.fps = (dtime ? (((1.0 / dtime) + self.fps) / 2.0) : 0.0);
+			previous = timestamp;
+			
+			self.runCallbacks.forEach(function(callback) {
+				if(typeof callback == 'function') {
+					callback.call(self, dtime);
+				}
+			});
+		}
+		
+		requestAnimationFrame(sceneRunner);
+	})();
 };
 
 glacier.Scene.prototype = {
-	fps: 0.0,
-	
 	end: function() {
-		if(this.running) {
-			this.fps = 0.0;
-			this.running = false;
-		}
+		this.fps = 0.0;
+		this.running = false;
 	},
 	
 	run: function() {
-		var self = this, previous;
-		
-		console.log(self.running, 'running');
-		
-		if(!self.running) {
-			self.running = true;
-			
-			(function sceneRunner(timestamp) {
-				if(self.running) {
-					// Calculate dtime and FPS
-					var dtime = (timestamp - previous) / 1000.0;
-					self.fps = (((1.0 / dtime) + self.fps) / 2.0 || 0);
-					previous = timestamp;
-					
-					self.runCallbacks.forEach(function(callback) {
-						if(typeof callback == 'function') {
-							callback.call(self, dtime);
-						}
-					});
-					
-					requestAnimationFrame(sceneRunner);
-				}
-			})();
-		}
+		this.running = true;
 	}
 };
 
@@ -1688,10 +1680,6 @@ glacier.extend(glacier.TypedArray, Array, {
 
 (function() {
 	var geoJSON = {
-		// geoJSON Object super-class
-		Object: function() {
-		},
-		
 		Feature: function(geometry, properties, id) {
 			this.id = (id !== undefined ? id : null);
 			this.geometry = (geometry || null);
@@ -1976,27 +1964,30 @@ glacier.extend(glacier.TypedArray, Array, {
 			}
 			
 			return null; // Invalid FeatureCollection
+		},
+		
+		// Method to check whether an object is a valid geoJSON object
+		validObject: function(object) {
+			return (object instanceof geoJSON.Feature				||
+					object instanceof geoJSON.FeatureCollection		||
+					object instanceof geoJSON.GeometryCollection	||	
+					object instanceof geoJSON.LineString			||
+					object instanceof geoJSON.MultiLineString		||
+					object instanceof geoJSON.MultiPoint			||
+					object instanceof geoJSON.MultiPolygon			||
+					object instanceof geoJSON.Polygon);
 		}
 	};
 	
-	// Extend geoJSON objects to inherit geoJSON.Object (super class)
-	glacier.extend(geoJSON.Feature,				geoJSON.Object);
-	glacier.extend(geoJSON.FeatureCollection,	geoJSON.Object);
-	glacier.extend(geoJSON.GeometryCollection,	geoJSON.Object);
-	glacier.extend(geoJSON.LineString,			geoJSON.Object);
-	glacier.extend(geoJSON.MultiLineString, 	geoJSON.Object);
-	glacier.extend(geoJSON.MultiPoint,			geoJSON.Object);
-	glacier.extend(geoJSON.MultiPolygon,		geoJSON.Object);
-	glacier.extend(geoJSON.Polygon,				geoJSON.Object);
-	
-	glacier.extend(geoJSON.Point, geoJSON.Object, {
+	// Extend geoJSON.Point with compare method
+	geoJSON.Point.prototype = {
 		compare: function(point, epsilon) {
 			return ((point instanceof geoJSON.Point) &&
 					(Math.abs(this.lat - point.lat) <= (epsilon || 0.0)) &&
 					(Math.abs(this.lng - point.lng) <= (epsilon || 0.0)) &&
 					(Math.abs(this.alt - point.alt) <= (epsilon || 0.0)));
 		}
-	});
+	};
 	
 	glacier.geoJSON = geoJSON;
 })();
@@ -3948,37 +3939,6 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			glacier.load(geoJson, function(data) {
 				self.addData(JSON.parse(data), color, callback);
 			});
-		} else if(geoJson instanceof glacier.geoJSON.Object) {
-			dataObject = self.data[(uid = glacier.generateUID())] = {
-				geoJSON: geoJson,
-				drawables: [],
-				hide: function() {
-					this.drawables.forEach(function(drawable) {
-						if(drawable instanceof glacier.Drawable) {
-							drawable.visible = false;
-						}
-					});
-				},
-				show: function() {
-					this.drawables.forEach(function(drawable) {
-						if(drawable instanceof glacier.Drawable) {
-							drawable.visible = true;
-						}
-					});
-				}
-			};
-			
-			addDrawables(dataObject.drawables, geoJson);
-			
-			dataObject.drawables.forEach(function(drawable) {
-				if(drawable instanceof glacier.Drawable) {
-					drawable.init(self.context);
-				}
-			});
-			
-			if(typeof callback == 'function') {
-				callback(uid, dataObject);
-			}
 		} else if(typeof geoJson == 'object') {
 			if((data = glacier.geoJSON.parse(geoJson))) {
 				dataObject = self.data[(uid = glacier.generateUID())] = {
