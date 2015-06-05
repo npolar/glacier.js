@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.2.7',
+	VERSION: '0.2.8',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -883,8 +883,16 @@ glacier.Context = function Context(canvas, options) {
 		options = {};
 	}
 	
-	if(!((context = canvas.getContext('webgl')) instanceof WebGLRenderingContext)) {
-		throw new glacier.exception.ContextError('WebGL is not supported', '(constructor)', 'Context');
+	// Try creating a WebGL context based on commonly used names
+	[ 'webgl', 'experimental-webgl' ].forEach(function(contextName) {
+		if(!context) {
+			context = canvas.getContext(contextName);
+		}
+	});
+	
+	// Throw exception if WebGL is not supported
+	if(!window.WebGLRenderingContext || !(context instanceof WebGLRenderingContext)) {
+		throw 'WebGL is not supported';
 	}
 	
 	// Define background, canvas, gl, height, projection, shaders, view and width members
