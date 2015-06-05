@@ -147,37 +147,6 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			glacier.load(geoJson, function(data) {
 				self.addData(JSON.parse(data), color, callback);
 			});
-		} else if(geoJson instanceof glacier.geoJSON.Object) {
-			dataObject = self.data[(uid = glacier.generateUID())] = {
-				geoJSON: geoJson,
-				drawables: [],
-				hide: function() {
-					this.drawables.forEach(function(drawable) {
-						if(drawable instanceof glacier.Drawable) {
-							drawable.visible = false;
-						}
-					});
-				},
-				show: function() {
-					this.drawables.forEach(function(drawable) {
-						if(drawable instanceof glacier.Drawable) {
-							drawable.visible = true;
-						}
-					});
-				}
-			};
-			
-			addDrawables(dataObject.drawables, geoJson);
-			
-			dataObject.drawables.forEach(function(drawable) {
-				if(drawable instanceof glacier.Drawable) {
-					drawable.init(self.context);
-				}
-			});
-			
-			if(typeof callback == 'function') {
-				callback(uid, dataObject);
-			}
 		} else if(typeof geoJson == 'object') {
 			if((data = glacier.geoJSON.parse(geoJson))) {
 				dataObject = self.data[(uid = glacier.generateUID())] = {
