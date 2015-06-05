@@ -1,9 +1,5 @@
 (function() {
 	var geoJSON = {
-		// geoJSON Object super-class
-		Object: function() {
-		},
-		
 		Feature: function(geometry, properties, id) {
 			this.id = (id !== undefined ? id : null);
 			this.geometry = (geometry || null);
@@ -288,27 +284,30 @@
 			}
 			
 			return null; // Invalid FeatureCollection
+		},
+		
+		// Method to check whether an object is a valid geoJSON object
+		validObject: function(object) {
+			return (object instanceof geoJSON.Feature				||
+					object instanceof geoJSON.FeatureCollection		||
+					object instanceof geoJSON.GeometryCollection	||	
+					object instanceof geoJSON.LineString			||
+					object instanceof geoJSON.MultiLineString		||
+					object instanceof geoJSON.MultiPoint			||
+					object instanceof geoJSON.MultiPolygon			||
+					object instanceof geoJSON.Polygon);
 		}
 	};
 	
-	// Extend geoJSON objects to inherit geoJSON.Object (super class)
-	glacier.extend(geoJSON.Feature,				geoJSON.Object);
-	glacier.extend(geoJSON.FeatureCollection,	geoJSON.Object);
-	glacier.extend(geoJSON.GeometryCollection,	geoJSON.Object);
-	glacier.extend(geoJSON.LineString,			geoJSON.Object);
-	glacier.extend(geoJSON.MultiLineString, 	geoJSON.Object);
-	glacier.extend(geoJSON.MultiPoint,			geoJSON.Object);
-	glacier.extend(geoJSON.MultiPolygon,		geoJSON.Object);
-	glacier.extend(geoJSON.Polygon,				geoJSON.Object);
-	
-	glacier.extend(geoJSON.Point, geoJSON.Object, {
+	// Extend geoJSON.Point with compare method
+	geoJSON.Point.prototype = {
 		compare: function(point, epsilon) {
 			return ((point instanceof geoJSON.Point) &&
 					(Math.abs(this.lat - point.lat) <= (epsilon || 0.0)) &&
 					(Math.abs(this.lng - point.lng) <= (epsilon || 0.0)) &&
 					(Math.abs(this.alt - point.alt) <= (epsilon || 0.0)));
 		}
-	});
+	};
 	
 	glacier.geoJSON = geoJSON;
 })();
