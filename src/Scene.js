@@ -1,5 +1,5 @@
 glacier.Scene = function Scene(container, options) {
-	var camera, canvas, context, contextOptions = {}, running = false, id;
+	var camera, canvas, context, contextOptions = {}, running = false, id, self = this, previous;
 	
 	if(typeof container == 'string') {
 		if(!((container = document.getElementById(container)) instanceof HTMLElement)) {
@@ -29,21 +29,23 @@ glacier.Scene = function Scene(container, options) {
 	context = new glacier.Context(canvas, contextOptions);
 	camera = new glacier.Camera(60.0, context.width / context.height, 1.0, 100.0);
 	
-	Object.defineProperties(this, {
+	Object.defineProperties(self, {
 		camera: { value: camera },
 		container: { value: container },
 		context: { value: context },
 		runCallbacks: { value: [] },
 		running: {
 			get: function() {
-				return running;
+				return !!running;
 			},
 			set: function(value) {
 				if(typeof value == 'boolean') {
-					if((running = value)) {
-						this.run();
-					} else {
-						this.end();
+					if(value != running) {
+						if((running = value)) {
+							self.run();
+						} else {
+							self.end();
+						}
 					}
 				} else {
 					glacier.error.invalidAssignment('running', value, 'boolean', 'Scene');
@@ -53,42 +55,34 @@ glacier.Scene = function Scene(container, options) {
 	});
 	
 	window.addEventListener('resize', function(event) {
-		this.camera.aspectRatio = (context.width / context.height);
-	}.bind(this));
+		self.camera.aspectRatio = (context.width / context.height);
+	});
+	
+	(function sceneRunner(timestamp) {
+		if(self.running) {
+			// Calculate dtime and FPS
+			var dtime = (((timestamp - previous) / 1000.0) || 0.0);
+			self.fps = (dtime ? (((1.0 / dtime) + self.fps) / 2.0) : 0.0);
+			previous = timestamp;
+			
+			self.runCallbacks.forEach(function(callback) {
+				if(typeof callback == 'function') {
+					callback.call(self, dtime);
+				}
+			});
+		}
+		
+		requestAnimationFrame(sceneRunner);
+	})();
 };
 
 glacier.Scene.prototype = {
-	fps: 0.0,
-	
 	end: function() {
-		if(this.running) {
-			this.fps = 0.0;
-			this.running = false;
-		}
+		this.fps = 0.0;
+		this.running = false;
 	},
 	
 	run: function() {
-		var self = this, previous;
-		
-		if(!self.running) {
-			self.running = true;
-			
-			(function sceneRunner(timestamp) {
-				if(self.running) {
-					// Calculate dtime and FPS
-					var dtime = (timestamp - previous) / 1000.0;
-					self.fps = (((1.0 / dtime) + self.fps) / 2.0 || 0);
-					previous = timestamp;
-					
-					self.runCallbacks.forEach(function(callback) {
-						if(typeof callback == 'function') {
-							callback.call(self, dtime);
-						}
-					});
-					
-					requestAnimationFrame(sceneRunner);
-				}
-			})();
-		}
+		this.running = true;
 	}
 };
