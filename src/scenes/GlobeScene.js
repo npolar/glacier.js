@@ -252,6 +252,40 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 						self.mouseHandler.deltaLatLng = null;
 					}
 				},
+				touchend: function(event) {
+					self.mouseHandler.clickLatLng = null;
+					
+					if(self.mouseHandler.deltaLatLng) {
+						self.mouseHandler.angleVelocity = {
+							initial: self.mouseHandler.deltaLatLng.copy,
+							current: new glacier.Vector2(0, 0),
+							dtime: 0.0
+						};
+					}
+				},
+				touchmove: function(event) {
+					if(event.touches.length == 1) {
+						var touch = event.touches[0];
+						
+						if((ray = self.rayCast(touch.clientX, touch.clientY))) {
+							if(self.mouseHandler.clickLatLng) {
+								self.mouseHandler.deltaLatLng = self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng);
+								self.camera.angle.subtract(self.mouseHandler.deltaLatLng);
+								camUpdate();
+							}
+						} else {
+							self.mouseHandler.deltaLatLng = null;
+						}
+					}
+				},
+				touchstart: function(event) {
+					if(event.touches.length == 1) {
+						var touch = event.touches[0];
+						
+						self.mouseHandler.clickLatLng = ((ray = self.rayCast(touch.clientX, touch.clientY)) ? self.pointToLatLng(ray) : null);
+						self.mouseHandler.angleVelocity = null;
+					}
+				},
 				wheel: function(event) {
 					if(event.deltaY) {
 						self.mouseHandler.zoomStep = glacier.clamp(self.mouseHandler.zoomStep + (event.deltaY > 0 ? 1 : -1), -options.zoomSteps, options.zoomSteps);
