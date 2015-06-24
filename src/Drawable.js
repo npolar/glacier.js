@@ -20,13 +20,29 @@ glacier.Drawable = function Drawable() {
 		});
 	}, this);
 	
-	// Define buffers member
-	Object.defineProperty(this, 'buffers', {
-		value: {
-			solid:		null,
-			wireframe:	null,
-			bounding:	null,
-			normals:	null
+	var drawMode = glacier.draw.SOLID;
+	
+	// Define buffers and drawMode members
+	Object.defineProperties(this, {
+		buffers: {
+			value: {
+				solid:		null,
+				wireframe:	null,
+				bounding:	null,
+				normals:	null
+			}
+		},
+		drawMode: {
+			get: function() {
+				return drawMode;
+			},
+			set: function(mode) {
+				if(typeof mode == 'number' && mode >= 0) {
+					drawMode = mode;
+				} else {
+					glacier.error.invalidAssignment('drawMode', mode, 'number >= 0', 'Drawable');
+				}
+			}
 		}
 	});
 };
@@ -52,19 +68,15 @@ glacier.Drawable.prototype = {
 		this.matrix		= new glacier.Matrix44();
 		this.visible	= true;
 	},
-	draw: function(mode) {
-		if(!this.visible) {
-			return;
-		}
-		
-		mode = (typeof mode == 'number' ? mode : glacier.draw.SOLID);
-		
-		var d, bufferObj;
-		
-		for(d in glacier.draw) {
-			if(glacier.draw.hasOwnProperty(d) && (mode & glacier.draw[d])) {
-				if((bufferObj = this.buffers[d.toLowerCase()]) instanceof glacier.BufferObject) {
-					bufferObj.draw();
+	draw: function() {
+		if(this.visible && this.drawMode) {
+			var d, bufferObj;
+			
+			for(d in glacier.draw) {
+				if(glacier.draw.hasOwnProperty(d) && (this.drawMode & glacier.draw[d])) {
+					if((bufferObj = this.buffers[d.toLowerCase()]) instanceof glacier.BufferObject) {
+						bufferObj.draw();
+					}
 				}
 			}
 		}
