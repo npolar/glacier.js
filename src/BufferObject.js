@@ -125,10 +125,9 @@ glacier.BufferObject.prototype = {
 				}
 			}
 			
-			if(!attrib || !this.buffers.color) {
-				if((uniform = this.shader.uniform('color_rgba'))) {
-					gl.uniform4fv(uniform, this.color.array);
-				}
+			// Set uniform color to black if vertex color is present, otherwise use uniform color
+			if((uniform = this.shader.uniform('color_rgba'))) {
+				gl.uniform4fv(uniform, (attrib && this.buffers.color ? glacier.color.BLACK.array : this.color.array));
 			}
 			
 			for(t = 0; t < glacier.BufferObject.MAX_TEXTURE_COUNT; ++t) {
