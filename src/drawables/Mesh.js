@@ -55,21 +55,21 @@ glacier.extend(glacier.Mesh, glacier.Drawable, {
 		
 		if(glacier.Drawable.prototype.init.call(this, context, options)) {
 			// Initialize buffers
-			if(self.buffer.init(self.vertices, self.indices, self.normals, self.texCoords, self.colors)) {
-				self.buffer.drawMode = context.gl.TRIANGLES;
-				self.buffer.elements = (self.indices.length ? self.indices.length : self.vertices.length / 3);
+			if(self.buffers.solid.init(self.vertices, self.indices, self.normals, self.texCoords, self.colors)) {
+				self.buffers.solid.elements = (self.indices.length ? self.indices.length : self.vertices.length / 3);
+				self.buffers.solid.drawMode = context.gl.TRIANGLES;
 				
 				// Enable texture hot-swapping
 				[ 0, 1, 2, 3 ].forEach(function(tex) {
-					self['texture' + tex].onLoad(function(image) { self.buffer.textures[tex] = context.createTexture(image); });
-					self['texture' + tex].onFree(function() { self.buffer.freeTexture(tex); });
+					self['texture' + tex].onLoad(function(image) { self.buffers.solid.textures[tex] = context.createTexture(image); });
+					self['texture' + tex].onFree(function() { self.buffers.solid.freeTexture(tex); });
 				});
 				
 				return true;
 			}
 		}
 		
-		self.buffer = null;
+		self.buffers.solid = null;
 		return false;
 	}
 });

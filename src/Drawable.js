@@ -20,38 +20,53 @@ glacier.Drawable = function Drawable() {
 		});
 	}, this);
 	
-	var bufferObject = null;
-	
-	// Define buffer member
-	Object.defineProperty(this, 'buffer', {
-		get: function() {
-			return bufferObject;
-		},
-		set: function(value) {
-			if(value instanceof glacier.BufferObject) {
-				bufferObject = value;
-			} else if(value === null) {
-				if(bufferObject) {
-					bufferObject.free();
-				}
-				
-				bufferObject = null;
-			} else {
-				glacier.error.invalidAssignment('buffer', buffer, 'BufferObject', 'Drawable');
-			}
+	// Define buffers member
+	Object.defineProperty(this, 'buffers', {
+		value: {
+			solid:		null,
+			wireframe:	null,
+			bounding:	null,
+			normals:	null
 		}
 	});
 };
 
+glacier.draw = {
+	SOLID:		0x01,
+	WIREFRAME:	0x02,
+	BOUNDING:	0x04,
+	NORMALS:	0x08
+};
+
 glacier.Drawable.prototype = {
 	free: function() {
-		this.buffer		= null;
+		for(var b in this.buffers) {
+			if(this.buffers.hasOwnProperty(b)) {
+				if(this.buffers[b] instanceof glacier.BufferObject) {
+					this.buffers[b].free();
+					this.buffers[b] = null;
+				}
+			}
+		}
+		
 		this.matrix		= new glacier.Matrix44();
 		this.visible	= true;
 	},
-	draw: function() {
-		if(this.visible && (this.buffer instanceof glacier.BufferObject)) {
-			this.buffer.draw();
+	draw: function(mode) {
+		if(!this.visible) {
+			return;
+		}
+		
+		mode = (typeof mode == 'number' ? mode : glacier.draw.SOLID);
+		
+		var d, bufferObj;
+		
+		for(d in glacier.draw) {
+			if(glacier.draw.hasOwnProperty(d) && (mode & glacier.draw[d])) {
+				if((bufferObj = this.buffers[d.toLowerCase()]) instanceof glacier.BufferObject) {
+					bufferObj.draw();
+				}
+			}
 		}
 	},
 	init: function(context, options) {
@@ -59,7 +74,30 @@ glacier.Drawable.prototype = {
 			throw new glacier.exception.InvalidParameter('context', context, 'Context', 'init', 'Drawable');
 		}
 		
-		var shader = context.shaders.get('generic');
+		var	initialized = true,
+			shader = context.shaders.get('generic'),
+			aabbMax = this.aabb.max,
+			aabbMin = this.aabb.min,
+			aabbVertices, aabbIndices;
+			
+		aabbVertices = [
+			new glacier.Vector3(aabbMax.x, aabbMax.y, aabbMax.z),
+			new glacier.Vector3(aabbMin.x, aabbMax.y, aabbMax.z),
+			new glacier.Vector3(aabbMax.x, aabbMax.y, aabbMin.z),
+			new glacier.Vector3(aabbMin.x, aabbMax.y, aabbMin.z),
+			new glacier.Vector3(aabbMax.x, aabbMin.y, aabbMax.z),
+			new glacier.Vector3(aabbMin.x, aabbMin.y, aabbMax.z),
+			new glacier.Vector3(aabbMax.x, aabbMin.y, aabbMin.z),
+			new glacier.Vector3(aabbMin.x, aabbMin.y, aabbMin.z)
+		];
+		
+		aabbIndices = [ 0, 1, 4, 5, 7, 1, 3, 2, 7, 6, 4, 2, 0, 3, 7, 4, 0, 5, 3, 6, 2, 1, 5, 6 ];
+		
+		this.buffers.bounding = new glacier.BufferObject(this, context, shader);
+		if(this.buffers.bounding.init(aabbVertices, aabbIndices, null, null, glacier.color.RED)) {
+			this.buffers.bounding.drawMode = context.gl.LINE_LOOP;
+			this.buffers.bounding.elements = 24;
+		}
 		
 		if(typeof options == 'object') {
 			if(typeof options.shader == 'string') {
@@ -69,8 +107,7 @@ glacier.Drawable.prototype = {
 			throw new glacier.exception.InvalidParameter('options', options, 'object', 'init', 'Drawable');
 		}
 		
-		if(!(this.buffer = new glacier.BufferObject(this, context, shader)).init()) {
-			this.buffer = null;
+		if(!(this.buffers.solid = new glacier.BufferObject(this, context, shader)).init()) {
 			return false;
 		}
 		

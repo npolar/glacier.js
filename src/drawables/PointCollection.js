@@ -42,14 +42,14 @@ glacier.extend(glacier.PointCollection, glacier.Drawable, {
 		
 		if(glacier.Drawable.prototype.init.call(this, context, options)) {
 			// Initialize buffers
-			if(self.buffer.init(self.vertices, null, null, null, self.colors)) {
-				self.buffer.drawMode = context.gl.POINTS;
-				self.buffer.elements = self.vertices.length;
+			if(self.buffers.solid.init(self.vertices, null, null, null, self.colors)) {
+				self.buffers.solid.elements = self.vertices.length;
+				self.buffers.solid.drawMode = context.gl.POINTS;
 				return true;
 			}
 		}
 		
-		self.buffer = null;
+		self.buffers.solid = null;
 		return false;
 	}
 });
