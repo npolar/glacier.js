@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.2.9',
+	VERSION: '0.2.10',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -1401,7 +1401,7 @@ glacier.Scene = function Scene(container, options) {
 		camera: { value: camera },
 		container: { value: container },
 		context: { value: context },
-		runCallbacks: { value: [] },
+		runCallbacks: { value: {} },
 		running: {
 			get: function() {
 				return !!running;
@@ -1429,15 +1429,17 @@ glacier.Scene = function Scene(container, options) {
 	(function sceneRunner(timestamp) {
 		if(self.running) {
 			// Calculate dtime and FPS
-			var dtime = (((timestamp - previous) / 1000.0) || 0.0);
+			var dtime = (((timestamp - previous) / 1000.0) || 0.0), r;
 			self.fps = (dtime ? (((1.0 / dtime) + self.fps) / 2.0) : 0.0);
 			previous = timestamp;
 			
-			self.runCallbacks.forEach(function(callback) {
-				if(typeof callback == 'function') {
-					callback.call(self, dtime);
+			for(r in self.runCallbacks) {
+				if(self.runCallbacks.hasOwnProperty(r)) {
+					if(typeof (r = self.runCallbacks[r]) == 'function') {
+						r.call(self, dtime);
+					}
 				}
-			});
+			}
 		}
 		
 		requestAnimationFrame(sceneRunner);
@@ -1445,9 +1447,39 @@ glacier.Scene = function Scene(container, options) {
 };
 
 glacier.Scene.prototype = {
+	addRunCallback: function(callback) {
+		if(typeof callback == 'function') {
+			var uid = glacier.generateUID();
+			this.runCallbacks[uid] = callback;
+			return uid;
+		} else {
+			throw new glacier.exception.InvalidParameter('callback', callback, 'addRunCallback', 'Scene');
+		}
+		
+		return null;
+	},
+	
 	end: function() {
 		this.fps = 0.0;
 		this.running = false;
+	},
+	
+	removeRunCallback: function(uidOrCallback) {
+		if(typeof uidOrCallback == 'string') {
+			if(this.runCallbacks[uidOrCallback]) {
+				return delete this.runCallbacks[uidOrCallback];
+			}
+		} else if(typeof uidOrCallback == 'function') {
+			for(var r in this.runCallbacks) {
+				if(this.runCallbacks[r] === uidOrCallback) {
+					return delete this.runCallbacks[r];
+				}
+			}
+		} else {
+			throw new glacier.exception.InvalidParameter('uidOrCallback', uidOrCallback, 'removeRunCallback', 'Scene');
+		}
+		
+		return false;
 	},
 	
 	run: function() {
@@ -3915,7 +3947,7 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 	this.context.background = options.background;
 	
 	// Add draw callback
-	this.runCallbacks.push(function() {
+	this.addRunCallback(function() {
 		var gl = this.context.gl, d;
 		
 		gl.enable(gl.DEPTH_TEST);
@@ -4163,7 +4195,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			}
 		}
 		
-		self.runCallbacks.push(self.mouseHandler.camEaseCallback);
+		self.addRunCallback(self.mouseHandler.camEaseCallback);
 	},
 	
 	focus: function(latLng, callback) {
@@ -4281,12 +4313,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 				}
 			}
 			
-			for(c in self.runCallbacks) {
-				if(self.runCallbacks[c] === self.mouseHandler.camEaseCallback) {
-					self.runCallbacks.splice(c, 1);
-					break;
-				}
-			}
+			self.removeRunCallback(self.mouseHandler.camEaseCallback);
 		}
 		
 		self.mouseHandler = null;
