@@ -199,16 +199,10 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		}
 		
 		// Parse options with type-checking
-		options = glacier.parseOptions(options, {
-			movementButton:	[ { number: null }, null ],
-			rotationButton:	[ { number:    0 }, null ],
-			zoomButton:		[ { number: null }, null ],
+		options = glacier.parseOptions(options, { 
 			zoomMin:		{ number: 1.01, gt: 0.0 },
 			zoomMax:		{ number: 10.0, gt: 0.0 },
 			zoomSteps:		{ number: 30, gt: 0 },
-			wheelMovement:	{ boolean: false },
-			wheelRotation:	{ boolean: false },
-			wheelZoom:		{ boolean: true  },
 		});
 		
 		self.camera.zoom = options.zoomMax;
@@ -220,13 +214,13 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			
 			callbacks: {
 				mousedown: function(event) {
-					if(options.rotationButton !== null && event.button === options.rotationButton) {
+					if(event.button === 0) {	// Left mouse for rotation
 						self.mouseHandler.clickLatLng = ((ray = self.rayCast(event.clientX, event.clientY)) ? self.pointToLatLng(ray) : null);
 						self.mouseHandler.angleVelocity = null;
 					}
 				},
 				mouseup: function(event) {
-					if(options.rotationButton !== null && event.button === options.rotationButton) {
+					if(event.button === 0) {	// Left mouse for rotation
 						self.mouseHandler.clickLatLng = null;
 						
 						if(self.mouseHandler.deltaLatLng) {
@@ -262,6 +256,8 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 							dtime: 0.0
 						};
 					}
+					
+					event.preventDefault();
 				},
 				touchmove: function(event) {
 					if(event.touches.length == 1) {
@@ -277,6 +273,8 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 							self.mouseHandler.deltaLatLng = null;
 						}
 					}
+					
+					event.preventDefault();
 				},
 				touchstart: function(event) {
 					if(event.touches.length == 1) {
@@ -285,6 +283,8 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 						self.mouseHandler.clickLatLng = ((ray = self.rayCast(touch.clientX, touch.clientY)) ? self.pointToLatLng(ray) : null);
 						self.mouseHandler.angleVelocity = null;
 					}
+					
+					event.preventDefault();
 				},
 				wheel: function(event) {
 					if(event.deltaY) {
