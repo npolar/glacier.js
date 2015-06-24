@@ -76,7 +76,7 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 	this.context.background = options.background;
 	
 	// Add draw callback
-	this.runCallbacks.push(function() {
+	this.addRunCallback(function() {
 		var gl = this.context.gl, d;
 		
 		gl.enable(gl.DEPTH_TEST);
@@ -324,7 +324,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			}
 		}
 		
-		self.runCallbacks.push(self.mouseHandler.camEaseCallback);
+		self.addRunCallback(self.mouseHandler.camEaseCallback);
 	},
 	
 	focus: function(latLng, callback) {
@@ -442,12 +442,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 				}
 			}
 			
-			for(c in self.runCallbacks) {
-				if(self.runCallbacks[c] === self.mouseHandler.camEaseCallback) {
-					self.runCallbacks.splice(c, 1);
-					break;
-				}
-			}
+			self.removeRunCallback(self.mouseHandler.camEaseCallback);
 		}
 		
 		self.mouseHandler = null;

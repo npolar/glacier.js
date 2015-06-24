@@ -33,7 +33,7 @@ glacier.Scene = function Scene(container, options) {
 		camera: { value: camera },
 		container: { value: container },
 		context: { value: context },
-		runCallbacks: { value: [] },
+		runCallbacks: { value: {} },
 		running: {
 			get: function() {
 				return !!running;
@@ -61,15 +61,17 @@ glacier.Scene = function Scene(container, options) {
 	(function sceneRunner(timestamp) {
 		if(self.running) {
 			// Calculate dtime and FPS
-			var dtime = (((timestamp - previous) / 1000.0) || 0.0);
+			var dtime = (((timestamp - previous) / 1000.0) || 0.0), r;
 			self.fps = (dtime ? (((1.0 / dtime) + self.fps) / 2.0) : 0.0);
 			previous = timestamp;
 			
-			self.runCallbacks.forEach(function(callback) {
-				if(typeof callback == 'function') {
-					callback.call(self, dtime);
+			for(r in self.runCallbacks) {
+				if(self.runCallbacks.hasOwnProperty(r)) {
+					if(typeof (r = self.runCallbacks[r]) == 'function') {
+						r.call(self, dtime);
+					}
 				}
-			});
+			}
 		}
 		
 		requestAnimationFrame(sceneRunner);
@@ -77,9 +79,39 @@ glacier.Scene = function Scene(container, options) {
 };
 
 glacier.Scene.prototype = {
+	addRunCallback: function(callback) {
+		if(typeof callback == 'function') {
+			var uid = glacier.generateUID();
+			this.runCallbacks[uid] = callback;
+			return uid;
+		} else {
+			throw new glacier.exception.InvalidParameter('callback', callback, 'addRunCallback', 'Scene');
+		}
+		
+		return null;
+	},
+	
 	end: function() {
 		this.fps = 0.0;
 		this.running = false;
+	},
+	
+	removeRunCallback: function(uidOrCallback) {
+		if(typeof uidOrCallback == 'string') {
+			if(this.runCallbacks[uidOrCallback]) {
+				return delete this.runCallbacks[uidOrCallback];
+			}
+		} else if(typeof uidOrCallback == 'function') {
+			for(var r in this.runCallbacks) {
+				if(this.runCallbacks[r] === uidOrCallback) {
+					return delete this.runCallbacks[r];
+				}
+			}
+		} else {
+			throw new glacier.exception.InvalidParameter('uidOrCallback', uidOrCallback, 'removeRunCallback', 'Scene');
+		}
+		
+		return false;
 	},
 	
 	run: function() {
