@@ -18,6 +18,7 @@ glacier.BufferObject = function BufferObject(drawable, context, shader) {
 	
 	// Define buffers, context, parent, textures, elements, drawMode and shader memebers
 	Object.defineProperties(this, {
+		color:		{ value: glacier.color.WHITE },
 		buffers:	{ value: {} },
 		context:	{ value: context },
 		parent:		{ value: drawable },
@@ -84,28 +85,50 @@ glacier.BufferObject.prototype = {
 			
 			this.shader.use();
 			
-			if(this.buffers.vertex && (attrib = this.shader.attribute('vertex_xyz')) !== null) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
-				gl.enableVertexAttribArray(attrib);
-				gl.vertexAttribPointer(attrib, 3, gl.FLOAT, false, 0, 0);
+			if((attrib = this.shader.attribute('vertex_position')) !== null) {
+				if(this.buffers.vertex) {
+					gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertex);
+					gl.enableVertexAttribArray(attrib);
+					gl.vertexAttribPointer(attrib, 3, gl.FLOAT, false, 0, 0);
+				} else {
+					gl.disableVertexAttribArray(attrib);
+				}
 			}
 			
-			if(this.buffers.normal && (attrib = this.shader.attribute('normal_xyz')) !== null) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.normal);
-				gl.enableVertexAttribArray(attrib);
-				gl.vertexAttribPointer(attrib, 3, gl.FLOAT, false, 0, 0);
+			if((attrib = this.shader.attribute('vertex_normal')) !== null) {
+				if(this.buffers.normal) {
+					gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.normal);
+					gl.enableVertexAttribArray(attrib);
+					gl.vertexAttribPointer(attrib, 3, gl.FLOAT, false, 0, 0);
+				} else {
+					gl.disableVertexAttribArray(attrib);
+				}
 			}
 			
-			if(this.buffers.texCoord && (attrib = this.shader.attribute('texture_uv')) !== null) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.texCoord);
-				gl.enableVertexAttribArray(attrib);
-				gl.vertexAttribPointer(attrib, 2, gl.FLOAT, false, 0, 0);
+			if((attrib = this.shader.attribute('vertex_uv')) !== null) {
+				if(this.buffers.texCoord) {
+					gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.texCoord);
+					gl.enableVertexAttribArray(attrib);
+					gl.vertexAttribPointer(attrib, 2, gl.FLOAT, false, 0, 0);
+				} else {
+					gl.disableVertexAttribArray(attrib);
+				}
 			}
 			
-			if(this.buffers.color && (attrib = this.shader.attribute('color_rgba')) !== null) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.color);
-				gl.enableVertexAttribArray(attrib);
-				gl.vertexAttribPointer(attrib, 4, gl.FLOAT, false, 0, 0);
+			if((attrib = this.shader.attribute('vertex_color')) !== null) {
+				if(this.buffers.color) {
+					gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.color);
+					gl.enableVertexAttribArray(attrib);
+					gl.vertexAttribPointer(attrib, 4, gl.FLOAT, false, 0, 0);
+				} else {
+					gl.disableVertexAttribArray(attrib);
+				}
+			}
+			
+			if(!attrib || !this.buffers.color) {
+				if((uniform = this.shader.uniform('color_rgba'))) {
+					gl.uniform4fv(uniform, this.color.array);
+				}
 			}
 			
 			for(t = 0; t < glacier.BufferObject.MAX_TEXTURE_COUNT; ++t) {
@@ -196,11 +219,11 @@ glacier.BufferObject.prototype = {
 					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.texCoord = gl.createBuffer()));
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
-			} else if(normals) {
+			} else if(texCoords) {
 				throw new glacier.exception.InvalidParameter('texCoords', texCoords, 'Vector2 array', 'init', 'BufferObject');
 			}
 			
-			// Vertex Color buffer
+			// Vertex Color buffer or Uniform Color
 			if(glacier.isArray(colors, glacier.Color)) {
 				if(colors.length) {
 					array = [];
@@ -208,7 +231,9 @@ glacier.BufferObject.prototype = {
 					gl.bindBuffer(gl.ARRAY_BUFFER, (this.buffers.color = gl.createBuffer()));
 					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(array), gl.STATIC_DRAW);
 				}
-			} else if(normals) {
+			} else if(colors instanceof glacier.Color) {
+				this.color.assign(colors);
+			} else if(colors) {
 				throw new glacier.exception.InvalidParameter('colors', colors, 'Color array', 'init', 'BufferObject');
 			}
 			

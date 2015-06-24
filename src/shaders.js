@@ -1,27 +1,34 @@
 glacier.shaders = {
+	
+	// highp:	vertex positions, uv coordinates
+	// mediump:	normals, lighting related vectors
+	// lowp:	colors
+	
 	vertex: {
 		generic: [
-			'attribute highp vec3 vertex_xyz;',
-			'attribute highp vec3 normal_xyz;',
-			'attribute highp vec2 texture_uv;',
-			'attribute highp vec4 color_rgba;',
+			'attribute highp vec3 vertex_position;',
+			'attribute mediump vec3 vertex_normal;',
+			'attribute lowp vec4 vertex_color;',
+			'attribute highp vec2 vertex_uv;',
 			'uniform highp mat4 matrix_mvp;',
+			'uniform lowp vec4 color_rgba;',
 			'varying highp vec4 vertex_pos;',
+			'varying mediump vec3 mvp_normal;',
+			'varying lowp vec4 frag_color;',
 			'varying highp vec2 tex_coords;',
-			'varying highp vec4 frag_color;',
-			'varying highp vec3 mvp_normal;',
 			'void main()',
 			'{',
 				'gl_PointSize = 2.0;',
-				'gl_Position = vertex_pos = matrix_mvp * vec4(vertex_xyz, 1.0);',
-				'tex_coords = texture_uv; frag_color = color_rgba;',
-				'mvp_normal = normalize(matrix_mvp * vec4(normal_xyz, 1.0)).xyz;',
+				'gl_Position = vertex_pos = matrix_mvp * vec4(vertex_position, 1.0);',
+				'mvp_normal = normalize(matrix_mvp * vec4(vertex_normal, 1.0)).xyz;',
+				'frag_color = vertex_color + color_rgba;',
+				'tex_coords = vertex_uv;',
 			'}'
 		]
 	},
 	fragment: {
 		generic: [
-			'varying highp vec4 frag_color;',
+			'varying lowp vec4 frag_color;',
 			'void main()',
 			'{',
 				'gl_FragColor = frag_color;',
@@ -33,8 +40,8 @@ glacier.shaders = {
 			'uniform sampler2D tex_samp_1;',
 			'uniform sampler2D tex_samp_2;',
 			'varying highp vec2 tex_coords;',
-			'varying highp vec4 frag_color;',
-			'varying highp vec3 mvp_normal;',
+			'varying lowp vec4 frag_color;',
+			'varying mediump vec3 mvp_normal;',
 			'void main()',
 			'{',
 				'vec3 lightPos = normalize(vec3(-28.0, 2.0, 12.0));',
@@ -52,7 +59,7 @@ glacier.shaders = {
 			'uniform sampler2D tex_samp_0;',
 			'uniform sampler2D tex_samp_1;',
 			'varying highp vec2 tex_coords;',
-			'varying highp vec4 frag_color;',
+			'varying lowp vec4 frag_color;',
 			'void main()',
 			'{',
 				'vec3 lightPos = normalize(vec3(1.0, 1.0, 1.0));',
@@ -66,7 +73,7 @@ glacier.shaders = {
 			'precision highp float;',
 			'uniform sampler2D tex_samp_0;',
 			'varying highp vec2 tex_coords;',
-			'varying highp vec4 frag_color;',
+			'varying lowp vec4 frag_color;',
 			'void main()',
 			'{',
 				'gl_FragColor = texture2D(tex_samp_0, tex_coords);',
