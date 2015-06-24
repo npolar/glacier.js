@@ -46,14 +46,14 @@ glacier.extend(glacier.Mesh, glacier.Drawable, {
 	init: function(context, options) {
 		var self = this;
 		
+		// Calculate AABB
+		self.aabb.reset();
+		self.vertices.forEach(function(vertex) {
+			self.aabb.min.minimize(vertex);
+			self.aabb.max.maximize(vertex);
+		});
+		
 		if(glacier.Drawable.prototype.init.call(this, context, options)) {
-			// Calculate AABB
-			self.aabb.reset();
-			self.vertices.forEach(function(vertex) {
-				self.aabb.min.minimize(vertex);
-				self.aabb.max.maximize(vertex);
-			});
-			
 			// Initialize buffers
 			if(self.buffer.init(self.vertices, self.indices, self.normals, self.texCoords, self.colors)) {
 				self.buffer.drawMode = context.gl.TRIANGLES;
