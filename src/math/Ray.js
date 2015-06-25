@@ -48,7 +48,11 @@ glacier.Ray.prototype = {
 			tmax = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6)),
 			tmin = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
 			
-		return ((tmax < 0 || tmin > tmax) ? null : new glacier.Vector3(tmin, tmin, tmin));
+		if(tmax < 0 || tmin > tmax) {
+			return null;
+		}
+		
+		return this.b.copy.multiply(tmin >= 0 ? tmin : tmax).add(this.a);
 	},
 	
 	deviation: function(ray) {
