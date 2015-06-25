@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.2.10',
+	VERSION: '0.2.11',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -3104,7 +3104,11 @@ glacier.Ray.prototype = {
 			tmax = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6)),
 			tmin = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
 			
-		return ((tmax < 0 || tmin > tmax) ? null : new glacier.Vector3(tmin, tmin, tmin));
+		if(tmax < 0 || tmin > tmax) {
+			return null;
+		}
+		
+		return this.b.copy.multiply(tmin >= 0 ? tmin : tmax).add(this.a);
 	},
 	
 	deviation: function(ray) {
@@ -4057,7 +4061,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 	},
 	
 	bindMouse: function(options) {
-		var self = this, camUpdate, c, ray;
+		var self = this, camUpdate, c, latLng;
 		
 		self.unbindMouse();
 		
@@ -4086,7 +4090,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 			callbacks: {
 				mousedown: function(event) {
 					if(event.button === 0) {	// Left mouse for rotation
-						self.mouseHandler.clickLatLng = ((ray = self.rayCast(event.clientX, event.clientY)) ? self.pointToLatLng(ray) : null);
+						self.mouseHandler.clickLatLng = self.screenToLatLng(event.clientX, event.clientY);
 						self.mouseHandler.angleVelocity = null;
 					}
 				},
@@ -4104,11 +4108,11 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 					}
 				},
 				mousemove: function(event) {
-					if((ray = self.rayCast(event.clientX, event.clientY))) {
+					if((latLng = self.screenToLatLng(event.clientX, event.clientY))) {
 						self.context.canvas.style.cursor = 'move';
 						
 						if(self.mouseHandler.clickLatLng) {
-							self.mouseHandler.deltaLatLng = self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng);
+							self.mouseHandler.deltaLatLng = latLng.subtract(self.mouseHandler.clickLatLng);
 							self.camera.angle.subtract(self.mouseHandler.deltaLatLng);
 							camUpdate();
 						}
@@ -4134,9 +4138,9 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 					if(event.touches.length == 1) {
 						var touch = event.touches[0];
 						
-						if((ray = self.rayCast(touch.clientX, touch.clientY))) {
+						if((latLng = self.screenToLatLng(event.clientX, event.clientY))) {
 							if(self.mouseHandler.clickLatLng) {
-								self.mouseHandler.deltaLatLng = self.pointToLatLng(ray).subtract(self.mouseHandler.clickLatLng);
+								self.mouseHandler.deltaLatLng = latLng.subtract(self.mouseHandler.clickLatLng);
 								self.camera.angle.subtract(self.mouseHandler.deltaLatLng);
 								camUpdate();
 							}
@@ -4151,7 +4155,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 					if(event.touches.length == 1) {
 						var touch = event.touches[0];
 						
-						self.mouseHandler.clickLatLng = ((ray = self.rayCast(touch.clientX, touch.clientY)) ? self.pointToLatLng(ray) : null);
+						self.mouseHandler.clickLatLng = self.screenToLatLng(event.clientX, event.clientY);
 						self.mouseHandler.angleVelocity = null;
 					}
 					
@@ -4266,36 +4270,36 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		);
 	},
 	
-	rayCast: function(x, y) {
-		if(typeof x != 'number') {
-			throw new glacier.exception.InvalidParameter('x', x, 'number', 'rayCast', 'GlobeScene');
+	rayCast: function(xOrVec2, y) {
+		if(xOrVec2 instanceof glacier.Vector2) {
+			return this.rayCast(xOrVec2.x, xOrVec2.y);
+		} else {
+			var args = [ 'x', 'y' ];
+			
+			[ xOrVec2, y ].forEach(function(arg, index) {
+				if(isNaN(arg)) {
+					throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'rayCast', 'GlobeScene');
+				}
+			});
 		}
-		
-		if(typeof y != 'number') {
-			throw new glacier.exception.InvalidParameter('y', y, 'number', 'rayCast', 'GlobeScene');
-		}
-		
+			
 		var ndc = new glacier.Vector3(
-			2.0 * (x / this.context.width) - 1.0,
+			2.0 * (xOrVec2 / this.context.width) - 1.0,
 			1.0 - 2.0 * (y / this.context.height),
 			-1.0
-		), eye, pos, ray, intersection;
+		), eye, pos, intersection;
 		
 		eye = this.camera.position.copy;
 		pos = new glacier.Vector4(ndc).multiply(this.camera.projection.inverse).multiply(this.camera.matrix.inverse);
-		ray = new glacier.Ray(eye, pos.divide(pos.w).xyz);
+		
+		return new glacier.Ray(eye, pos.divide(pos.w).xyz);
+	},
+	
+	screenToLatLng: function(xOrVec2, y) {
+		var intersection, ray = this.rayCast(xOrVec2, y);
 		
 		if((intersection = ray.intersects(this.base))) {
 			intersection.multiply(this.base.matrix.inverse);
-		}
-		
-		return intersection;
-	},
-	
-	screenToLatLng: function(x, y) {
-		var intersection;
-		
-		if((intersection = this.rayCast(x, y))) {
 			return this.pointToLatLng(intersection);
 		}
 		
