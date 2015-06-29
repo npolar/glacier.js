@@ -411,7 +411,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		var ndc = new glacier.Vector3(
 			2.0 * (xOrVec2 / this.context.width) - 1.0,
 			1.0 - 2.0 * (y / this.context.height),
-			-1.0
+			1.0
 		), eye, pos, intersection;
 		
 		eye = this.camera.position.copy;

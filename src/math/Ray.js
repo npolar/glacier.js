@@ -45,14 +45,15 @@ glacier.Ray.prototype = {
 			t4 = (max.y - this.a.y) * dir.y,
 			t5 = (min.z - this.a.z) * dir.z,
 			t6 = (max.z - this.a.z) * dir.z,
-			tmax = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6)),
-			tmin = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
+			tmin = Math.max(Math.min(t1, t2), Math.min(t3, t4), Math.min(t5, t6)),
+			tmax = Math.min(Math.max(t1, t2), Math.max(t3, t4), Math.max(t5, t6));
 			
+		// Check if ray is behind, or avoids intersection
 		if(tmax < 0 || tmin > tmax) {
 			return null;
 		}
 		
-		return this.b.copy.multiply(tmin >= 0 ? tmin : tmax).add(this.a);
+		return this.b.copy.multiply(tmin).add(this.a);
 	},
 	
 	deviation: function(ray) {
