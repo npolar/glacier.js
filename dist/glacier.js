@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.2.11',
+	VERSION: '0.2.12',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -1253,8 +1253,7 @@ glacier.Drawable.prototype = {
 			throw new glacier.exception.InvalidParameter('context', context, 'Context', 'init', 'Drawable');
 		}
 		
-		var	initialized = true,
-			shader = context.shaders.get('generic'),
+		var	shader = context.shaders.get('generic'),
 			aabbMax = this.aabb.max,
 			aabbMin = this.aabb.min,
 			aabbVertices, aabbIndices;
@@ -2107,14 +2106,18 @@ glacier.extend(glacier.TypedArray, Array, {
 
 glacier.EPSILON = 10e-5;
 
-glacier.compare = function(value1, value2) {
+glacier.compare = function(value1, value2, epsilon) {
 	var e, val1Arr = glacier.isArray(value1), val2Arr = glacier.isArray(value2);
+	
+	if(typeof epsilon != 'number') {
+		epsilon = glacier.EPSILON;
+	}
 	
 	if(val1Arr && val2Arr) {
 		if(value1.length == value2.length) {
 			for(e = 0; e < value1.length; ++e) {
 				if(typeof value1[e] == 'number' && typeof value2[e] == 'number') {
-					if(Math.abs(value1[e] - value2[e]) >= glacier.EPSILON) {
+					if(Math.abs(value1[e] - value2[e]) >= epsilon) {
 						return false;
 					}
 				} else if(value1 !== value2) {
@@ -2129,7 +2132,7 @@ glacier.compare = function(value1, value2) {
 		
 		for(e = 0; e < arr.length; ++e) {
 			if(typeof arr[e] == 'number' && typeof val == 'number') {
-				if(Math.abs(arr[e] - val) >= glacier.EPSILON) {
+				if(Math.abs(arr[e] - val) >= epsilon) {
 					return false;
 				}
 			} else if(arr[e] !== val) {
@@ -2139,7 +2142,7 @@ glacier.compare = function(value1, value2) {
 		
 		return true;
 	} else if(typeof value1 == 'number' && typeof value2 == 'number') {
-		return (Math.abs(value1 - value2) < glacier.EPSILON);
+		return (Math.abs(value1 - value2) < epsilon);
 	} else {
 		return (value1 === value2);
 	}
@@ -3054,6 +3057,209 @@ glacier.Matrix44.prototype = {
 	}
 };
 
+(function() {
+	function Cell(min, max, parent) {
+		// Determine root
+		var root = (parent.root || parent);
+		while(root && root.parent) {
+			root = root.parent;
+		}
+		
+		// Define Cell properties
+		Object.defineProperties(this, {
+			children: { value: [] },
+			max: { value: max },
+			min: { value: min },
+			parent: { value: parent },
+			points: { value: [] },
+			root: { value: root }
+		});
+	}
+	
+	Cell.prototype = {
+		add: function(point) {
+			if(point instanceof glacier.Vector3) {
+				if(this.contains(point)) {
+					if(!this.children.length) {
+						if(this.points.length < this.root.cellCapacity) {
+							this.points.push(point);
+							return true;
+						} else if(!this.split()) {
+							return false;
+						}
+					}
+					
+					for(var child in this.children) {
+						if((child = this.children[child]).contains(point)) {
+							return child.add(point);
+						}
+					}
+				}
+			}
+			
+			return false;
+		},
+		
+		clear: function() {
+			this.children.length = this.points.length = 0;
+		},
+		
+		contains: function(point) {
+			if(point instanceof glacier.Vector3) {
+				return (point.x >= this.min.x && point.y >= this.min.y && point.z >= this.min.z &&
+						point.x <= this.max.x && point.y <= this.max.y && point.z <= this.max.z);
+			}
+			
+			return false;
+		},
+		
+		get level() {
+			var level = 0, parent = this.parent;
+			
+			while(parent && (parent = parent.parent)) {
+				level++;
+			}
+			
+			return level;
+		},
+		
+		remove: function(point) {
+			if(point instanceof glacier.Vector3) {
+				if(this.contains(point)) {
+					var n;
+					
+					for(n in this.points) {
+						if(this.points[n] === point) {
+							this.points.splice(n, 1);
+							return true;
+						}
+					}
+					
+					for(n in this.children) {
+						if(this.children[n].remove(point)) {
+							return true;
+						}
+					}
+				}
+			}
+			
+			return false;
+		},
+		
+		split: function() {
+			if(!this.children.length) {
+				var min = this.min, max = this.max, cen = max.copy.subtract(min), point, cell;
+					
+				this.children.push(
+					new Cell(new glacier.Vector3(min.x, min.y, min.z), new glacier.Vector3(cen.x, cen.y, cen.z), this),
+					new Cell(new glacier.Vector3(cen.x, min.y, min.z), new glacier.Vector3(max.x, cen.y, cen.z), this),
+					new Cell(new glacier.Vector3(min.x, min.y, cen.z), new glacier.Vector3(cen.x, cen.y, max.z), this),
+					new Cell(new glacier.Vector3(cen.x, min.y, cen.z), new glacier.Vector3(max.x, cen.y, max.z), this),
+					new Cell(new glacier.Vector3(min.x, cen.y, min.z), new glacier.Vector3(cen.x, max.y, cen.z), this),
+					new Cell(new glacier.Vector3(cen.x, cen.y, min.z), new glacier.Vector3(max.x, max.y, cen.z), this),
+					new Cell(new glacier.Vector3(min.x, cen.y, cen.z), new glacier.Vector3(cen.x, max.y, max.z), this),
+					new Cell(new glacier.Vector3(cen.x, cen.y, cen.z), new glacier.Vector3(max.x, max.y, max.z), this)
+				);
+				
+				return true;
+			}
+			
+			return false;
+		}
+	};
+	
+	// TODO: Octree constructor from min/max boundaries
+	function Octree(points, cellCapacity) {
+		if(glacier.isArray(points, glacier.Vector3)) {
+			var min = new glacier.Vector3( Infinity),
+				max = new glacier.Vector3(-Infinity),
+				root;
+				
+			// Use 8 as default cellCapacity if cellCapacity is not a number
+			cellCapacity = (typeof cellCapacity == 'number' ? Math.abs(cellCapacity) : 8);
+			
+			Object.defineProperty(this, 'cellCapacity', {
+				get: function() {
+					return cellCapacity;
+				},
+				set: function(value) {
+					if(typeof value == 'number' && value > 0) {
+						cellCapacity = Math.ceil(value);
+						// TODO: Rebuilt tree with new cell capacity
+					}
+				}
+				
+			});
+			
+			if(glacier.isArray(points, glacier.Vector3)) {
+				// Calculate octree boundaries
+				points.forEach(function(point) {
+					min.minimize(point);
+					max.maximize(point);
+				});
+				
+				// Create root cell, and add points
+				root = new Cell(min, max, this);
+				points.forEach(function(point) {
+					root.add(point);
+				});
+			}
+			
+			Object.defineProperty(this, 'root', { value: root });
+		} else {
+			throw new glacier.exception.InvalidParameter('points', points, 'Vector3 Array', '(constructor)', 'Octree');
+		}
+	}
+	
+	Octree.prototype = {
+		add: function(point) {
+			return this.root.add(point);
+		},
+		
+		clear: function() {
+			this.root.clear();
+		},
+		
+		contains: function(point) {
+			return this.root.contains(point);
+		},
+		
+		get max() {
+			return this.root.max;
+		},
+		
+		get min() {
+			return this.root.min;
+		},
+		
+		get points() {
+			function childPoints(cell) {
+				var points = [];
+				
+				cell.points.forEach(function(point) {
+					points.push(point);
+				});
+				
+				cell.children.forEach(function(child) {
+					childPoints(child).forEach(function(point) {
+						points.push(point);
+					});
+				});
+				
+				return points;
+			}
+			
+			return childPoints(this.root);
+		},
+		
+		remove: function(point) {
+			return this.root.remove(point);
+		},
+	};
+
+	glacier.Octree = Octree;
+})();
+
 glacier.Ray = function Ray(origin, direction) {
 	glacier.addTypedProperty(this, ['a', 'origin'], new glacier.Vector3(0.0), glacier.Vector3);
 	glacier.addTypedProperty(this, ['b', 'direction'], new glacier.Vector3(0.0), glacier.Vector3);
@@ -3101,14 +3307,15 @@ glacier.Ray.prototype = {
 			t4 = (max.y - this.a.y) * dir.y,
 			t5 = (min.z - this.a.z) * dir.z,
 			t6 = (max.z - this.a.z) * dir.z,
-			tmax = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6)),
-			tmin = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
+			tmin = Math.max(Math.min(t1, t2), Math.min(t3, t4), Math.min(t5, t6)),
+			tmax = Math.min(Math.max(t1, t2), Math.max(t3, t4), Math.max(t5, t6));
 			
+		// Check if ray is behind, or avoids intersection
 		if(tmax < 0 || tmin > tmax) {
 			return null;
 		}
 		
-		return this.b.copy.multiply(tmin >= 0 ? tmin : tmax).add(this.a);
+		return this.b.copy.multiply(tmin).add(this.a);
 	},
 	
 	deviation: function(ray) {
@@ -3209,6 +3416,15 @@ glacier.Vector2.prototype = {
 		return this;
 	},
 	
+	compare: function(vec2, epsilon) {
+		if(vec2 instanceof glacier.Vector2) {
+			return (glacier.compare(this.x, vec2.x, epsilon) &&
+					glacier.compare(this.y, vec2.y, epsilon));
+		}
+		
+		throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'compare', 'Vector2');
+	},
+	
 	get copy() {
 		return new glacier.Vector2(this);
 	},
@@ -3217,9 +3433,9 @@ glacier.Vector2.prototype = {
 		if(vec2 instanceof glacier.Vector2) {
 			var dx = this.x - vec2.x, dy = this.y - vec2.y;
 			return Math.sqrt(dx * dx + dy * dy);
-		} else {
-			throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'distance', 'Vector2');
 		}
+		
+		throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'distance', 'Vector2');
 	},
 	
 	divide: function(value) {
@@ -3239,9 +3455,9 @@ glacier.Vector2.prototype = {
 	dot: function(vec2) {
 		if(vec2 instanceof glacier.Vector2) {
 			return ((this.x * vec2.x) + (this.y * vec2.y));
-		} else {
-			throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'dot', 'Vector2');
 		}
+		
+		throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'dot', 'Vector2');
 	},
 	
 	get length() {
@@ -3406,6 +3622,16 @@ glacier.Vector3.prototype = {
 		return this;
 	},
 	
+	compare: function(vec3, epsilon) {
+		if(vec3 instanceof glacier.Vector3) {
+			return (glacier.compare(this.x, vec3.x, epsilon) &&
+					glacier.compare(this.y, vec3.y, epsilon) &&
+					glacier.compare(this.z, vec3.z, epsilon));
+		}
+		
+		throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'compare', 'Vector3');
+	},
+	
 	get copy() {
 		return new glacier.Vector3(this);
 	},
@@ -3417,18 +3643,18 @@ glacier.Vector3.prototype = {
 				(this.z * vec3.x) - (this.x * vec3.z),
 				(this.x * vec3.y) - (this.y * vec3.x)
 			);
-		} else {
-			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'cross', 'Vector3');
 		}
+		
+		throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'cross', 'Vector3');
 	},
 	
 	distance: function(vec3) {
 		if(vec3 instanceof glacier.Vector3) {
 			var dx = this.x - vec3.x, dy = this.y - vec3.y, dz = this.z - vec3.z;
 			return Math.sqrt(dx * dx + dy * dy + dz * dz);
-		} else {
-			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'distance', 'Vector3');
 		}
+		
+		throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'distance', 'Vector3');
 	},
 	
 	divide: function(value) {
@@ -3462,9 +3688,9 @@ glacier.Vector3.prototype = {
 	dot: function(vec3) {
 		if(vec3 instanceof glacier.Vector3) {
 			return ((this.x * vec3.x) + (this.y * vec3.y) + (this.z * vec3.z));
-		} else {
-			throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'dot', 'Vector3');
 		}
+		
+		throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'dot', 'Vector3');
 	},
 	
 	get length() {
@@ -3692,6 +3918,17 @@ glacier.Vector4.prototype = {
 		return this;
 	},
 	
+	compare: function(vec4, epsilon) {
+		if(vec4 instanceof glacier.Vector4) {
+			return (glacier.compare(this.x, vec4.x, epsilon) &&
+					glacier.compare(this.y, vec4.y, epsilon) &&
+					glacier.compare(this.z, vec4.z, epsilon) &&
+					glacier.compare(this.w, vec4.w, epsilon));
+		}
+		
+		throw new glacier.exception.InvalidParameter('vec4', vec4, 'Vector4', 'compare', 'Vector4');
+	},
+	
 	get copy() {
 		return new glacier.Vector4(this);
 	},
@@ -3724,9 +3961,9 @@ glacier.Vector4.prototype = {
 	dot: function(vec4) {
 		if(vec4 instanceof glacier.Vector4) {
 			return ((this.x * vec4.x) + (this.y * vec4.y) + (this.z * vec4.z) + (this.w * vec4.w));
-		} else {
-			throw new glacier.exception.InvalidParameter('vec4', vec4, 'Vector4', 'dot', 'Vector4');
 		}
+		
+		throw new glacier.exception.InvalidParameter('vec4', vec4, 'Vector4', 'dot', 'Vector4');
 	},
 	
 	get length() {
@@ -4286,7 +4523,7 @@ glacier.extend(glacier.GlobeScene, glacier.Scene, {
 		var ndc = new glacier.Vector3(
 			2.0 * (xOrVec2 / this.context.width) - 1.0,
 			1.0 - 2.0 * (y / this.context.height),
-			-1.0
+			1.0
 		), eye, pos, intersection;
 		
 		eye = this.camera.position.copy;
