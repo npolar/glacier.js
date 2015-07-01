@@ -109,6 +109,7 @@
 		}
 	};
 	
+	// TODO: Octree constructor from min/max boundaries
 	function Octree(points, cellCapacity) {
 		if(glacier.isArray(points, glacier.Vector3)) {
 			var min = new glacier.Vector3( Infinity),
