@@ -47,6 +47,15 @@ glacier.Vector2.prototype = {
 		return this;
 	},
 	
+	compare: function(vec2, epsilon) {
+		if(vec2 instanceof glacier.Vector2) {
+			return (glacier.compare(this.x, vec2.x, epsilon) &&
+					glacier.compare(this.y, vec2.y, epsilon));
+		}
+		
+		throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'compare', 'Vector2');
+	},
+	
 	get copy() {
 		return new glacier.Vector2(this);
 	},
@@ -55,9 +64,9 @@ glacier.Vector2.prototype = {
 		if(vec2 instanceof glacier.Vector2) {
 			var dx = this.x - vec2.x, dy = this.y - vec2.y;
 			return Math.sqrt(dx * dx + dy * dy);
-		} else {
-			throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'distance', 'Vector2');
 		}
+		
+		throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'distance', 'Vector2');
 	},
 	
 	divide: function(value) {
@@ -77,9 +86,9 @@ glacier.Vector2.prototype = {
 	dot: function(vec2) {
 		if(vec2 instanceof glacier.Vector2) {
 			return ((this.x * vec2.x) + (this.y * vec2.y));
-		} else {
-			throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'dot', 'Vector2');
 		}
+		
+		throw new glacier.exception.InvalidParameter('vec2', vec2, 'Vector2', 'dot', 'Vector2');
 	},
 	
 	get length() {

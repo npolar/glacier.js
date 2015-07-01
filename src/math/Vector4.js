@@ -59,6 +59,17 @@ glacier.Vector4.prototype = {
 		return this;
 	},
 	
+	compare: function(vec4, epsilon) {
+		if(vec4 instanceof glacier.Vector4) {
+			return (glacier.compare(this.x, vec4.x, epsilon) &&
+					glacier.compare(this.y, vec4.y, epsilon) &&
+					glacier.compare(this.z, vec4.z, epsilon) &&
+					glacier.compare(this.w, vec4.w, epsilon));
+		}
+		
+		throw new glacier.exception.InvalidParameter('vec4', vec4, 'Vector4', 'compare', 'Vector4');
+	},
+	
 	get copy() {
 		return new glacier.Vector4(this);
 	},
@@ -91,9 +102,9 @@ glacier.Vector4.prototype = {
 	dot: function(vec4) {
 		if(vec4 instanceof glacier.Vector4) {
 			return ((this.x * vec4.x) + (this.y * vec4.y) + (this.z * vec4.z) + (this.w * vec4.w));
-		} else {
-			throw new glacier.exception.InvalidParameter('vec4', vec4, 'Vector4', 'dot', 'Vector4');
 		}
+		
+		throw new glacier.exception.InvalidParameter('vec4', vec4, 'Vector4', 'dot', 'Vector4');
 	},
 	
 	get length() {
