@@ -86,8 +86,7 @@ glacier.Drawable.prototype = {
 			throw new glacier.exception.InvalidParameter('context', context, 'Context', 'init', 'Drawable');
 		}
 		
-		var	initialized = true,
-			shader = context.shaders.get('generic'),
+		var	shader = context.shaders.get('generic'),
 			aabbMax = this.aabb.max,
 			aabbMin = this.aabb.min,
 			aabbVertices, aabbIndices;
