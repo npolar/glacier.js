@@ -1,13 +1,17 @@
 glacier.EPSILON = 10e-5;
 
-glacier.compare = function(value1, value2) {
+glacier.compare = function(value1, value2, epsilon) {
 	var e, val1Arr = glacier.isArray(value1), val2Arr = glacier.isArray(value2);
+	
+	if(typeof epsilon != 'number') {
+		epsilon = glacier.EPSILON;
+	}
 	
 	if(val1Arr && val2Arr) {
 		if(value1.length == value2.length) {
 			for(e = 0; e < value1.length; ++e) {
 				if(typeof value1[e] == 'number' && typeof value2[e] == 'number') {
-					if(Math.abs(value1[e] - value2[e]) >= glacier.EPSILON) {
+					if(Math.abs(value1[e] - value2[e]) >= epsilon) {
 						return false;
 					}
 				} else if(value1 !== value2) {
@@ -22,7 +26,7 @@ glacier.compare = function(value1, value2) {
 		
 		for(e = 0; e < arr.length; ++e) {
 			if(typeof arr[e] == 'number' && typeof val == 'number') {
-				if(Math.abs(arr[e] - val) >= glacier.EPSILON) {
+				if(Math.abs(arr[e] - val) >= epsilon) {
 					return false;
 				}
 			} else if(arr[e] !== val) {
@@ -32,7 +36,7 @@ glacier.compare = function(value1, value2) {
 		
 		return true;
 	} else if(typeof value1 == 'number' && typeof value2 == 'number') {
-		return (Math.abs(value1 - value2) < glacier.EPSILON);
+		return (Math.abs(value1 - value2) < epsilon);
 	} else {
 		return (value1 === value2);
 	}
