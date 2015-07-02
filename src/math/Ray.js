@@ -59,9 +59,17 @@ glacier.Ray.prototype = {
 	deviation: function(ray) {
 		if(ray instanceof glacier.Ray) {
 			return this.b.dot(ray.b);
-		} else {
-			throw new glacier.exception.InvalidParameter('ray', ray, 'Ray', 'deviation', 'Ray');
 		}
+		
+		throw new glacier.exception.InvalidParameter('ray', ray, 'Ray', 'deviation', 'Ray');
+	},
+	
+	distance: function(vec3) {
+		if(vec3 instanceof glacier.Vector3) {
+			return this.b.copy.subtract(this.a).cross(this.a.copy.subtract(vec3)).length / this.b.copy.subtract(this.a).length;
+		}
+		
+		throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'distance', 'Ray');
 	},
 	
 	intersects: function(geometry) {
