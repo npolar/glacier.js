@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.2.12',
+	VERSION: '0.3.0',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -3168,47 +3168,39 @@ glacier.Matrix44.prototype = {
 		}
 	};
 	
-	// TODO: Octree constructor from min/max boundaries
-	function Octree(points, cellCapacity) {
-		if(glacier.isArray(points, glacier.Vector3)) {
-			var min = new glacier.Vector3( Infinity),
-				max = new glacier.Vector3(-Infinity),
-				root;
-				
-			// Use 8 as default cellCapacity if cellCapacity is not a number
-			cellCapacity = (typeof cellCapacity == 'number' ? Math.abs(cellCapacity) : 8);
-			
-			Object.defineProperty(this, 'cellCapacity', {
+	function Octree(min, max, cellCapacity) {
+		if(!(min instanceof glacier.Vector3) || min.length == Infinity) {
+			throw new glacier.exception.InvalidParameter('min', min, 'finite Vector3', '(constructor)', 'Octree');
+		}
+		
+		if(!(max instanceof glacier.Vector3) || max.length == Infinity) {
+			throw new glacier.exception.InvalidParameter('max', max, 'finite Vector3', '(constructor)', 'Octree');
+		}
+		
+		cellCapacity = (typeof cellCapacity == 'number' ? Math.ceil(Math.abs(cellCapacity)) : 256);
+		
+		if(min.length > max.length) {
+			min.swap(max);
+		}
+		
+		Object.defineProperties(this, {
+			cellCapacity: {
 				get: function() {
 					return cellCapacity;
 				},
 				set: function(value) {
 					if(typeof value == 'number' && value > 0) {
 						cellCapacity = Math.ceil(value);
-						// TODO: Rebuilt tree with new cell capacity
+						
+						// Rebuild tree with new cell capacity
+						var points = this.points;
+						this.clear();
+						points.forEach(function(point) { root.add(point); });
 					}
 				}
-				
-			});
-			
-			if(glacier.isArray(points, glacier.Vector3)) {
-				// Calculate octree boundaries
-				points.forEach(function(point) {
-					min.minimize(point);
-					max.maximize(point);
-				});
-				
-				// Create root cell, and add points
-				root = new Cell(min, max, this);
-				points.forEach(function(point) {
-					root.add(point);
-				});
-			}
-			
-			Object.defineProperty(this, 'root', { value: root });
-		} else {
-			throw new glacier.exception.InvalidParameter('points', points, 'Vector3 Array', '(constructor)', 'Octree');
-		}
+			},
+			root: { value: new Cell(min, max, this) }
+		});
 	}
 	
 	Octree.prototype = {
@@ -3250,6 +3242,42 @@ glacier.Matrix44.prototype = {
 			}
 			
 			return childPoints(this.root);
+		},
+		
+		rayPoint: function(ray, radius) {
+			if(ray instanceof glacier.Ray) {
+				radius = Math.abs(typeof radius == 'number' ? radius : Infinity);
+				
+				var closest = function(cell) {
+					var dist, point, closeDist, closePoint, current, cellPos = cell.max.copy.subtract(cell.min);
+					
+					if(ray.boxIntersection(cell.min, cell.max)) {
+						if(ray.distance(cellPos) <= radius) {
+							for(point in cell.points) {
+								if((dist = ray.distance((point = cell.points[point]))) <= radius) {
+									if(!closeDist || dist < closeDist) {
+										closePoint = point;
+										closeDist = dist;
+									}
+								}
+							}
+							
+							cell.children.forEach(function(child) {
+								if((current = closest(child)) && current.dist < closeDist) {
+									closeDist = current.dist;
+									closePoint = current.point;
+								}
+							});
+						}
+					}
+					
+					return closePoint ? { point: closePoint, dist: closeDist } : null;
+				}, current;
+				
+				return (current = closest(this.root)) ? current.point : null;
+			}
+			
+			throw new glacier.exception.InvalidParameter('ray', ray, 'Ray', 'rayPoints', 'Octree');
 		},
 		
 		remove: function(point) {
@@ -3321,9 +3349,17 @@ glacier.Ray.prototype = {
 	deviation: function(ray) {
 		if(ray instanceof glacier.Ray) {
 			return this.b.dot(ray.b);
-		} else {
-			throw new glacier.exception.InvalidParameter('ray', ray, 'Ray', 'deviation', 'Ray');
 		}
+		
+		throw new glacier.exception.InvalidParameter('ray', ray, 'Ray', 'deviation', 'Ray');
+	},
+	
+	distance: function(vec3) {
+		if(vec3 instanceof glacier.Vector3) {
+			return this.b.copy.subtract(this.a).cross(this.a.copy.subtract(vec3)).length / this.b.copy.subtract(this.a).length;
+		}
+		
+		throw new glacier.exception.InvalidParameter('vec3', vec3, 'Vector3', 'distance', 'Ray');
 	},
 	
 	intersects: function(geometry) {
