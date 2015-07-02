@@ -109,11 +109,16 @@
 		}
 	};
 	
-	function Octree(minOrPoints, max) {
-		var min = minOrPoints, cellCapacity = 256, root;
+	function Octree(min, max, cellCapacity) {
+		if(!(min instanceof glacier.Vector3) || min.length == Infinity) {
+			throw new glacier.exception.InvalidParameter('min', min, 'finite Vector3', '(constructor)', 'Octree');
+		}
 		
-		min = (min instanceof glacier.Vector3 ? min : new glacier.Vector3( Infinity));
-		max = (max instanceof glacier.Vector3 ? max : new glacier.Vector3(-Infinity));
+		if(!(max instanceof glacier.Vector3) || max.length == Infinity) {
+			throw new glacier.exception.InvalidParameter('max', max, 'finite Vector3', '(constructor)', 'Octree');
+		}
+		
+		cellCapacity = (typeof cellCapacity == 'number' ? Math.ceil(Math.abs(cellCapacity)) : 256);
 		
 		if(min.length > max.length) {
 			min.swap(max);
@@ -134,29 +139,9 @@
 						points.forEach(function(point) { root.add(point); });
 					}
 				}
-			}
+			},
+			root: { value: new Cell(min, max, this) }
 		});
-		
-		if(glacier.isArray(minOrPoints, glacier.Vector3)) {
-			// Calculate boundaries
-			minOrPoints.forEach(function(point) {
-				min.minimize(point);
-				max.maximize(point);
-			});
-			
-			// Create root and add points
-			root = new Cell(min, max, this);
-			minOrPoints.forEach(function(point) {
-				root.add(point);
-			});
-		} else if(min.length == Infinity) {
-			throw new glacier.exception.InvalidParameter('min', min, 'finite Vector3', '(constructor)', 'Octree');
-		} else if(max.length == Infinity) {
-			throw new glacier.exception.InvalidParameter('max', max, 'finite Vector3', '(constructor)', 'Octree');
-		}
-		
-		// Define root property
-		Object.defineProperty(this, 'root', { value: root });
 	}
 	
 	Octree.prototype = {
