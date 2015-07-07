@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.3.0',
+	VERSION: '0.3.1',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -3248,33 +3248,31 @@ glacier.Matrix44.prototype = {
 			if(ray instanceof glacier.Ray) {
 				radius = Math.abs(typeof radius == 'number' ? radius : Infinity);
 				
-				var closest = function(cell) {
-					var dist, point, closeDist, closePoint, current, cellPos = cell.max.copy.subtract(cell.min);
+				var closest = function(cell, radius) {
+					var dist, point, closeDist, closePoint, current;
 					
 					if(ray.boxIntersection(cell.min, cell.max)) {
-						if(ray.distance(cellPos) <= radius) {
-							for(point in cell.points) {
-								if((dist = ray.distance((point = cell.points[point]))) <= radius) {
-									if(!closeDist || dist < closeDist) {
-										closePoint = point;
-										closeDist = dist;
-									}
+						for(point in cell.points) {
+							if((dist = ray.distance((point = cell.points[point]))) <= radius) {
+								if(!closeDist || dist < closeDist) {
+									closePoint = point;
+									closeDist = dist;
 								}
 							}
-							
-							cell.children.forEach(function(child) {
-								if((current = closest(child)) && current.dist < closeDist) {
-									closeDist = current.dist;
-									closePoint = current.point;
-								}
-							});
 						}
+						
+						cell.children.forEach(function(child) {
+							if((current = closest(child)) && current.dist < closeDist) {
+								closeDist = current.dist;
+								closePoint = current.point;
+							}
+						});
 					}
 					
 					return closePoint ? { point: closePoint, dist: closeDist } : null;
 				}, current;
 				
-				return (current = closest(this.root)) ? current.point : null;
+				return (current = closest(this.root, radius)) ? current.point : null;
 			}
 			
 			throw new glacier.exception.InvalidParameter('ray', ray, 'Ray', 'rayPoints', 'Octree');
@@ -3287,6 +3285,162 @@ glacier.Matrix44.prototype = {
 
 	glacier.Octree = Octree;
 })();
+
+glacier.Quaternion = function Quaternion(x, y, z, w) {
+	// Add x, y, z and w properties
+	[ 'x', 'y', 'z', 'w' ].forEach(function(property) {
+		glacier.addTypedProperty(this, property, 1.0);
+	}, this);
+	
+	this.assign(x, y, z, w);
+};
+
+glacier.Quaternion.prototype = {
+	add: function(value) {
+		if(value instanceof glacier.Quaternion) {
+			this.x += value.x;
+			this.y += value.y;
+			this.z += value.z;
+			this.w += value.w;
+		} else {
+			throw new glacier.exception.InvalidParameter('value', value, 'Quaternion', 'add', 'Quaternion');
+		}
+		
+		return this;
+	},
+	
+	get array() {
+		return new Float32Array([ this.x, this.y, this.z, this.w ]);
+	},
+	
+	assign: function(xAngleOrQuat, yOrAxisVec3, z, w) {
+		if(xAngleOrQuat !== null && xAngleOrQuat !== undefined) {
+			if (xAngleOrQuat instanceof glacier.Quaternion || xAngleOrQuat instanceof glacier.Vector4) {
+				this.assign(xAngleOrQuat.x, xAngleOrQuat.y, xAngleOrQuat.z, xAngleOrQuat.w);
+			} else if(typeof xAngleOrQuat == 'number' && yOrAxisVec3 instanceof glacier.Vector3) {
+				var half = 0.5 * xAngleOrQuat, sinHalf = Math.sin(half);
+				this.assign(sinHalf * yOrAxisVec3.x, sinHalf * yOrAxisVec3.y, sinHalf * yOrAxisVec3.z, Math.cos(half));
+			} else {
+				var args = [ 'x', 'y', 'z', 'w' ];
+				
+				[ x, y, z, w ].forEach(function(arg, index) {
+					if(isNaN(arg)) {
+						throw new glacier.exception.InvalidParameter(args[index], arg, 'number', 'assign', 'Quaternion');
+					}
+				});
+				
+				this.x = x;
+				this.y = y;
+				this.z = z;
+				this.w = w;
+			}
+		}
+		
+		return this;
+	},
+	
+	assignIdentity: function() {
+		this.assign(0.0, 0.0, 0.0, 1.0);
+	},
+	
+	compare: function(quat, epsilon) {
+		if(quat instanceof glacier.Quaternion) {
+			return (glacier.compare(this.x, quat.x, epsilon) &&
+					glacier.compare(this.y, quat.y, epsilon) &&
+					glacier.compare(this.z, quat.z, epsilon) &&
+					glacier.compare(this.w, quat.w, epsilon));
+		}
+		
+		throw new glacier.exception.InvalidParameter('quat', quat, 'Quaternion', 'compare', 'Quaternion');
+	},
+	
+	get copy() {
+		return new glacier.Quaternion(this);
+	},
+	
+	get matrix() {
+		var mat = new glacier.Matrix33(),
+			tx = 2.0 * this.x,
+			ty = 2.0 * this.y,
+			tz = 2.0 * this.z,
+			tx_w = tx * this.w,
+			ty_w = ty * this.w,
+			tz_w = tz * this.w,
+			tx_x = tx * this.x,
+			ty_x = ty * this.x,
+			tz_x = tz * this.x,
+			ty_y = ty * this.y,
+			tz_y = tz * this.y,
+			tz_z = tz * this.z;
+			
+		mat.array[0] = 1.0 - (ty_y + tz_z);
+		mat.array[1] = ty_x - tz_w;
+		mat.array[2] = tz_x + ty_w;
+		mat.array[3] = ty_x + tz_w;
+		mat.array[4] = 1.0 - (tx_x + tz_z);
+		mat.array[5] = tz_y - tx_w;
+		mat.array[6] = tz_x - ty_w;
+		mat.array[7] = tz_y + tx_w;
+		mat.array[8] = 1.0 - (tx_x + ty_y);
+		
+		return mat;
+	},
+	
+	multiply: function(value) {
+		if(value instanceof glacier.Quaternion) {
+			this.x = (this.w * value.x) + (this.x * value.w) + (this.y * value.z) - (this.z * value.y);
+			this.y = (this.w * value.y) + (this.y * value.w) + (this.z * value.x) - (this.x * value.z);
+			this.z = (this.w * value.z) + (this.z * value.w) + (this.x * value.y) - (this.y * value.x);
+			this.w = (this.w * value.w) - (this.x * value.x) - (this.y * value.y) - (this.z * value.z);
+		} else if(typeof value == 'number') {
+			this.x *= value;
+			this.y *= value;
+			this.z *= value;
+			this.w *= value;
+		} else {
+			throw new glacier.exception.InvalidParameter('value', value, 'number, Vector3 or Quaternion', 'multiply', 'Quaternion');
+		}
+		
+		return this;
+	},
+	
+	normalize: function() {
+		this.multiply(1.0 / Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z) + (this.w * this.w)));
+		return this;
+	},
+	
+	get normalized() {
+		return this.copy.normalize();
+	},
+	
+	subtract: function(value) {
+		if(value instanceof glacier.Quaternion) {
+			this.x -= value.x;
+			this.y -= value.y;
+			this.z -= value.z;
+			this.w -= value.w;
+		} else {
+			throw new glacier.exception.InvalidParameter('value', value, 'Quaternion', 'subtract', 'Quaternion');
+		}
+		
+		return this;
+	},
+	
+	swap: function(quat) {
+		if(quat instanceof glacier.Quaternion) {
+			this.x = quat.x + (quat.x = this.x, 0);
+			this.y = quat.y + (quat.y = this.y, 0);
+			this.z = quat.z + (quat.z = this.z, 0);
+			this.w = quat.w + (quat.w = this.w, 0);
+		} else {
+			throw new glacier.exception.InvalidParameter('quat', quat, 'Quaternion', 'swap', 'Quaternion');
+		}
+	},
+	
+	toString: function() {
+		return ('(' + this.x + ', ' + this.y + ', ' + this.z + ', ' + this.w + ')');
+	}
+};
 
 glacier.Ray = function Ray(origin, direction) {
 	glacier.addTypedProperty(this, ['a', 'origin'], new glacier.Vector3(0.0), glacier.Vector3);
@@ -3321,11 +3475,11 @@ glacier.Ray.prototype = {
 	
 	boxIntersection: function(min, max) {
 		if(!(min instanceof glacier.Vector3)) {
-			throw new glacier.excepetion.InvalidParameter('min', min, 'Vector3', 'boxIntersection', 'Ray');
+			throw new glacier.exception.InvalidParameter('min', min, 'Vector3', 'boxIntersection', 'Ray');
 		}
 		
 		if(!(max instanceof glacier.Vector3)) {
-			throw new glacier.excepetion.InvalidParameter('max', max, 'Vector3', 'boxIntersection', 'Ray');
+			throw new glacier.exception.InvalidParameter('max', max, 'Vector3', 'boxIntersection', 'Ray');
 		}
 		
 		var dir = new glacier.Vector3(1.0).divide(this.b),
@@ -3766,6 +3920,12 @@ glacier.Vector3.prototype = {
 			this.x *= value;
 			this.y *= value;
 			this.z *= value;
+		} else if(value instanceof glacier.Quaternion) {
+			var res = new glacier.Quaternion(this.x, this.y, this.z, 0.0),
+				neg = new glacier.Quaternion(-value.x, -value.y, -value.z, value.w);
+				
+			res = value.copy.multiply(res.multiply(neg));
+			this.assign(res.x, res.y, res.z);
 		} else if(value instanceof glacier.Matrix33) {
 			this.assign(
 				(this.x * value.array[0]) + (this.y * value.array[3]) + (this.z * value.array[6]),
