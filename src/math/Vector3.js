@@ -170,6 +170,12 @@ glacier.Vector3.prototype = {
 			this.x *= value;
 			this.y *= value;
 			this.z *= value;
+		} else if(value instanceof glacier.Quaternion) {
+			var res = new glacier.Quaternion(this.x, this.y, this.z, 0.0),
+				neg = new glacier.Quaternion(-value.x, -value.y, -value.z, value.w);
+				
+			res = value.copy.multiply(res.multiply(neg));
+			this.assign(res.x, res.y, res.z);
 		} else if(value instanceof glacier.Matrix33) {
 			this.assign(
 				(this.x * value.array[0]) + (this.y * value.array[3]) + (this.z * value.array[6]),
