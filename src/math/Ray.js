@@ -31,11 +31,11 @@ glacier.Ray.prototype = {
 	
 	boxIntersection: function(min, max) {
 		if(!(min instanceof glacier.Vector3)) {
-			throw new glacier.excepetion.InvalidParameter('min', min, 'Vector3', 'boxIntersection', 'Ray');
+			throw new glacier.exception.InvalidParameter('min', min, 'Vector3', 'boxIntersection', 'Ray');
 		}
 		
 		if(!(max instanceof glacier.Vector3)) {
-			throw new glacier.excepetion.InvalidParameter('max', max, 'Vector3', 'boxIntersection', 'Ray');
+			throw new glacier.exception.InvalidParameter('max', max, 'Vector3', 'boxIntersection', 'Ray');
 		}
 		
 		var dir = new glacier.Vector3(1.0).divide(this.b),
