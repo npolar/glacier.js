@@ -189,33 +189,31 @@
 			if(ray instanceof glacier.Ray) {
 				radius = Math.abs(typeof radius == 'number' ? radius : Infinity);
 				
-				var closest = function(cell) {
-					var dist, point, closeDist, closePoint, current, cellPos = cell.max.copy.subtract(cell.min);
+				var closest = function(cell, radius) {
+					var dist, point, closeDist, closePoint, current;
 					
 					if(ray.boxIntersection(cell.min, cell.max)) {
-						if(ray.distance(cellPos) <= radius) {
-							for(point in cell.points) {
-								if((dist = ray.distance((point = cell.points[point]))) <= radius) {
-									if(!closeDist || dist < closeDist) {
-										closePoint = point;
-										closeDist = dist;
-									}
+						for(point in cell.points) {
+							if((dist = ray.distance((point = cell.points[point]))) <= radius) {
+								if(!closeDist || dist < closeDist) {
+									closePoint = point;
+									closeDist = dist;
 								}
 							}
-							
-							cell.children.forEach(function(child) {
-								if((current = closest(child)) && current.dist < closeDist) {
-									closeDist = current.dist;
-									closePoint = current.point;
-								}
-							});
 						}
+						
+						cell.children.forEach(function(child) {
+							if((current = closest(child)) && current.dist < closeDist) {
+								closeDist = current.dist;
+								closePoint = current.point;
+							}
+						});
 					}
 					
 					return closePoint ? { point: closePoint, dist: closeDist } : null;
 				}, current;
 				
-				return (current = closest(this.root)) ? current.point : null;
+				return (current = closest(this.root, radius)) ? current.point : null;
 			}
 			
 			throw new glacier.exception.InvalidParameter('ray', ray, 'Ray', 'rayPoints', 'Octree');
