@@ -1,8 +1,8 @@
 glacier.Quaternion = function Quaternion(x, y, z, w) {
-	// Add x, y, z and w properties
-	[ 'x', 'y', 'z', 'w' ].forEach(function(property) {
-		glacier.addTypedProperty(this, property, 1.0);
-	}, this);
+	glacier.addTypedProperty(this, 'x', 0.0);
+	glacier.addTypedProperty(this, 'y', 0.0);
+	glacier.addTypedProperty(this, 'z', 0.0);
+	glacier.addTypedProperty(this, 'w', 1.0);
 	
 	this.assign(x, y, z, w);
 };
