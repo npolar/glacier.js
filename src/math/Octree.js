@@ -195,7 +195,7 @@
 					if(ray.boxIntersection(cell.min, cell.max)) {
 						for(point in cell.points) {
 							if((dist = ray.distance((point = cell.points[point]))) <= radius) {
-								if(!closeDist || dist < closeDist) {
+								if(closeDist === undefined || dist < closeDist) {
 									closePoint = point;
 									closeDist = dist;
 								}
@@ -203,7 +203,7 @@
 						}
 						
 						cell.children.forEach(function(child) {
-							if((current = closest(child)) && current.dist < closeDist) {
+							if((current = closest(child, closeDist))) {
 								closeDist = current.dist;
 								closePoint = current.point;
 							}
