@@ -19,6 +19,13 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 	
 	var rotation = 0.0;
 	
+	/* TODO:
+	 *  - Save rotation as Quaternion
+	 *  - Save globe position as Vector3
+	 *  - Rotate globe (not camera) with mouse
+	 *  - Zoom still modifies camera distance
+	 */
+	
 	Object.defineProperties(this, {
 		base: { get: function() { return this.layers[0]; } },
 		data: { value: {} },
