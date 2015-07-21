@@ -9,7 +9,7 @@
 \* * * * * * * * * * * * */
 
 var glacier = {
-	VERSION: '0.3.2',
+	VERSION: '0.3.3',
 	AUTHORS: [ 'remi@npolar.no' ]
 };
 
@@ -3254,7 +3254,7 @@ glacier.Matrix44.prototype = {
 					if(ray.boxIntersection(cell.min, cell.max)) {
 						for(point in cell.points) {
 							if((dist = ray.distance((point = cell.points[point]))) <= radius) {
-								if(!closeDist || dist < closeDist) {
+								if(closeDist === undefined || dist < closeDist) {
 									closePoint = point;
 									closeDist = dist;
 								}
@@ -3262,7 +3262,7 @@ glacier.Matrix44.prototype = {
 						}
 						
 						cell.children.forEach(function(child) {
-							if((current = closest(child)) && current.dist < closeDist) {
+							if((current = closest(child, closeDist))) {
 								closeDist = current.dist;
 								closePoint = current.point;
 							}
@@ -4326,6 +4326,13 @@ glacier.GlobeScene = function GlobeScene(container, options) {
 	}, 'GlobeScene');
 	
 	var rotation = 0.0;
+	
+	/* TODO:
+	 *  - Save rotation as Quaternion
+	 *  - Save globe position as Vector3
+	 *  - Rotate globe (not camera) with mouse
+	 *  - Zoom still modifies camera distance
+	 */
 	
 	Object.defineProperties(this, {
 		base: { get: function() { return this.layers[0]; } },
